@@ -1,0 +1,15 @@
+dist
+node_modules
+logs
+.yarnrc.yml
+.yarn
+.yarn.lock
+.env
+.idea/
+.idea/
+.env.docker
+.idea/
+pgdata
+.vscode
+.DS_Store
+src/config/firebase-admin-credential.json
