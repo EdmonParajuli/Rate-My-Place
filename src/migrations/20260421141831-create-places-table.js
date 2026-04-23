@@ -77,7 +77,7 @@ module.exports = {
         allowNull: true
       },
     });
-    await queryInterface.addIndex('provider_places',['label'],{
+    await queryInterface.addIndex('providers_places',['label'],{
       concurrently: true,
       name: 'providers_places_label',
       where: {
