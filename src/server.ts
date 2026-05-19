@@ -38,7 +38,7 @@ class Server {
         }: {
           req: IncomingMessage | any;
         }): Promise<any> => {
-            const operationName = req.body.operationName;
+          const operationName = req.body.operationName;
           const authorization = req.headers?.authorization as string;
 
           return {

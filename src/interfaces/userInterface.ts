@@ -13,7 +13,7 @@ export interface InputUserInterface {
 }
 
 export interface UserInterface extends ModelTimestampExtend, InputUserInterface {
-    id: Sequelize.CreationOptional <number>;
+    id: Sequelize.CreationOptional <string>;
 }
 
 export interface UserModelInterface extends Sequelize.Model<UserInterface, Partial<InputUserInterface>>,UserInterface{}
