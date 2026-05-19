@@ -13,15 +13,6 @@ export const userDefs: DocumentNode = gql `
         message: String
     }
 
-    type User {
-        id: Int
-        email: String
-        phoneNumber: String
-        fullName: String
-        userType: UserTypeEnum
-        profilePicture: String 
-    }
-
     input InputUser {
         email: String
         phoneNumber: String
