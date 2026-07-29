@@ -1,9 +1,10 @@
 import { IncomingHttpHeaders } from "http";
-import { UserInterface } from "./userInterface";
+import { AuthTokenPayload } from "./authInterface";
 
 export interface ContextInterface {
     authorization?: string | undefined;
     operationName?: string;
-    user?: UserInterface;
-    headers?: IncomingHttpHeaders; 
+    user?: AuthTokenPayload;
+    headers?: IncomingHttpHeaders;
+    ip?: string;
 }

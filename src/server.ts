@@ -57,7 +57,9 @@ class Server {
           return {
             authorization,
             operationName,
-            user
+            user,
+            headers: req.headers,
+            ip: req.ip || req.socket?.remoteAddress,
           };
         },
       })

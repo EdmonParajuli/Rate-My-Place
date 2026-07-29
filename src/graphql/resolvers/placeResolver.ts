@@ -21,7 +21,7 @@ export const placeResolver = {
 
                 Validator.check(createPlaceSchema, args.input);
 
-                const result = await new PlaceService().createPlace({...args.input, ownerId: user.userid});
+                const result = await new PlaceService().createPlace({...args.input, ownerId: user.id});
 
                 return SuccessResponse.send({
                     message: "Place created successfully",
