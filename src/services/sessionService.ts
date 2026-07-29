@@ -115,14 +115,16 @@ export class SessionService {
     await this.repository.updateOne({ id: sessionId, input: { revokedAt: new Date() } });
   }
 
-  async revokeAllForUser(userId: string, exceptSessionId?: number): Promise<void> {
+  async revokeAllForUser(userId: string, exceptRefreshToken?: string): Promise<void> {
+    const exceptHash = exceptRefreshToken ? this.hashToken(exceptRefreshToken) : undefined;
+
     const activeSessions = await this.repository.findAll({
       where: { userId, revokedAt: null },
     });
 
     await Promise.all(
       activeSessions
-        .filter((session) => String(session.id) !== String(exceptSessionId))
+        .filter((session) => session.refreshTokenHash !== exceptHash)
         .map((session) =>
           this.repository.updateOne({ id: session.id, input: { revokedAt: new Date() } })
         )

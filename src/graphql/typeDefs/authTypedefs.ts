@@ -33,6 +33,7 @@ export const authTypedefs: DocumentNode = gql`
         previousPassword: String!
         newPassword: String!
         confirmNewPassword: String!
+        refreshToken: String
     }
 
     input InputAuthLogin {
@@ -51,7 +52,7 @@ export const authTypedefs: DocumentNode = gql`
     }
 
     input InputRefreshToken {
-        refreshToken: String
+        refreshToken: String!
     }
 
     type SignUpData {
