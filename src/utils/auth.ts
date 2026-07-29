@@ -1,32 +1,21 @@
-import { GraphQLError } from "graphql";
 import { ContextInterface } from "../interfaces";
+import { AuthTokenPayload } from "../interfaces/authInterface";
 import { UserTypeEnum } from "../enums/userTypesEnum";
+import { throwError } from "../helpers/errorHelper";
 
-export const requireAuth = (context: ContextInterface) => {
+export const requireAuth = (context: ContextInterface): AuthTokenPayload => {
     if(!context.user){
-        throw new GraphQLError("Auth Failed",{
-            extensions: {
-                code: "UNAUTHENTICATED",
-                message: "You must be logged in to perform this action",
-                status: 401
-            },
-        })
+        throwError("You must be logged in to perform this action", "UNAUTHENTICATED", 401);
     }
 
-    return context.user;
+    return context.user!;
 }
 
-export const requireOwner = (context: ContextInterface) => {
+export const requireOwner = (context: ContextInterface): AuthTokenPayload => {
     const user = requireAuth(context);
     if(user.userType !== UserTypeEnum["BUSINESS"]){
-        throw new GraphQLError("Authorization Failed",{
-            extensions: {
-                code: "UNAUTHORIZED",
-                message: "You dont have permission to perform this action",
-                status: 403
-            }
-        })
+        throwError("You dont have permission to perform this action", "UNAUTHORIZED", 403);
     }
 
-    return context.user;
+    return user;
 }

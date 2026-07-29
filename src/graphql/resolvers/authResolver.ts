@@ -1,9 +1,10 @@
 import { ContextInterface, InputAuthLoginInterface, InputAuthSignUpInterface } from "../../interfaces";
 import { Validator } from "../../middlewares";
 import { loginSchema, signUpSchema } from "../../validators";
-import { GraphQLError, GraphQLResolveInfo } from "graphql";
+import { GraphQLResolveInfo } from "graphql";
 import { AuthService } from "../../services/authService";
 import { SuccessResponse } from "../../helpers/responseHelper";
+import { throwError } from "../../helpers/errorHelper";
 import { requireAuth } from "../../utils/auth";
 import { UserRepository } from "../../repositories/userRepository";
 
@@ -26,12 +27,7 @@ export const authResolvers = {
           data: result
         });
       } catch (error: any) {
-        throw new GraphQLError(error.message, {
-          extensions: {
-            code: "BAD_USER_INPUT",
-            status: 404,
-          },
-        });
+        throwError(error.message, "BAD_USER_INPUT", 404);
       }
     },
 
@@ -53,12 +49,7 @@ export const authResolvers = {
         });
         
       }catch(error: any){
-        throw new GraphQLError(error.message,{
-          extensions: {
-            code: "BAD_USER_INPUT",
-            status: "404"
-          }
-        })
+        throwError(error.message, "BAD_USER_INPUT", 404);
       }
     }
   },

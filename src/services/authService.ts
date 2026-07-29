@@ -1,9 +1,9 @@
-import { GraphQLError } from "graphql";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { InputAuthLoginInterface, InputAuthSignUpInterface, AuthResponseInterface, ContextInterface } from "../interfaces";
 import { signToken } from "../utils/jwt";
 import { UserRepository } from "../repositories/userRepository";
+import { throwError } from "../helpers/errorHelper";
 
 dotenv.config();
 
@@ -20,13 +20,7 @@ export class AuthService {
     /**Check if email already exists for user**/
     const existingUser = await  this.repository.findOne({ where: {email} });
     if (existingUser) {
-        throw new GraphQLError("User already exists.", {
-            extensions: {
-              code: "BAD_USER_INPUT",
-              status: 404,
-              message: `User with email ${email} already exists.`,
-            },
-          });
+        throwError(`User with email ${email} already exists.`, "BAD_USER_INPUT", 404);
     }
 
     const hashedPassword = await bcrypt.hash(password, parseInt(process.env.PASSWORD_HASH_CONSTANT!));
@@ -53,23 +47,13 @@ export class AuthService {
     const user = await this.repository.findOne({where: {email}});
 
     if(!user){
-      throw new GraphQLError("Invalid email or password",{
-        extensions :{
-          code: "UNAUTHENTICATED",
-          status: 401
-        }
-      })
+      throwError("Invalid email or password", "UNAUTHENTICATED", 401);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if(!isPasswordValid){
-      throw new GraphQLError("Invalid email or password",{
-        extensions :{
-          code: 'UNAUTHENTICATED',
-          status: 401
-        }
-      })
+      throwError("Invalid email or password", "UNAUTHENTICATED", 401);
     }
 
     const {accessToken, refreshToken} = signToken(
@@ -77,8 +61,6 @@ export class AuthService {
       user.userType
     )
 
-    context.user = user;
-    
     return {
       user,
       token: {

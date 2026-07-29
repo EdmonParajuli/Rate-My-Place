@@ -1,4 +1,4 @@
-import { GraphQLError, GraphQLResolveInfo } from "graphql";
+import { GraphQLResolveInfo } from "graphql";
 import { ContextInterface } from "../../interfaces";
 import { InputPlaceInterface, PlaceInterface } from "../../interfaces/placeInterface";
 import { requireAuth, requireOwner } from "../../utils/auth";
@@ -6,6 +6,7 @@ import { Validator } from "../../middlewares";
 import { createPlaceSchema } from "../../validators/placeValidators";
 import PlaceService from "../../services/placeService";
 import { SuccessResponse } from "../../helpers/responseHelper";
+import { throwError } from "../../helpers/errorHelper";
 
 export const placeResolver = {
     Mutation: {
@@ -29,12 +30,7 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         },
         updatePlace: async(
@@ -57,12 +53,7 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         },
 
@@ -99,12 +90,7 @@ export const placeResolver = {
                     data: result
                 });
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         }
     }
