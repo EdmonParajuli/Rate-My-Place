@@ -1,4 +1,5 @@
 import { UserTypeEnum } from "../enums/userTypesEnum";
+import crypto from "crypto";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 
@@ -13,7 +14,11 @@ export const signToken = (id: string, userType: UserTypeEnum) => {
     } as jwt.SignOptions
   );
   const refreshToken = jwt.sign(
-    { id, userType },
+    // jti makes every refresh token unique even when issued for the same
+    // user within the same second, which would otherwise sign byte-identical
+    // tokens (same payload + iat) and collide on the sessions table's unique
+    // hash constraint.
+    { id, userType, jti: crypto.randomUUID() },
     process.env.JWT_REFRESH_SECRET!,
     {
       expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
