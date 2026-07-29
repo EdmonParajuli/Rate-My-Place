@@ -51,7 +51,7 @@ const Place = sequelize.define<PlaceModelInterface>(
             field: "category_id"
         },
         averageRating: {
-            type: Sequelize.INTEGER,
+            type: Sequelize.DECIMAL(2, 1),
             allowNull: true,
             defaultValue: 0,
             validate: {

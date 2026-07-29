@@ -7,6 +7,7 @@ import { createPlaceSchema } from "../../validators/placeValidators";
 import PlaceService from "../../services/placeService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
+import { UserRepository } from "../../repositories/userRepository";
 
 export const placeResolver = {
     Mutation: {
@@ -111,6 +112,11 @@ export const placeResolver = {
                 }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
+        }
+    },
+    Place: {
+        owner: async (parent: PlaceInterface) => {
+            return new UserRepository().findByPk(parent.ownerId);
         }
     }
 }
