@@ -22,7 +22,7 @@ export const placeDefs: DocumentNode = gql`
         phone: String
         website: String
         category: String
-        averageRating: Int
+        averageRating: Float
         reviewCount: Int
         isVerified: Boolean
     }
