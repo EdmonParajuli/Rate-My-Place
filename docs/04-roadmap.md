@@ -11,16 +11,27 @@ doc is meant to be edited, not archived.
 - [x] Places: create/update/delete/getById, owner-gated writes
 - [x] Migrations for categories, reviews, review replies (schema only)
 
-## Phase 1 — Close out the backend's existing surface
+## Phase 1 — Done
 
-Small, mostly mechanical, and removes the sharpest edges before more code copies them.
+Implemented and manually verified end to end on branch
+`rmp-2-phase-1-backend-hardening` — see
+[specs/phase-1-backend-hardening.md](./specs/phase-1-backend-hardening.md) for the
+design and [02-current-state.md](./02-current-state.md) for what shipped, including a
+few previously-unknown bugs (a stray file that broke the entire Places API since the
+first commit, a refresh-token collision, and a missing schema declaration) that
+surfaced only once this was actually load-tested against a live server.
 
-- [ ] Fix the `authMeUser` / JWT payload field mismatch (doc 2, issue 1)
-- [ ] Fix `requireOwner` to check resource ownership, not just role (doc 2, issue 2)
-- [ ] Remove or implement `signOut`/`forgotPassword`/`changePassword`/`confirmForgotPassword` (doc 2, issue 3)
-- [ ] Delete or finish `userTypedefs.ts` (doc 2, issue 4)
-- [ ] Standardize the GraphQL error `extensions.status` type (doc 2, issue 6)
-- [ ] Add a `SESSIONS` table + wire refresh-token issuance/revocation through it (unblocks logout and "active sessions" later)
+- [x] Fix the `authMeUser` / JWT payload field mismatch (doc 2, issue 1)
+- [x] Fix `requireOwner` to check resource ownership, not just role (doc 2, issue 2)
+- [x] Implement `signOut`/`forgotPassword`/`changePassword`/`confirmForgotPassword` (doc 2, issue 3)
+- [x] Delete `userTypedefs.ts` (doc 2, issue 4)
+- [x] Standardize the GraphQL error `extensions.status` type (doc 2, issue 6)
+- [x] Add a `SESSIONS` table + wire refresh-token issuance/rotation/revocation through it
+
+Still open, not part of this phase: doc 2's issue 7 (no tests/CI — see
+[06-quality-and-ops.md](./06-quality-and-ops.md)), issue 8 (singular
+`providers_category` table name), the newly-found `SignUpData` schema mismatch, and
+`updatePlace`'s all-fields-required validator.
 
 ## Phase 2 — Reviews (the core loop)
 

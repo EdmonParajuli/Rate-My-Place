@@ -31,67 +31,75 @@ Consistent across the two features that exist (auth, places).
 - Soft deletes (`paranoid: true`) + `underscored: true` + explicit `field:` mappings on every model — consistent convention, keep it.
 - Config module ([config/index.ts](../src/config/index.ts)) fails fast on missing env vars via `mustExist` — good pattern, extend it rather than reading `process.env` ad hoc elsewhere.
 
-## Known issues / tech debt worth fixing early
+## Known issues / tech debt
 
-Cheaper to fix now, while there are only two features, than after ten more are built
-on top of the same pattern.
+Issues 1–6 below were Phase 1's punch list and are now **fixed** on branch
+`rmp-2-phase-1-backend-hardening` (see
+[specs/phase-1-backend-hardening.md](./specs/phase-1-backend-hardening.md) for the
+design and this repo's git history for the actual commits). Kept here, marked done,
+so this doc stays an honest record of what was true and when it changed — not deleted
+outright, since "issue 1 doesn't exist anymore" is itself useful history.
 
-1. **`authMeUser` is very likely broken.** [authResolver.ts](../src/graphql/resolvers/authResolver.ts:74)
-   calls `new UserRepository().findByPk(user.id!)`, where `user = requireAuth(context)`.
-   But `context.user` is populated in [server.ts](../src/server.ts:51) via
-   `verifyJwt(token)`, which returns the raw JWT payload — `{ userid, userType, iat, exp }`
-   (see [jwt.ts](../src/utils/jwt.ts:7)). There is no `id` field on that payload, only
-   `userid`. So `user.id` is `undefined` and `authMeUser` will look up a bogus primary
-   key. `placeResolver.createPlace` already works around this correctly by reading
-   `user.userid` ([placeResolver.ts](../src/graphql/resolvers/placeResolver.ts:24)).
-   Pick one field name (`id` is more conventional) and make the JWT payload, the
-   `ContextInterface`, and every call site agree.
+1. ~~`authMeUser` is very likely broken~~ **Fixed.** Standardized on `id` across the
+   JWT payload, `ContextInterface.user` (now a dedicated `AuthTokenPayload` type
+   instead of the misleading full `UserInterface`), and every call site.
+2. ~~`requireOwner` checks role, not resource ownership~~ **Fixed.**
+   `PlaceService.updatePlace`/`delete` now take the requesting user's id and reject
+   with `FORBIDDEN`/403 when it doesn't match the place's `ownerId`.
+3. ~~Schema/resolver drift in auth (`signOut`/`forgotPassword`/`changePassword`/
+   `confirmForgotPassword` declared but unimplemented)~~ **Fixed.** All four are
+   implemented end to end, including a new sessions system they depend on (see
+   the spec's §6).
+4. ~~`userTypedefs.ts` is dead and self-inconsistent~~ **Fixed.** File deleted.
+5. ~~No refresh-token persistence or revocation~~ **Fixed.** New `providers_sessions`
+   table + `SessionService`: refresh tokens are hashed and persisted at
+   issuance, rotated on renewal (`refreshAccessToken`), and revocable
+   (`signOut`, `revokeSession`, or automatically on password change/reset). A new
+   `activeSessions` query lists them.
+6. ~~Inconsistent GraphQL error `status` typing~~ **Fixed.** A `throwError(message,
+   code, status)` helper in `src/helpers/errorHelper.ts` is now the only way any
+   resolver throws, `status` is always a number, and resolver `catch` blocks no
+   longer swallow and rewrap `GraphQLError`s thrown by the service layer (they used
+   to — which would have silently turned the new 403/404s above back into a generic
+   400).
 
-2. **`requireOwner` checks role, not resource ownership.** [auth.ts](../src/utils/auth.ts:19)
-   confirms the caller's `userType === BUSINESS`, but `updatePlace` and `deletePlace`
-   in [placeResolver.ts](../src/graphql/resolvers/placeResolver.ts:40-83) never check
-   that the caller owns *that specific* place. Today, any business-type account can
-   edit or delete any other business's listing. This needs an
-   `existingPlace.ownerId === user.userid` check inside the service or resolver before
-   the roadmap adds reviews/replies with the same shape of bug.
+**Discovered while manually verifying Phase 1 against a live server — also fixed on
+the same branch, not called out in the original spec because they weren't known yet:**
 
-3. **Schema/resolver drift in auth.** [authTypedefs.ts](../src/graphql/typeDefs/authTypedefs.ts:92-98)
-   declares `signOut`, `forgotPassword`, `changePassword`, `confirmForgotPassword` as
-   mutations, but [authResolver.ts](../src/graphql/resolvers/authResolver.ts) only
-   implements `signUp`, `login`, and the `authMeUser` query. Calling any of those four
-   today will hit Apollo's default resolver and likely error or return `null`
-   unexpectedly rather than a clear "not implemented." Either build them next (they're
-   on the roadmap anyway — see doc 4) or remove them from the schema until they exist,
-   so the schema is always truthful about what the API can do.
+- **A stray `src/models/index.js`** (leftover `sequelize-cli init` boilerplate from
+  the very first commit) shadowed the real `src/models/index.ts` at Node's module
+  resolution level. Every repository's `Model.X` was `undefined` at request time —
+  **signUp, login, and the entire Places API have been non-functional end-to-end since
+  the first commit**, despite the server booting and connecting to the DB
+  successfully (the DB connection doesn't go through this file, only the repositories
+  do). This is exactly the kind of bug that only manual, live testing catches — the
+  code compiles fine and looks correct on paper. Deleted the stray file.
+- **Refresh tokens collided within the same second.** `jwt.sign` is deterministic
+  given identical payload+secret+timing; two tokens issued for the same user inside
+  the same second (e.g. signup immediately followed by login) were byte-identical,
+  colliding with the new sessions table's unique hash constraint. Fixed by adding a
+  random `jti` claim to refresh tokens.
+- **`updatePlace`/`deletePlace` had resolvers but no schema declaration.** Both were
+  fully implemented in `placeResolver.ts` (Phase 0) but never added to
+  `placeTypedefs.ts`, so neither was actually callable via GraphQL. Added.
 
-4. **`userTypedefs.ts` is dead and self-inconsistent.** [userTypedefs.ts](../src/graphql/typeDefs/userTypedefs.ts)
-   defines `createUser`/`updateUser`/`deleteUser`/`users`/`user`, but it's never passed
-   into `buildSubgraphSchema` in [schema/index.ts](../src/graphql/schema/index.ts) — so
-   none of it is reachable. It also references a `SingleUser` type that is never
-   defined anywhere in the file (would fail schema composition if it were wired in).
-   Either delete this file or finish and wire it up as part of a proper user-management
-   feature — leaving it as unreachable-and-broken is the worst of both options.
+**Still open — found, deliberately not fixed here, out of scope for Phase 1:**
 
-5. **No refresh-token persistence or revocation.** `signToken` issues a refresh JWT
-   ([jwt.ts](../src/utils/jwt.ts:15)) but nothing stores it. There's no way to log a
-   session out server-side, no "active sessions" list, and no way to satisfy the
-   Settings screen's "active sessions with revoke" feature without a sessions table.
-
-6. **Inconsistent GraphQL error `status` typing.** Some resolvers pass `status: 401`
-   (number), others `status: "404"` (string) in `extensions`
-   ([authResolver.ts](../src/graphql/resolvers/authResolver.ts:58) vs.
-   [placeResolver.ts](../src/graphql/resolvers/placeResolver.ts:35)). Pick one type and
-   enforce it — small thing, but it'll be copy-pasted into every future resolver if not
-   caught now.
-
-7. **No tests, no CI.** There is no test file anywhere in the repo and no
-   `.github/workflows`. Covered in depth in
-   [06-quality-and-ops.md](./06-quality-and-ops.md).
-
-8. **Table naming is singular where the rest of the schema is plural.** `providers_category`
-   vs. `providers_users`/`providers_places`/`providers_reviews`. Harmless functionally,
-   but worth a single fixup migration before more code (and more developers) start
-   referencing the name.
+- **`SignUpData` doesn't match what `signUp` actually returns.** The schema declares
+  `type SignUpData { email, userType }`, but the resolver returns
+  `{ user, token }` (matching `login`'s shape). Querying `signUp { data { user { ... }
+  } }` fails schema validation, and the fields the schema *does* declare
+  (`email`/`userType`) don't resolve from that shape either — `signUp` cannot
+  currently return usable tokens to a caller at all. Pre-existing (confirmed on
+  `main` before this branch), unrelated to any Phase 1 item, and worth its own small
+  fix — either change `SignUpData` to match `UserData`/`LoginToken`, or have the
+  resolver return only what's declared and require a follow-up `login` call.
+- **`updatePlace`'s validator requires every field**, so it doesn't actually support
+  partial updates (it reuses `createPlaceSchema` verbatim). Pre-existing, not part of
+  the ownership fix, worth a dedicated `updatePlaceSchema` when someone next touches
+  this resolver.
+- Issue 7 (no tests/CI) and issue 8 (singular `providers_category` table name) from
+  the original list are still open — not touched by Phase 1.
 
 None of this blocks moving forward — it's a punch list to burn down alongside the
 next couple of features, not a prerequisite for starting them.

@@ -1,6 +1,6 @@
 # Phase 1 Spec: Backend Hardening
 
-**Status: DRAFT — awaiting your green signal. Nothing in here is implemented yet.**
+**Status: IMPLEMENTED** (branch `rmp-2-phase-1-backend-hardening`). All six items below, plus a few bugs discovered during manual end-to-end verification (see [02-current-state.md](../02-current-state.md) for the running list), are done and verified against a live server. Left as historical record of the approved design — see git history on this branch for the actual commits.
 
 Source: [docs/04-roadmap.md](../04-roadmap.md) Phase 1, itemized from bugs/gaps found in
 [docs/02-current-state.md](../02-current-state.md). This spec exists so the shape of
