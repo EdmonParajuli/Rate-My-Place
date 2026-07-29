@@ -1,5 +1,5 @@
 import { UserTypeEnum } from "../enums/userTypesEnum";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -12,7 +12,6 @@ export const signToken = (userid: string, userType: UserTypeEnum) => {
       expiresIn: process.env.JWT_ACCESS_EXPIRES_IN,
     } as jwt.SignOptions
   );
-
   const refreshToken = jwt.sign(
     { userid, userType },
     process.env.JWT_REFRESH_SECRET!,
@@ -22,4 +21,17 @@ export const signToken = (userid: string, userType: UserTypeEnum) => {
   );
 
   return { accessToken, refreshToken };
+};
+
+export const verifyJwt = (token: string): JwtPayload => {
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_ACCESS_SECRET!
+    ) as JwtPayload;
+
+    return decoded;
+  } catch (error) {
+    throw new Error("Invalid or expired token");
+  }
 };

@@ -1,6 +1,7 @@
 import { buildSubgraphSchema } from '@apollo/subgraph';
-import { authTypedefs } from '../typeDefs/authTypedefs';
-import { authResolvers } from '../resolvers/authResolver';
+import { authResolvers, placeResolver } from '../resolvers';
+import { authTypedefs, placeDefs } from '../typeDefs';
 export const schema = buildSubgraphSchema([
-    {typeDefs: authTypedefs, resolvers: authResolvers}
+    {typeDefs: authTypedefs, resolvers: authResolvers},
+    {typeDefs: placeDefs, resolvers: placeResolver}
 ])

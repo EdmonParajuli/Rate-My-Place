@@ -1,7 +1,7 @@
 import { GraphQLError } from "graphql";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
-import { InputAuthSignUpInterface, SignUpResponseInterface, UserInterface } from "../interfaces";
+import { InputAuthLoginInterface, InputAuthSignUpInterface, AuthResponseInterface, ContextInterface } from "../interfaces";
 import { signToken } from "../utils/jwt";
 import { UserRepository } from "../repositories/userRepository";
 
@@ -14,7 +14,7 @@ export class AuthService {
     this.repository = new UserRepository();
   }
 
-  public async signUp(input: InputAuthSignUpInterface): Promise<SignUpResponseInterface> {
+  public async signUp(input: InputAuthSignUpInterface): Promise<AuthResponseInterface> {
     const { email, password, name, userType } = input;
 
     /**Check if email already exists for user**/
@@ -39,12 +39,52 @@ export class AuthService {
     )
 
     return ({
-        id: user.id,
-        email: user.email,
-        userType: user.userType,
-        fullName: user.fullName,
-        accessToken,
-        refreshToken
+        user,
+        token :{
+          access: accessToken,
+          refresh: refreshToken
+        }
       })
+  }
+
+  public async login(input: InputAuthLoginInterface, context: ContextInterface): Promise<AuthResponseInterface>{
+    const {email, password} = input;
+
+    const user = await this.repository.findOne({where: {email}});
+
+    if(!user){
+      throw new GraphQLError("Invalid email or password",{
+        extensions :{
+          code: "UNAUTHENTICATED",
+          status: 401
+        }
+      })
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    if(!isPasswordValid){
+      throw new GraphQLError("Invalid email or password",{
+        extensions :{
+          code: 'UNAUTHENTICATED',
+          status: 401
+        }
+      })
+    }
+
+    const {accessToken, refreshToken} = signToken(
+      user.id,
+      user.userType
+    )
+
+    context.user = user;
+    
+    return {
+      user,
+      token: {
+        access: accessToken,
+        refresh: refreshToken,
+      },
+    };
   }
 }

@@ -70,6 +70,7 @@ export const authTypedefs: DocumentNode = gql`
     }
 
     type UserData {
+        user: User
         token : LoginToken
     }
 
@@ -83,6 +84,11 @@ export const authTypedefs: DocumentNode = gql`
         data: User
     }
 
+    type authMeUserResponse {
+        message: String
+        data: User
+    }
+
     extend type Mutation {
         signUp(input: InputAuthSignUp): SignUpResponse
         login(input: InputAuthLogin): LoginResponse
@@ -90,6 +96,10 @@ export const authTypedefs: DocumentNode = gql`
         forgotPassword(input: InputForgotPassword!): Message
         changePassword(input: InputChangePassword!): Message
         confirmForgotPassword(input: InputConfirmForgotPassword!): Message
+    }
+
+    extend type Query {
+        authMeUser: authMeUserResponse
     }
 
 `

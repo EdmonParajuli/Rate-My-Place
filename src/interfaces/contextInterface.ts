@@ -1,8 +1,9 @@
 import { IncomingHttpHeaders } from "http";
+import { UserInterface } from "./userInterface";
 
 export interface ContextInterface {
     authorization?: string | undefined;
     operationName?: string;
-    secret?: string;
+    user?: UserInterface;
     headers?: IncomingHttpHeaders; 
 }
