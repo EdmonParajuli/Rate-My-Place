@@ -7,7 +7,7 @@ import { createPlaceSchema } from "../../validators/placeValidators";
 import PlaceService from "../../services/placeService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
-import { UserRepository } from "../../repositories/userRepository";
+import { UserService } from "../../services/userService";
 
 export const placeResolver = {
     Mutation: {
@@ -116,7 +116,7 @@ export const placeResolver = {
     },
     Place: {
         owner: async (parent: PlaceInterface) => {
-            return new UserRepository().findByPk(parent.ownerId);
+            return new UserService().getById(parent.ownerId);
         }
     }
 }
