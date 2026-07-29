@@ -38,5 +38,7 @@ export const placeDefs: DocumentNode = gql`
 
     extend type Mutation {
         createPlace(input: InputPlace): PlaceResponse
+        updatePlace(placeId: Int!, input: InputPlace): PlaceResponse
+        deletePlace(placeId: Int!): Message
     }
 `

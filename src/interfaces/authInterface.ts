@@ -20,3 +20,8 @@ export interface AuthResponseInterface {
         refresh: string;
       };
 }
+
+export interface AuthTokenPayload {
+    id: string;
+    userType: UserTypeEnum;
+}

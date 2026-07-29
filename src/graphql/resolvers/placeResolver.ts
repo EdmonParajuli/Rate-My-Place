@@ -6,6 +6,7 @@ import { Validator } from "../../middlewares";
 import { createPlaceSchema } from "../../validators/placeValidators";
 import PlaceService from "../../services/placeService";
 import { SuccessResponse } from "../../helpers/responseHelper";
+import { throwError } from "../../helpers/errorHelper";
 
 export const placeResolver = {
     Mutation: {
@@ -21,7 +22,7 @@ export const placeResolver = {
 
                 Validator.check(createPlaceSchema, args.input);
 
-                const result = await new PlaceService().createPlace({...args.input, ownerId: user.userid});
+                const result = await new PlaceService().createPlace({...args.input, ownerId: user.id});
 
                 return SuccessResponse.send({
                     message: "Place created successfully",
@@ -29,12 +30,10 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         },
         updatePlace: async(
@@ -44,12 +43,15 @@ export const placeResolver = {
             info: GraphQLResolveInfo 
         ) => {
             try {
-                requireAuth(context);
+                const user = requireAuth(context);
                 requireOwner(context);
 
                 Validator.check(createPlaceSchema, args.input);
 
-                const result = await new PlaceService().updatePlace(args);
+                const result = await new PlaceService().updatePlace({
+                    ...args,
+                    requestingUserId: user.id,
+                });
 
                 return SuccessResponse.send({
                     message: "Place updated successfully",
@@ -57,12 +59,10 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         },
 
@@ -72,14 +72,21 @@ export const placeResolver = {
             context: ContextInterface,
             infor: GraphQLResolveInfo
         ) => {
-            requireAuth(context);
-            requireOwner(context);
+            try {
+                const user = requireAuth(context);
+                requireOwner(context);
 
-            await new PlaceService().delete(args.placeId);
+                await new PlaceService().delete(args.placeId, user.id);
 
-            return SuccessResponse.send({
-                message: "Place deleted successfully"
-            })
+                return SuccessResponse.send({
+                    message: "Place deleted successfully"
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
         }
 },
     Query: {
@@ -99,12 +106,10 @@ export const placeResolver = {
                     data: result
                 });
             } catch (error: any) {
-                throw new GraphQLError(error.message, {
-                    extensions: {
-                        code: "BAD_REQUEST",
-                        status: 400
-                    }
-                });
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
             }
         }
     }
