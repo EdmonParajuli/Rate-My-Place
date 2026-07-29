@@ -1,4 +1,4 @@
-import { GraphQLResolveInfo } from "graphql";
+import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { ContextInterface } from "../../interfaces";
 import { InputPlaceInterface, PlaceInterface } from "../../interfaces/placeInterface";
 import { requireAuth, requireOwner } from "../../utils/auth";
@@ -30,6 +30,9 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
         },
@@ -40,12 +43,15 @@ export const placeResolver = {
             info: GraphQLResolveInfo 
         ) => {
             try {
-                requireAuth(context);
+                const user = requireAuth(context);
                 requireOwner(context);
 
                 Validator.check(createPlaceSchema, args.input);
 
-                const result = await new PlaceService().updatePlace(args);
+                const result = await new PlaceService().updatePlace({
+                    ...args,
+                    requestingUserId: user.id,
+                });
 
                 return SuccessResponse.send({
                     message: "Place updated successfully",
@@ -53,6 +59,9 @@ export const placeResolver = {
                 });
 
             } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
         },
@@ -63,14 +72,21 @@ export const placeResolver = {
             context: ContextInterface,
             infor: GraphQLResolveInfo
         ) => {
-            requireAuth(context);
-            requireOwner(context);
+            try {
+                const user = requireAuth(context);
+                requireOwner(context);
 
-            await new PlaceService().delete(args.placeId);
+                await new PlaceService().delete(args.placeId, user.id);
 
-            return SuccessResponse.send({
-                message: "Place deleted successfully"
-            })
+                return SuccessResponse.send({
+                    message: "Place deleted successfully"
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
         }
 },
     Query: {
@@ -90,6 +106,9 @@ export const placeResolver = {
                     data: result
                 });
             } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
         }
