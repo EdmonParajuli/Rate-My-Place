@@ -1,8 +1,9 @@
 import { buildSubgraphSchema } from '@apollo/subgraph';
-import { authResolvers, placeResolver, sessionResolver } from '../resolvers';
-import { authTypedefs, placeDefs, sessionTypedefs } from '../typeDefs';
+import { authResolvers, placeResolver, sessionResolver, categoryResolver } from '../resolvers';
+import { authTypedefs, placeDefs, sessionTypedefs, categoryTypedefs } from '../typeDefs';
 export const schema = buildSubgraphSchema([
     {typeDefs: authTypedefs, resolvers: authResolvers},
     {typeDefs: placeDefs, resolvers: placeResolver},
-    {typeDefs: sessionTypedefs, resolvers: sessionResolver}
+    {typeDefs: sessionTypedefs, resolvers: sessionResolver},
+    {typeDefs: categoryTypedefs, resolvers: categoryResolver}
 ])

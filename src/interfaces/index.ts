@@ -6,3 +6,4 @@ export * from './paginationInterface';
 export * from './placeInterface';
 export * from './sessionInterface';
 export * from './passwordResetTokenInterface';
+export * from './categoryInterface';
