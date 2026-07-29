@@ -6,6 +6,7 @@ import http, { IncomingMessage } from "http";
 import cors from "cors";
 import { Database } from "./config";
 import { schema } from "./graphql/schema";
+import { verifyJwt } from "./utils/jwt";
 
 dotenv.config();
 
@@ -41,9 +42,22 @@ class Server {
           const operationName = req.body.operationName;
           const authorization = req.headers?.authorization as string;
 
+          let user: any = null;
+
+          if (authorization?.startsWith("Bearer ")) {
+            const token = authorization.split(" ")[1];
+
+            try {
+                user = verifyJwt(token); // your JWT verification function
+              } catch (err) {
+                user = null;
+              }
+            }
+
           return {
             authorization,
-            operationName
+            operationName,
+            user
           };
         },
       })

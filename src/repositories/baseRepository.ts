@@ -62,7 +62,7 @@ interface RepositoryReader<IT, RT> {
   }): Promise<RT>;
 
   findByPk(
-    id: number,
+    id: string,
     options?: {
       attributes?: Attributes<any>;
       include?: IncludeOptions[];
@@ -157,7 +157,7 @@ export abstract class BaseRepository<IT, RT>
   };
 
   findByPk(
-    id: number,
+    id: number | string,
     options?: {
         attributes?: Attributes<any>,
         include?: IncludeOptions[],
