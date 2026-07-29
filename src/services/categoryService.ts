@@ -1,4 +1,5 @@
 import { CategoryRepository } from '../repositories/categoryRepository';
+import { throwError } from '../helpers/errorHelper';
 
 export class CategoryService {
   private repository: CategoryRepository;
@@ -12,6 +13,10 @@ export class CategoryService {
   }
 
   async getById(id: number) {
-    return this.repository.findByPk(id);
+    const category = await this.repository.findByPk(id);
+    if (!category) {
+      throwError(`Category with ID ${id} not found`, "NOT_FOUND", 404);
+    }
+    return category;
   }
 }
