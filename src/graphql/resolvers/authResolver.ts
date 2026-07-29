@@ -20,7 +20,7 @@ export const authResolvers = {
         args.input.email = args.input?.email.toLowerCase();
         Validator.check(signUpSchema, args.input);
 
-        const result = await new AuthService().signUp(args.input);
+        const result = await new AuthService().signUp(args.input, context);
 
         return SuccessResponse.send({
           message: "Signup successfully",

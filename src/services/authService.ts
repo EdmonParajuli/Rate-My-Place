@@ -3,18 +3,21 @@ import dotenv from "dotenv";
 import { InputAuthLoginInterface, InputAuthSignUpInterface, AuthResponseInterface, ContextInterface } from "../interfaces";
 import { signToken } from "../utils/jwt";
 import { UserRepository } from "../repositories/userRepository";
+import { SessionService } from "./sessionService";
 import { throwError } from "../helpers/errorHelper";
 
 dotenv.config();
 
 export class AuthService {
   private repository: UserRepository;
+  private sessionService: SessionService;
 
   constructor() {
     this.repository = new UserRepository();
+    this.sessionService = new SessionService();
   }
 
-  public async signUp(input: InputAuthSignUpInterface): Promise<AuthResponseInterface> {
+  public async signUp(input: InputAuthSignUpInterface, context: ContextInterface): Promise<AuthResponseInterface> {
     const { email, password, name, userType } = input;
 
     /**Check if email already exists for user**/
@@ -31,6 +34,13 @@ export class AuthService {
       user.id,
       user.userType
     )
+
+    await this.sessionService.createSession({
+      userId: user.id,
+      refreshToken,
+      userAgent: context.headers?.["user-agent"] as string | undefined,
+      ip: context.ip,
+    });
 
     return ({
         user,
@@ -60,6 +70,13 @@ export class AuthService {
       user.id,
       user.userType
     )
+
+    await this.sessionService.createSession({
+      userId: user.id,
+      refreshToken,
+      userAgent: context.headers?.["user-agent"] as string | undefined,
+      ip: context.ip,
+    });
 
     return {
       user,
