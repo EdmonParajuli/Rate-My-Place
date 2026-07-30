@@ -38,7 +38,17 @@ export class ReviewService {
         { placeId, reviewerId, review, rating },
         { transaction }
       );
-      await this.placeService.recomputeRatingStats(placeId, transaction);
+
+      // Recompute from source (AVG/COUNT over the place's current reviews)
+      // rather than incrementally adjusting a running counter - simpler and
+      // correct by construction, cheap enough given the index on place_id.
+      const { average, count } = await this.repository.getRatingStats(placeId, transaction);
+      await this.placeService.updateRatingStats(
+        placeId,
+        { averageRating: average, reviewCount: count },
+        transaction
+      );
+
       await transaction.commit();
       return created;
     } catch (error) {
