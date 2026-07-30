@@ -5,14 +5,19 @@ import PlaceService from './placeService';
 import { Database } from '../config';
 import { throwError } from '../helpers/errorHelper';
 import { assertOwnership } from '../utils/auth';
+import { CursorBasedPagination, SortEnum } from '../packages/cursors/service';
+
+const NEWEST_FIRST = { order: 'createdAt', sort: SortEnum.Desc };
 
 export class ReviewService {
   private repository: ReviewRepository;
   private placeService: PlaceService;
+  private pagination: CursorBasedPagination;
 
   constructor() {
     this.repository = new ReviewRepository();
     this.placeService = new PlaceService();
+    this.pagination = new CursorBasedPagination();
   }
 
   private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
@@ -112,5 +117,39 @@ export class ReviewService {
       await this.repository.deleteOne(reviewId, transaction);
       await this.recomputePlaceStats(existingReview.placeId, transaction);
     });
+  }
+
+  // Newest-first only for this phase (see docs/specs/phase-2-reviews.md's cursor
+  // pagination section) - first/after are the only caller-controlled params;
+  // order/sort are fixed so the cursor's encoded sortValue always means the
+  // same thing. Additional sort orders would each need their own cursor
+  // encoding, deferred until a future phase actually needs one.
+  async listByPlace(placeId: number, { first, after }: { first?: number; after?: string }) {
+    const place = await this.placeService.getPlaceById(placeId);
+    if (!place) {
+      throwError(`Place with ID ${placeId} not found`, "NOT_FOUND", 404);
+    }
+
+    const cursorQuery = this.pagination.validateParameters({
+      cursor: after,
+      limit: first,
+      ...NEWEST_FIRST,
+    });
+    const rows = await this.repository.paginate({ placeId }, cursorQuery);
+    const { cursor: pageInfo, data } = this.pagination.paginate(rows, cursorQuery);
+
+    return { data, pageInfo };
+  }
+
+  async listByReviewer(reviewerId: string, { first, after }: { first?: number; after?: string }) {
+    const cursorQuery = this.pagination.validateParameters({
+      cursor: after,
+      limit: first,
+      ...NEWEST_FIRST,
+    });
+    const rows = await this.repository.paginate({ reviewerId }, cursorQuery);
+    const { cursor: pageInfo, data } = this.pagination.paginate(rows, cursorQuery);
+
+    return { data, pageInfo };
   }
 }

@@ -6,6 +6,9 @@ import { createReviewSchema, updateReviewSchema } from "../../validators/reviewV
 import { ReviewService } from "../../services/reviewService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
+import { UserService } from "../../services/userService";
+import PlaceService from "../../services/placeService";
+import { ReviewInterface } from "../../interfaces/reviewInterface";
 
 export const reviewResolver = {
     Mutation: {
@@ -89,6 +92,67 @@ export const reviewResolver = {
                 }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
+        }
+    },
+    Query: {
+        placeReviews: async(
+            parent: ParentNode,
+            args: { placeId: number, first?: number, after?: string },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const { data, pageInfo } = await new ReviewService().listByPlace(args.placeId, {
+                    first: args.first,
+                    after: args.after,
+                });
+
+                return SuccessResponse.send({
+                    message: "Reviews fetched successfully",
+                    data,
+                    pageInfo
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        },
+
+        myReviews: async(
+            parent: ParentNode,
+            args: { first?: number, after?: string },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const user = requireAuth(context);
+
+                const { data, pageInfo } = await new ReviewService().listByReviewer(user.id, {
+                    first: args.first,
+                    after: args.after,
+                });
+
+                return SuccessResponse.send({
+                    message: "Your reviews fetched successfully",
+                    data,
+                    pageInfo
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        }
+    },
+    Review: {
+        reviewer: async (parent: ReviewInterface) => {
+            return new UserService().getById(parent.reviewerId);
+        },
+        place: async (parent: ReviewInterface) => {
+            return new PlaceService().getPlaceById(parent.placeId);
         }
     }
 }
