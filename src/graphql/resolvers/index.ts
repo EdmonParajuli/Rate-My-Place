@@ -4,3 +4,4 @@ export * from "./sessionResolver";
 export * from "./categoryResolver";
 export * from "./reviewResolver";
 export * from "./reviewReplyResolver";
+export * from "./reviewVoteResolver";

@@ -9,6 +9,7 @@ import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
 import PlaceService from "../../services/placeService";
 import { ReviewReplyService } from "../../services/reviewReplyService";
+import { ReviewVoteService } from "../../services/reviewVoteService";
 import { ReviewInterface } from "../../interfaces/reviewInterface";
 
 export const reviewResolver = {
@@ -157,6 +158,12 @@ export const reviewResolver = {
         },
         reply: async (parent: ReviewInterface) => {
             return new ReviewReplyService().getByReviewId(parent.id);
+        },
+        helpfulCount: async (parent: ReviewInterface) => {
+            return new ReviewVoteService().getHelpfulCount(parent.id);
+        },
+        helpfulByMe: async (parent: ReviewInterface, args: unknown, context: ContextInterface) => {
+            return new ReviewVoteService().hasVoted(parent.id, context.user?.id);
         }
     }
 }
