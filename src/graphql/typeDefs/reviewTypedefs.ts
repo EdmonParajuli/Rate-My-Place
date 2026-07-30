@@ -9,6 +9,11 @@ export const reviewTypedefs: DocumentNode = gql`
         rating: Int!
     }
 
+    input InputUpdateReview {
+        review: String
+        rating: Int
+    }
+
     type Review {
         id: Int
         review: String
@@ -24,5 +29,7 @@ export const reviewTypedefs: DocumentNode = gql`
 
     extend type Mutation {
         createReview(placeId: Int!, input: InputReview!): ReviewResponse
+        updateReview(reviewId: Int!, input: InputUpdateReview!): ReviewResponse
+        deleteReview(reviewId: Int!): Message
     }
 `
