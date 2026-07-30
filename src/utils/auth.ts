@@ -19,3 +19,9 @@ export const requireOwner = (context: ContextInterface): AuthTokenPayload => {
 
     return user;
 }
+
+export const assertOwnership = (actualOwnerId: string | number, requestingUserId: string, message: string): void => {
+    if(String(actualOwnerId) !== String(requestingUserId)){
+        throwError(message, "FORBIDDEN", 403);
+    }
+}

@@ -2,7 +2,7 @@ import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { ContextInterface } from "../../interfaces";
 import { requireAuth } from "../../utils/auth";
 import { Validator } from "../../middlewares";
-import { createReviewSchema } from "../../validators/reviewValidators";
+import { createReviewSchema, updateReviewSchema } from "../../validators/reviewValidators";
 import { ReviewService } from "../../services/reviewService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
@@ -30,6 +30,58 @@ export const reviewResolver = {
                 return SuccessResponse.send({
                     message: "Review created successfully",
                     data: result
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        },
+
+        updateReview: async(
+            parent: ParentNode,
+            args: { reviewId: number, input: { review?: string; rating?: number } },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const user = requireAuth(context);
+
+                Validator.check(updateReviewSchema, args.input);
+
+                const result = await new ReviewService().updateReview({
+                    reviewId: args.reviewId,
+                    requestingUserId: user.id,
+                    review: args.input.review,
+                    rating: args.input.rating,
+                });
+
+                return SuccessResponse.send({
+                    message: "Review updated successfully",
+                    data: result
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        },
+
+        deleteReview: async(
+            parent: ParentNode,
+            args: { reviewId: number },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const user = requireAuth(context);
+
+                await new ReviewService().deleteReview(args.reviewId, user.id);
+
+                return SuccessResponse.send({
+                    message: "Review deleted successfully"
                 });
             } catch (error: any) {
                 if (error instanceof GraphQLError) {
