@@ -9,3 +9,4 @@ export * from './passwordResetTokenInterface';
 export * from './categoryInterface';
 export * from './reviewInterface';
 export * from './reviewReplyInterface';
+export * from './reviewVoteInterface';

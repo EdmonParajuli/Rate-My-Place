@@ -5,3 +5,4 @@ export * from "./userService";
 export * from "./categoryService";
 export * from "./reviewService";
 export * from "./reviewReplyService";
+export * from "./reviewVoteService";

@@ -5,6 +5,7 @@ import PasswordResetToken from "./passwordResetTokens";
 import Category from "./categories";
 import Review from "./reviews";
 import ReviewReply from "./reviewReplies";
+import ReviewVote from "./reviewVotes";
 
 const Model = {
     User,
@@ -13,7 +14,8 @@ const Model = {
     PasswordResetToken,
     Category,
     Review,
-    ReviewReply
+    ReviewReply,
+    ReviewVote
 }
 
 export default Model;
