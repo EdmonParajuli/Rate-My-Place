@@ -1,9 +1,10 @@
 import { Transaction } from 'sequelize';
-import { InputReviewInterface, ReviewInterface } from '../interfaces/reviewInterface';
+import { InputReviewInterface } from '../interfaces/reviewInterface';
 import { ReviewRepository } from '../repositories/reviewRepository';
 import PlaceService from './placeService';
 import { Database } from '../config';
 import { throwError } from '../helpers/errorHelper';
+import { assertOwnership } from '../utils/auth';
 
 export class ReviewService {
   private repository: ReviewRepository;
@@ -14,9 +15,15 @@ export class ReviewService {
     this.placeService = new PlaceService();
   }
 
-  private assertOwnership(review: ReviewInterface, requestingUserId: string) {
-    if (String(review.reviewerId) !== String(requestingUserId)) {
-      throwError("You do not own this review.", "FORBIDDEN", 403);
+  private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
+    const transaction = await Database.sequelize.transaction();
+    try {
+      const result = await fn(transaction);
+      await transaction.commit();
+      return result;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
   }
 
@@ -48,8 +55,7 @@ export class ReviewService {
       );
     }
 
-    const transaction = await Database.sequelize.transaction();
-    try {
+    return this.withTransaction(async (transaction) => {
       const created = await this.repository.create(
         { placeId, reviewerId, review, rating },
         { transaction }
@@ -60,12 +66,8 @@ export class ReviewService {
       // correct by construction, cheap enough given the index on place_id.
       await this.recomputePlaceStats(placeId, transaction);
 
-      await transaction.commit();
       return created;
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    });
   }
 
   async updateReview({
@@ -83,22 +85,20 @@ export class ReviewService {
     if (!existingReview) {
       throwError(`Review with ID ${reviewId} not found`, "NOT_FOUND", 404);
     }
-    this.assertOwnership(existingReview, requestingUserId);
+    assertOwnership(existingReview.reviewerId, requestingUserId, "You do not own this review.");
 
     const input: Partial<InputReviewInterface> = {};
     if (review !== undefined) input.review = review;
     if (rating !== undefined) input.rating = rating;
 
-    const transaction = await Database.sequelize.transaction();
-    try {
+    // The re-fetch below must happen after withTransaction resolves (i.e.
+    // after commit) - findByPk doesn't take a transaction, so calling it
+    // inside the callback would read the pre-commit, stale row.
+    await this.withTransaction(async (transaction) => {
       await this.repository.updateOne({ id: reviewId, input }, { transaction });
       await this.recomputePlaceStats(existingReview.placeId, transaction);
-      await transaction.commit();
-      return this.repository.findByPk(reviewId);
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    });
+    return this.repository.findByPk(reviewId);
   }
 
   async deleteReview(reviewId: number, requestingUserId: string) {
@@ -106,16 +106,11 @@ export class ReviewService {
     if (!existingReview) {
       throwError(`Review with ID ${reviewId} not found`, "NOT_FOUND", 404);
     }
-    this.assertOwnership(existingReview, requestingUserId);
+    assertOwnership(existingReview.reviewerId, requestingUserId, "You do not own this review.");
 
-    const transaction = await Database.sequelize.transaction();
-    try {
+    return this.withTransaction(async (transaction) => {
       await this.repository.deleteOne(reviewId, transaction);
       await this.recomputePlaceStats(existingReview.placeId, transaction);
-      await transaction.commit();
-    } catch (error) {
-      await transaction.rollback();
-      throw error;
-    }
+    });
   }
 }
