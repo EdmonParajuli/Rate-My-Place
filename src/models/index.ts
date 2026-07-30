@@ -3,13 +3,15 @@ import Place from "./places";
 import Session from "./sessions";
 import PasswordResetToken from "./passwordResetTokens";
 import Category from "./categories";
+import Review from "./reviews";
 
 const Model = {
     User,
     Place,
     Session,
     PasswordResetToken,
-    Category
+    Category,
+    Review
 }
 
 export default Model;

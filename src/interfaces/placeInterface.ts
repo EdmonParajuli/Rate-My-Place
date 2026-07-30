@@ -9,6 +9,10 @@ export interface InputPlaceInterface {
       website?: string,
       categoryId?: number
       ownerId: string,
+      // Not part of the public create/update GraphQL input - only written by
+      // PlaceService.recomputeRatingStats via the repository's generic updateOne.
+      averageRating?: number,
+      reviewCount?: number,
 }
 
 export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterface {

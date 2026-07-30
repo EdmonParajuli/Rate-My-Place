@@ -1,12 +1,16 @@
+import { Transaction } from 'sequelize';
 import { InputPlaceInterface, PlaceInterface } from '../interfaces/placeInterface';
 import PlaceRepository from '../repositories/placeRepository';
+import { ReviewRepository } from '../repositories/reviewRepository';
 import { throwError } from '../helpers/errorHelper';
 
 export default class PlaceService {
   private repository: PlaceRepository;
+  private reviewRepository: ReviewRepository;
 
   constructor() {
     this.repository = new PlaceRepository();
+    this.reviewRepository = new ReviewRepository();
   }
 
   // async listPlaces() {
@@ -51,5 +55,16 @@ export default class PlaceService {
     }
     this.assertOwnership(existingPlace, requestingUserId);
     return this.repository.deleteOne(placeId);
+  }
+
+  // Recomputes from source (AVG/COUNT over the place's current reviews) rather
+  // than incrementally adjusting a running counter - simpler and correct by
+  // construction, cheap enough given the index on place_id.
+  async recomputeRatingStats(placeId: number, transaction?: Transaction) {
+    const { average, count } = await this.reviewRepository.getRatingStats(placeId, transaction);
+    return this.repository.updateOne(
+      { id: placeId, input: { averageRating: average, reviewCount: count } },
+      { transaction }
+    );
   }
 }

@@ -7,3 +7,4 @@ export * from './placeInterface';
 export * from './sessionInterface';
 export * from './passwordResetTokenInterface';
 export * from './categoryInterface';
+export * from './reviewInterface';
