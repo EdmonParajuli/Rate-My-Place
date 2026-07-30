@@ -1,3 +1,13 @@
+// NOT WIRED UP TO ANYTHING IN THIS REPO - DO NOT USE FOR A LIVE QUERY.
+// QueryBuilder.build() (src/packages/queryBuilder/queryBuilder.ts) constructs
+// SQL by string-interpolating values directly into the query text, with no
+// parameterization or escaping. Feeding this any value that isn't fully
+// trusted/hardcoded (e.g. CursorPaginate.search()'s `query` param, sourced
+// from a client) is a SQL injection vector. This repo's actual cursor
+// pagination (src/repositories/reviewRepository.ts) is built directly on
+// Sequelize's own where/Op instead, which parameterizes automatically -
+// only the safe, DB-agnostic parts of this package (CursorBasedPagination,
+// Base64) are used anywhere in this codebase.
 import {QueryBuilder, QueryBuilderInterface} from "../queryBuilder";
 import {Base64, CaseConverter} from "./utils";
 import {CursorDataInterface, CursorDirectionEnum, CursorQueryResponseInterface, SortEnum} from "./service";

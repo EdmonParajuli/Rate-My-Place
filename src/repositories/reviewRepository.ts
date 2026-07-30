@@ -4,7 +4,7 @@ import { InputReviewInterface, ReviewInterface } from '../interfaces/reviewInter
 import Model from '../models';
 import { BaseRepository } from './baseRepository';
 import { Base64 } from '../packages/cursors/utils';
-import { CursorDataInterface, CursorDirectionEnum, CursorQueryResponseInterface, SortEnum } from '../packages/cursors/service';
+import { CursorDataInterface, CursorQueryResponseInterface, SortEnum } from '../packages/cursors/service';
 
 export class ReviewRepository extends BaseRepository<InputReviewInterface, ReviewInterface> {
   constructor() {
@@ -42,19 +42,24 @@ export class ReviewRepository extends BaseRepository<InputReviewInterface, Revie
 
     if (cursorQuery.cursor) {
       const { id, sortValue } = Base64.decode<CursorDataInterface>(cursorQuery.cursor);
-      const sortComparator = cursorQuery.sort === SortEnum.Asc ? Op.gt : Op.lt;
-      const cursorComparator =
-        cursorQuery.direction === CursorDirectionEnum.Next
-          ? cursorQuery.withCursor ? Op.gte : Op.gt
-          : cursorQuery.withCursor ? Op.lte : Op.lt;
+
+      // The id tie-breaker moves in the same direction as the primary sort,
+      // not the direction CursorBasedPagination.validateParameters computes
+      // for cursorSort (which only tracks pagination direction, Next/Previous,
+      // independent of the caller's chosen sort order). Using that value here
+      // would order tied rows (identical createdAt) oldest-of-the-pair-first
+      // even under a "newest first" sort. This phase only supports one fixed
+      // sort order and forward pagination, so a single comparator is correct
+      // for both the primary field and its tie-breaker.
+      const comparator = cursorQuery.sort === SortEnum.Asc ? Op.gt : Op.lt;
 
       where = {
         [Op.and]: [
           baseWhere,
           {
             [Op.or]: [
-              { [cursorQuery.order]: { [sortComparator]: sortValue } },
-              { [cursorQuery.order]: sortValue, id: { [cursorComparator]: id } },
+              { [cursorQuery.order]: { [comparator]: sortValue } },
+              { [cursorQuery.order]: sortValue, id: { [comparator]: id } },
             ],
           },
         ],
@@ -65,7 +70,7 @@ export class ReviewRepository extends BaseRepository<InputReviewInterface, Revie
       where,
       order: [
         [cursorQuery.order, cursorQuery.sort],
-        [cursorQuery.cursorOrder, cursorQuery.cursorSort],
+        [cursorQuery.cursorOrder, cursorQuery.sort],
       ],
       limit: cursorQuery.limit + 1,
     });

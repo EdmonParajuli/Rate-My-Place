@@ -1,3 +1,11 @@
+// SQL INJECTION RISK - NOT WIRED UP TO ANYTHING IN THIS REPO.
+// build() below constructs SQL by string-interpolating where-clause values
+// directly into the query text (see buildConditionClauses), with no
+// parameterization or escaping. Do not call this with any value that isn't
+// fully trusted/hardcoded - a client-supplied search string or cursor value
+// passed through here is exploitable. This repo's own pagination
+// (src/repositories/reviewRepository.ts) is built on Sequelize's where/Op
+// instead, which parameterizes automatically.
 const maxCallBackConditionClauses: number = 5;
 
 export enum SortEnum {
