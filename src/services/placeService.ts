@@ -1,3 +1,4 @@
+import { Transaction } from 'sequelize';
 import { InputPlaceInterface, PlaceInterface } from '../interfaces/placeInterface';
 import PlaceRepository from '../repositories/placeRepository';
 import { throwError } from '../helpers/errorHelper';
@@ -51,5 +52,18 @@ export default class PlaceService {
     }
     this.assertOwnership(existingPlace, requestingUserId);
     return this.repository.deleteOne(placeId);
+  }
+
+  // Pure write - the caller (ReviewService, which owns the review data) computes
+  // the stats. Keeps PlaceService from needing to know anything about reviews.
+  async updateRatingStats(
+    placeId: number,
+    { averageRating, reviewCount }: { averageRating: number; reviewCount: number },
+    transaction?: Transaction
+  ) {
+    return this.repository.updateOne(
+      { id: placeId, input: { averageRating, reviewCount } },
+      { transaction }
+    );
   }
 }

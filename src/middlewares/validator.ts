@@ -15,19 +15,12 @@ class Validator {
     }
 
     public check = (schema: ObjectSchema | ArraySchema | StringSchema, input: object | string) => {
-        const {value, error} = schema.validate(input, {
+        const {error} = schema.validate(input, {
             abortEarly: false,
         });
 
         if(error){
-            if(error.details.length > 1){
-                const errorArray: string[] = [];
-                error.details.map((err) => {
-                    errorArray.push(err.message);
-                })
-                console.log(errorArray);
-                throw error;
-            }
+            throw error;
         }
     };
 

@@ -16,7 +16,7 @@ const positiveIntegerSchema = Joi.number().integer().min(1);
 
 const emailSchema = Joi.string().email({minDomainSegments: 2}).lowercase().trim();
 
-const phoneSchema = Joi.string().min(7).max(16).pattern(/^[+]{1}(?:[0-9\-\(\)\/\.]\s?){6, 15}[0-9]{1}$/).trim();
+const phoneSchema = Joi.string().min(7).max(16).pattern(/^[+]{1}(?:[0-9\-\(\)\/\.]\s?){6,15}[0-9]{1}$/).trim();
 
 const urlSchema = Joi.string().uri();
 
