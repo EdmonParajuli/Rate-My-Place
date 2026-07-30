@@ -4,3 +4,4 @@ export * from "./sessionService";
 export * from "./userService";
 export * from "./categoryService";
 export * from "./reviewService";
+export * from "./reviewReplyService";

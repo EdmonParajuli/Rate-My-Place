@@ -8,6 +8,7 @@ import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
 import PlaceService from "../../services/placeService";
+import { ReviewReplyService } from "../../services/reviewReplyService";
 import { ReviewInterface } from "../../interfaces/reviewInterface";
 
 export const reviewResolver = {
@@ -153,6 +154,9 @@ export const reviewResolver = {
         },
         place: async (parent: ReviewInterface) => {
             return new PlaceService().getPlaceById(parent.placeId);
+        },
+        reply: async (parent: ReviewInterface) => {
+            return new ReviewReplyService().getByReviewId(parent.id);
         }
     }
 }

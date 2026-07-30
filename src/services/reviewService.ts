@@ -41,6 +41,10 @@ export class ReviewService {
     );
   }
 
+  async getReviewById(reviewId: number) {
+    return this.repository.findByPk(reviewId);
+  }
+
   async createReview({ placeId, reviewerId, review, rating }: InputReviewInterface) {
     const place = await this.placeService.getPlaceById(placeId);
     if (!place) {
