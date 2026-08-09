@@ -71,6 +71,14 @@ const Place = sequelize.define<PlaceModelInterface>(
             allowNull: true,
             defaultValue: false,
             field: "is_verified"
+        },
+        latitude: {
+            type: Sequelize.DECIMAL(9, 6),
+            allowNull: true
+        },
+        longitude: {
+            type: Sequelize.DECIMAL(9, 6),
+            allowNull: true
         }
     },
     {   

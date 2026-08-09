@@ -13,6 +13,8 @@ export interface InputPlaceInterface {
       // PlaceService.recomputeRatingStats via the repository's generic updateOne.
       averageRating?: number,
       reviewCount?: number,
+      latitude?: number,
+      longitude?: number,
 }
 
 export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterface {
@@ -20,6 +22,9 @@ export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterfac
       averageRating?: number,
       reviewCount?: number,
       isVerified?: boolean,
+      // Only present on rows returned by PlaceRepository.paginateByDistance -
+      // undefined (resolves GraphQL null) for every other query path.
+      distance?: number,
 }
 
 export interface PlaceModelInterface extends Sequelize.Model<PlaceInterface, Partial<InputPlaceInterface>>, PlaceInterface{}

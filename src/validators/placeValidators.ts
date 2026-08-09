@@ -34,6 +34,14 @@ const createPlaceSchema = Joi.object({
     categoryId: numberSchema.label('category id').required().messages({
         "number.base": "Category ID must be a number.",
         "any.required": "Category ID is required."
+    }),
+    latitude: numberSchema.label('latitude').min(-90).max(90).allow(null).optional().messages({
+        "number.min": "Latitude must be between -90 and 90.",
+        "number.max": "Latitude must be between -90 and 90."
+    }),
+    longitude: numberSchema.label('longitude').min(-180).max(180).allow(null).optional().messages({
+        "number.min": "Longitude must be between -180 and 180.",
+        "number.max": "Longitude must be between -180 and 180."
     })
 })
 
