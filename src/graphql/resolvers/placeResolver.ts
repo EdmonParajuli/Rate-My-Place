@@ -8,6 +8,7 @@ import PlaceService from "../../services/placeService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
+import { PlaceSortEnum } from "../../enums/placeSortEnum";
 
 export const placeResolver = {
     Mutation: {
@@ -105,6 +106,40 @@ export const placeResolver = {
                 return SuccessResponse.send({
                     message: "Place fetched successfully",
                     data: result
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        },
+
+        // Public, no requireAuth - browsing Discover shouldn't require login,
+        // same reasoning as placeReviews/categories in Phase 2.
+        listPlaces: async(
+            parent: ParentNode,
+            args: {
+                sort?: PlaceSortEnum,
+                near?: { latitude: number; longitude: number },
+                first?: number,
+                after?: string
+            },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const { data, pageInfo } = await new PlaceService().listPlaces({
+                    sort: args.sort,
+                    near: args.near,
+                    first: args.first,
+                    after: args.after,
+                });
+
+                return SuccessResponse.send({
+                    message: "Places fetched successfully",
+                    data,
+                    pageInfo
                 });
             } catch (error: any) {
                 if (error instanceof GraphQLError) {

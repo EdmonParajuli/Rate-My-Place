@@ -10,7 +10,19 @@ export const placeDefs: DocumentNode = gql`
         address: String
         phone: String
         website: String
-        categoryId: Int 
+        categoryId: Int
+        latitude: Float
+        longitude: Float
+    }
+
+    enum PlaceSortEnum {
+        NEW
+        NEAREST
+    }
+
+    input GeoInput {
+        latitude: Float!
+        longitude: Float!
     }
 
     type Place {
@@ -25,6 +37,9 @@ export const placeDefs: DocumentNode = gql`
         averageRating: Float
         reviewCount: Int
         isVerified: Boolean
+        latitude: Float
+        longitude: Float
+        distance: Float
     }
 
     type PlaceResponse {
@@ -32,8 +47,15 @@ export const placeDefs: DocumentNode = gql`
         data: Place
     }
 
+    type PlaceListResponse {
+        message: String
+        data: [Place]
+        pageInfo: PageInfo
+    }
+
     extend type Query {
         getPlaceById(id: Int!): PlaceResponse
+        listPlaces(sort: PlaceSortEnum, near: GeoInput, first: Int, after: String): PlaceListResponse
     }
 
     extend type Mutation {
