@@ -118,6 +118,13 @@ export default class PlaceService {
     return this.repository.deleteOne(placeId);
   }
 
+  // Thin passthrough - src/jobs/trendingScoreJob.ts is a caller like any
+  // other (a resolver, a service), so it goes through PlaceService rather
+  // than touching PlaceRepository directly, same layering as everything else.
+  async refreshTrendingScores(): Promise<void> {
+    return this.repository.refreshTrendingScores();
+  }
+
   // Pure write - the caller (ReviewService, which owns the review data) computes
   // the stats. Keeps PlaceService from needing to know anything about reviews.
   async updateRatingStats(

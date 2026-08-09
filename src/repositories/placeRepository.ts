@@ -194,4 +194,35 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
 
     return rows;
   }
+
+  // Raw 24h review count per place, written straight to the stored column -
+  // see docs/08-trending-strategy.md §6 for the design (materialized,
+  // hourly-refreshed, not decayed). Called by src/jobs/trendingScoreJob.ts;
+  // Sequelize access stays confined to the repository layer even for a
+  // job-triggered write, same as every other Sequelize touchpoint in this
+  // codebase.
+  async refreshTrendingScores(): Promise<void> {
+    await Database.sequelize.query(`
+      UPDATE providers_places
+      SET trending_score = COALESCE(sub.recent_count, 0)
+      FROM (
+        SELECT place_id, COUNT(*) AS recent_count
+        FROM providers_reviews
+        WHERE deleted_at IS NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY place_id
+      ) sub
+      WHERE providers_places.id = sub.place_id;
+    `);
+
+    await Database.sequelize.query(`
+      UPDATE providers_places
+      SET trending_score = 0
+      WHERE trending_score != 0
+        AND id NOT IN (
+            SELECT place_id FROM providers_reviews
+            WHERE deleted_at IS NULL AND created_at > NOW() - INTERVAL '24 hours'
+        );
+    `);
+  }
 }
