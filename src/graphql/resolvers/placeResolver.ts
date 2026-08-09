@@ -1,14 +1,17 @@
 import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { ContextInterface } from "../../interfaces";
-import { InputPlaceInterface, PlaceInterface } from "../../interfaces/placeInterface";
+import { InputPlaceInterface, PlaceFilterOptions, PlaceInterface } from "../../interfaces/placeInterface";
 import { requireAuth, requireOwner } from "../../utils/auth";
 import { Validator } from "../../middlewares";
 import { createPlaceSchema } from "../../validators/placeValidators";
+import { setPlaceHoursSchema } from "../../validators/placeHourValidators";
 import PlaceService from "../../services/placeService";
+import { PlaceHourService } from "../../services/placeHourService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
 import { PlaceSortEnum } from "../../enums/placeSortEnum";
+import { InputPlaceHourInterface } from "../../interfaces/placeHourInterface";
 
 export const placeResolver = {
     Mutation: {
@@ -89,6 +92,36 @@ export const placeResolver = {
                 }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
+        },
+
+        setPlaceHours: async(
+            parent: ParentNode,
+            args: { placeId: number, hours: Omit<InputPlaceHourInterface, 'placeId'>[] },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const user = requireAuth(context);
+                requireOwner(context);
+
+                Validator.check(setPlaceHoursSchema, { hours: args.hours });
+
+                const result = await new PlaceHourService().replaceForPlace({
+                    placeId: args.placeId,
+                    requestingUserId: user.id,
+                    hours: args.hours,
+                });
+
+                return SuccessResponse.send({
+                    message: "Business hours updated successfully",
+                    data: result
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
         }
 },
     Query: {
@@ -122,6 +155,7 @@ export const placeResolver = {
             args: {
                 sort?: PlaceSortEnum,
                 near?: { latitude: number; longitude: number },
+                filter?: PlaceFilterOptions,
                 first?: number,
                 after?: string
             },
@@ -132,6 +166,7 @@ export const placeResolver = {
                 const { data, pageInfo } = await new PlaceService().listPlaces({
                     sort: args.sort,
                     near: args.near,
+                    filter: args.filter,
                     first: args.first,
                     after: args.after,
                 });
@@ -152,6 +187,12 @@ export const placeResolver = {
     Place: {
         owner: async (parent: PlaceInterface) => {
             return new UserService().getById(parent.ownerId);
+        },
+        hours: async (parent: PlaceInterface) => {
+            return new PlaceHourService().getForPlace(parent.id);
+        },
+        openNow: async (parent: PlaceInterface) => {
+            return new PlaceHourService().isOpenNow(parent.id);
         }
     }
 }

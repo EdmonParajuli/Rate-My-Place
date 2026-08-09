@@ -79,6 +79,17 @@ const Place = sequelize.define<PlaceModelInterface>(
         longitude: {
             type: Sequelize.DECIMAL(9, 6),
             allowNull: true
+        },
+        priceRange: {
+            type: Sequelize.ENUM('LOW', 'MEDIUM', 'HIGH'),
+            allowNull: true,
+            field: "price_range"
+        },
+        trendingScore: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            field: "trending_score"
         }
     },
     {   

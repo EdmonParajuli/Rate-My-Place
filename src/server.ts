@@ -7,6 +7,7 @@ import cors from "cors";
 import { Database } from "./config";
 import { schema } from "./graphql/schema";
 import { verifyJwt } from "./utils/jwt";
+import { startTrendingScoreJob } from "./jobs/trendingScoreJob";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ class Server {
 
   public async start() {
     await this.connectDB();
+    startTrendingScoreJob();
 
     const httpServer = http.createServer(this.app);
 

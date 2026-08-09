@@ -1,5 +1,5 @@
 import { Transaction } from 'sequelize';
-import { InputPlaceInterface } from '../interfaces/placeInterface';
+import { InputPlaceInterface, PlaceFilterOptions } from '../interfaces/placeInterface';
 import PlaceRepository from '../repositories/placeRepository';
 import { assertOwnership } from '../utils/auth';
 import { throwError } from '../helpers/errorHelper';
@@ -15,18 +15,28 @@ export default class PlaceService {
     this.pagination = new CursorBasedPagination();
   }
 
-  // sort defaults to NEW, matching placeReviews'/myReviews' "newest first"
-  // default from Phase 2. HIGHEST_RATED/TRENDING are deferred to follow-up
-  // tickets (TRENDING specifically needs the scheduled trending_score refresh
-  // job, which doesn't exist yet), so PlaceSortEnum only has two values today.
+  // Column-based sorts: each just names a real, stored column to order by -
+  // PlaceRepository.paginateByColumn doesn't care which. TRENDING sorts on
+  // trending_score, refreshed hourly by src/jobs/trendingScoreJob.ts (see
+  // docs/08-trending-strategy.md) rather than computed live per request -
+  // NEAREST is the one sort that isn't a stored column, handled separately
+  // below.
+  private static readonly COLUMN_SORTS: Partial<Record<PlaceSortEnum, { order: string; sort: SortEnum }>> = {
+    [PlaceSortEnum.NEW]: { order: 'createdAt', sort: SortEnum.Desc },
+    [PlaceSortEnum.HIGHEST_RATED]: { order: 'averageRating', sort: SortEnum.Desc },
+    [PlaceSortEnum.TRENDING]: { order: 'trendingScore', sort: SortEnum.Desc },
+  };
+
   async listPlaces({
     sort,
     near,
+    filter,
     first,
     after,
   }: {
     sort?: PlaceSortEnum;
     near?: { latitude: number; longitude: number };
+    filter?: PlaceFilterOptions;
     first?: number;
     after?: string;
   }) {
@@ -45,19 +55,24 @@ export default class PlaceService {
       });
       // near is guaranteed defined by the throwError above (TS's never-return
       // narrowing doesn't reach across the intervening statements here).
-      const rows = await this.repository.paginateByDistance(near!, cursorQuery);
+      const rows = await this.repository.paginateByDistance(near!, cursorQuery, filter);
       const { cursor: pageInfo, data } = this.pagination.paginate(rows, cursorQuery);
 
       return { data, pageInfo };
     }
 
+    const columnSort = PlaceService.COLUMN_SORTS[resolvedSort];
+    if (!columnSort) {
+      throwError(`Sort '${resolvedSort}' is not yet supported.`, "BAD_REQUEST", 400);
+    }
+
     const cursorQuery = this.pagination.validateParameters({
       cursor: after,
       limit: first,
-      order: 'createdAt',
-      sort: SortEnum.Desc,
+      order: columnSort!.order,
+      sort: columnSort!.sort,
     });
-    const rows = await this.repository.paginateByCreatedAt(cursorQuery);
+    const rows = await this.repository.paginateByColumn(cursorQuery, filter);
     const { cursor: pageInfo, data } = this.pagination.paginate(rows, cursorQuery);
 
     return { data, pageInfo };
