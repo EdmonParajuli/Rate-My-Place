@@ -8,6 +8,7 @@ import { Database } from "./config";
 import { schema } from "./graphql/schema";
 import { verifyJwt } from "./utils/jwt";
 import { startTrendingScoreJob } from "./jobs/trendingScoreJob";
+import { rateLimiter } from "./middlewares";
 
 dotenv.config();
 
@@ -16,6 +17,12 @@ class Server {
 
   constructor() {
     this.app = express();
+    // Required for rateLimiter to key on the real client IP rather than the
+    // reverse proxy's - both recommended hosts (Railway/Render, per
+    // docs/06-quality-and-ops.md) sit in front of the app, so without this
+    // req.ip resolves to the proxy for every client, collapsing everyone
+    // into one shared rate-limit bucket.
+    this.app.set("trust proxy", 1);
   }
 
   public async start() {
@@ -35,6 +42,7 @@ class Server {
       "/graphql",
       cors(),
       express.json(),
+      rateLimiter,
       expressMiddleware(apolloServer, {
         context: async ({
           req,
