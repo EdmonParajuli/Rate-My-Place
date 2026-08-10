@@ -6,6 +6,7 @@ import Category from "./categories";
 import Review from "./reviews";
 import ReviewReply from "./reviewReplies";
 import ReviewVote from "./reviewVotes";
+import PlaceHour from "./placeHours";
 
 const Model = {
     User,
@@ -15,7 +16,8 @@ const Model = {
     Category,
     Review,
     ReviewReply,
-    ReviewVote
+    ReviewVote,
+    PlaceHour
 }
 
 export default Model;

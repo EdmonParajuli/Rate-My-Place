@@ -1,5 +1,6 @@
 import Joi from "joi";
 import { numberSchema, phoneSchema, stringSchema } from "./schemas";
+import { PriceRangeEnum } from "../enums/priceRangeEnum";
 
 
 const createPlaceSchema = Joi.object({
@@ -42,6 +43,9 @@ const createPlaceSchema = Joi.object({
     longitude: numberSchema.label('longitude').min(-180).max(180).allow(null).optional().messages({
         "number.min": "Longitude must be between -180 and 180.",
         "number.max": "Longitude must be between -180 and 180."
+    }),
+    priceRange: stringSchema.label('price range').valid(...Object.values(PriceRangeEnum)).allow(null).optional().messages({
+        "any.only": "Price range must be one of LOW, MEDIUM, HIGH."
     })
 })
 

@@ -1,10 +1,11 @@
-import { Op, QueryTypes, WhereOptions } from 'sequelize';
+import { literal, Op, QueryTypes, WhereOptions } from 'sequelize';
 import Model from '../models';
-import { InputPlaceInterface, PlaceInterface } from '../interfaces';
+import { InputPlaceInterface, PlaceFilterOptions, PlaceInterface } from '../interfaces';
 import { BaseRepository } from './baseRepository';
 import { Database } from '../config';
 import { Base64 } from '../packages/cursors/utils';
 import { CursorDataInterface, CursorQueryResponseInterface, SortEnum } from '../packages/cursors/service';
+import { getCurrentServerDayAndTime } from '../utils/businessHours';
 
 // How far out a NEAREST search looks before ranking by exact distance - the
 // bounding box this produces is what keeps paginateByDistance's Haversine
@@ -18,24 +19,47 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
     super(Model.Place);
   }
 
-  // sort: NEW - same keyset-pagination shape as ReviewRepository.paginate,
-  // ordering on a real, stored column (createdAt), so plain Sequelize
-  // where/Op is enough. See that method for why the id tie-breaker's
+  // sort: NEW / HIGHEST_RATED - same keyset-pagination shape as
+  // ReviewRepository.paginate, ordering on a real, stored column
+  // (createdAt or averageRating - whichever cursorQuery.order names), so
+  // plain Sequelize where/Op is enough; nothing here is specific to either
+  // column. See ReviewRepository.paginate for why the id tie-breaker's
   // comparator is derived from the caller's sort direction.
-  async paginateByCreatedAt(cursorQuery: CursorQueryResponseInterface): Promise<PlaceInterface[]> {
-    let where: WhereOptions = {};
+  async paginateByColumn(
+    cursorQuery: CursorQueryResponseInterface,
+    filter?: PlaceFilterOptions
+  ): Promise<PlaceInterface[]> {
+    const conditions: (WhereOptions | ReturnType<typeof literal>)[] = [];
 
     if (cursorQuery.cursor) {
       const { id, sortValue } = Base64.decode<CursorDataInterface>(cursorQuery.cursor);
       const comparator = cursorQuery.sort === SortEnum.Asc ? Op.gt : Op.lt;
 
-      where = {
+      conditions.push({
         [Op.or]: [
           { [cursorQuery.order]: { [comparator]: sortValue } },
           { [cursorQuery.order]: sortValue, id: { [comparator]: id } },
         ],
-      };
+      });
     }
+
+    if (filter?.categoryId !== undefined) {
+      conditions.push({ categoryId: filter.categoryId });
+    }
+    if (filter?.priceRange) {
+      conditions.push({ priceRange: filter.priceRange });
+    }
+    if (filter?.minRating !== undefined) {
+      conditions.push({ averageRating: { [Op.gte]: filter.minRating } });
+    }
+    if (filter?.query) {
+      conditions.push({ label: { [Op.iLike]: `%${filter.query}%` } });
+    }
+    if (filter?.openNow) {
+      conditions.push(literal(this.openNowExistsSql()));
+    }
+
+    const where: WhereOptions = conditions.length > 0 ? { [Op.and]: conditions } : {};
 
     return this.model.findAll({
       where,
@@ -45,6 +69,22 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
       ],
       limit: cursorQuery.limit + 1,
     });
+  }
+
+  // Server-computed day-of-week/time only (never caller input), still run
+  // through sequelize.escape() for correct SQL literal formatting and to
+  // keep the "never bare-interpolate into raw SQL" discipline uniform
+  // regardless of whether a given value happens to be attacker-reachable.
+  private openNowExistsSql(): string {
+    const { dayOfWeek, time } = getCurrentServerDayAndTime();
+
+    return `EXISTS (
+      SELECT 1 FROM providers_place_hours
+      WHERE providers_place_hours.place_id = providers_places.id
+        AND providers_place_hours.day_of_week = ${Database.sequelize.escape(dayOfWeek)}
+        AND providers_place_hours.opens_at <= ${Database.sequelize.escape(time)}
+        AND providers_place_hours.closes_at > ${Database.sequelize.escape(time)}
+    )`;
   }
 
   // sort: NEAREST - distance is computed, not a stored column, so it can't be
@@ -59,7 +99,8 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
   // ORM's where/attributes API like paginateByCreatedAt above.
   async paginateByDistance(
     { latitude, longitude }: { latitude: number; longitude: number },
-    cursorQuery: CursorQueryResponseInterface
+    cursorQuery: CursorQueryResponseInterface,
+    filter?: PlaceFilterOptions
   ): Promise<PlaceInterface[]> {
     let cursorId: number | string | null = null;
     let cursorDistance: number | null = null;
@@ -77,6 +118,8 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
     const latDelta = MAX_SEARCH_RADIUS_KM / KM_PER_DEGREE_LATITUDE;
     const lngDelta =
       MAX_SEARCH_RADIUS_KM / (KM_PER_DEGREE_LATITUDE * Math.max(Math.cos((latitude * Math.PI) / 180), 0.01));
+
+    const openNowClause = filter?.openNow ? `AND ${this.openNowExistsSql()}` : '';
 
     // Columns explicitly aliased to their camelCase JS names - raw
     // sequelize.query results, unlike the ORM path, don't get the model's
@@ -101,6 +144,7 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
           is_verified AS "isVerified",
           latitude,
           longitude,
+          price_range AS "priceRange",
           created_at AS "createdAt",
           updated_at AS "updatedAt",
           deleted_at AS "deletedAt",
@@ -117,6 +161,11 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
           AND latitude IS NOT NULL AND longitude IS NOT NULL
           AND latitude BETWEEN :minLat AND :maxLat
           AND longitude BETWEEN :minLng AND :maxLng
+          AND (:categoryId IS NULL OR category_id = :categoryId)
+          AND (:priceRange IS NULL OR price_range = :priceRange)
+          AND (:minRating IS NULL OR average_rating >= :minRating)
+          AND (:query IS NULL OR label ILIKE '%' || :query || '%')
+          ${openNowClause}
       ) candidates
       WHERE :cursorDistance IS NULL
         OR (candidates.distance, candidates.id) > (:cursorDistance, :cursorId)
@@ -132,6 +181,10 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
           maxLat: latitude + latDelta,
           minLng: longitude - lngDelta,
           maxLng: longitude + lngDelta,
+          categoryId: filter?.categoryId ?? null,
+          priceRange: filter?.priceRange ?? null,
+          minRating: filter?.minRating ?? null,
+          query: filter?.query ?? null,
           cursorDistance,
           cursorId,
           limit: cursorQuery.limit + 1,
@@ -140,5 +193,36 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
     );
 
     return rows;
+  }
+
+  // Raw 24h review count per place, written straight to the stored column -
+  // see docs/08-trending-strategy.md §6 for the design (materialized,
+  // hourly-refreshed, not decayed). Called by src/jobs/trendingScoreJob.ts;
+  // Sequelize access stays confined to the repository layer even for a
+  // job-triggered write, same as every other Sequelize touchpoint in this
+  // codebase.
+  async refreshTrendingScores(): Promise<void> {
+    await Database.sequelize.query(`
+      UPDATE providers_places
+      SET trending_score = COALESCE(sub.recent_count, 0)
+      FROM (
+        SELECT place_id, COUNT(*) AS recent_count
+        FROM providers_reviews
+        WHERE deleted_at IS NULL
+          AND created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY place_id
+      ) sub
+      WHERE providers_places.id = sub.place_id;
+    `);
+
+    await Database.sequelize.query(`
+      UPDATE providers_places
+      SET trending_score = 0
+      WHERE trending_score != 0
+        AND id NOT IN (
+            SELECT place_id FROM providers_reviews
+            WHERE deleted_at IS NULL AND created_at > NOW() - INTERVAL '24 hours'
+        );
+    `);
   }
 }
