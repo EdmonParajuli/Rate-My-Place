@@ -5,7 +5,8 @@ import { LoginPage } from "./auth/LoginPage"
 import { PrivateRoute } from "@/components/PrivateRoute"
 import { AppLayout } from "./app/AppLayout"
 import { DiscoverPage } from "./app/discover/DiscoverPage"
-import { CategoriesPage } from "./app/CategoriesPage"
+import { CategoriesPage } from "./app/categories/CategoriesPage"
+import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
 import { MyReviewsPage } from "./app/MyReviewsPage"
 import { PlaceDetailPage } from "./app/PlaceDetailPage"
 
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DiscoverPage /> },
           { path: "categories", element: <CategoriesPage /> },
+          { path: "categories/:categoryId", element: <CategoryDetailPage /> },
           { path: "my-reviews", element: <MyReviewsPage /> },
           { path: "places/:placeId", element: <PlaceDetailPage /> },
         ],

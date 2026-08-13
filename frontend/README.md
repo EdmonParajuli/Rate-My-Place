@@ -27,11 +27,17 @@ GraphQL Code Generator (typed Apollo hooks), React Hook Form + Zod.
   skip installing Rolldown's native binding on a plain `npm install`. Vite 7 has no such requirement.
   Revisit once Node is upgraded.
 - **`@vitejs/plugin-react` pinned to `^5.2.0`**: the `6.x` line requires Vite `^8.0.0`.
-- **`scripts/fix-codegen-suspense-overloads.mjs`**: `@graphql-codegen/typescript-react-apollo@4.4.2`
-  generates a `useXSuspenseQuery` overload that doesn't type-check against Apollo Client v4's actual
-  types (a gap in the plugin's current Apollo Client v4 support, not a project bug). This script patches
-  the generated file after every `codegen` run; revisit once the plugin catches up. The regular
-  `useXQuery`/`useXLazyQuery` hooks are unaffected.
+- **`scripts/fix-codegen-apollo-v4.mjs`**: two `@graphql-codegen/typescript-react-apollo@4.4.2` gaps
+  against Apollo Client v4's actual types (not project bugs) that patch the generated file after every
+  `codegen` run; revisit once the plugin catches up.
+  1. A `useXSuspenseQuery` overload that doesn't type-check against v4's real `useSuspenseQuery` types.
+  2. Any query with an all-required `variables` object (e.g. `Category($id: Int!)`) fails to compile
+     internally — the plugin's generated wrapper builds `options` via `{...defaultOptions, ...baseOptions}`
+     then calls `ApolloReactHooks.useQuery<T, V>(Document, options)`, but v4's real `useQuery` enforces
+     required variables through its own overload set, which that spread's inferred
+     `variables?: V | undefined` never satisfies (`TS2769`), regardless of the outer wrapper signature.
+     The fix casts only that internal call (`options as any`) — the outer signature callers actually see
+     and get type-checked against is untouched, so `variables` is still correctly required at call sites.
 - **Apollo Client v4 import paths**: React bindings (`ApolloProvider`, hooks) moved to
   `@apollo/client/react` in v4 (previously the package root) — `codegen.ts`'s
   `apolloReactCommonImportFrom`/`apolloReactHooksImportFrom` point the generated hooks there; hand-written
