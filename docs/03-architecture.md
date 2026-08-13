@@ -234,15 +234,34 @@ are still planned, not yet implemented.
   + matching GraphQL field, resolved via default field resolution off the model
   instance (no field resolver needed). Categories are migration/seed-managed
   ("no mutations" per `CLAUDE.md`) and stay that way — no mutation was added.
-  **Not yet seeded**: the field exists and resolves (verified `null` for all 5
-  existing categories via a live query) but no actual URLs have been set —
-  populating real per-category images is a content decision, not part of this
-  addition. Also worth noting while touching this table: the current seed data
-  only has 5 categories (Restaurant, Cafe, Bar, Hotel, Gym), not the 10 the
-  Phase 4 frontend design was built against (Restaurants, Cafés, Hotels,
-  Shopping, Healthcare, Education, Fitness, Beauty & Wellness, Entertainment,
-  Professional Services) — a real gap to resolve before the Categories screen
-  is wired to real data, not addressed by this change.
+  **Not yet seeded**: the field exists and resolves (verified `null` for every
+  category via a live query) but no actual URLs have been set — populating real
+  per-category images is a content decision, not part of this addition.
+
+  **Category count fixed (2026-08-13)**: the seed data used to have only 5
+  categories (Restaurant, Cafe, Bar, Hotel, Gym), not the 10 the Phase 4
+  frontend design was built against. Fixed via a new seeder,
+  `20260813130000-update-categories-to-figma-ten.js` — 4 of the 5 renamed in
+  place (Restaurant→Restaurants, Cafe→Cafés, Hotel→Hotels, Gym→Fitness,
+  preserving their ids so any existing `Place.categoryId` stays valid), `Bar`
+  kept as an 11th category (no Figma counterpart, deliberately not deleted),
+  plus 6 new categories (Shopping, Healthcare, Education, Beauty & Wellness,
+  Entertainment, Professional Services). `icon` also switched meaning here:
+  the original seed held flaticon.com image URLs, but every Phase 4 prototype
+  (and the design-tokens research) uses lucide-react icon *names* instead — no
+  real frontend consumed the old convention yet, so the whole table moved onto
+  the one that's actually going to be built against.
+
+  **Real issue found while doing this, not yet fixed**: this project's
+  seeders aren't tracked/idempotent — `sequelize-cli db:seed:all` has no
+  seed-storage config, so it **re-runs every seeder file every time**,
+  regardless of whether it already ran. Running `npm run db:seed` after adding
+  the new seeder above silently re-inserted 5 duplicate rows from the
+  *original* `20260704104520-create-categories` seeder (cleaned up manually
+  this time). Worth fixing properly before anyone else runs `db:seed` again —
+  either a custom `seederStorage` config (sequelize-cli supports tracking
+  seeders the same way it tracks migrations) or rewriting seeders to be
+  idempotent (`findOrCreate`-style) rather than raw `bulkInsert`.
 - **`businessCount: Int` / `avgRating: Float`** — computed **live at query time**,
   not materialized/cached columns. This matches the *existing* precedent already
   set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md` documents as

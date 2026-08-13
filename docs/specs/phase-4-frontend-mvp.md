@@ -63,10 +63,14 @@ linked below. **Status updated as items land** — 2 of 7 are built as of 2026-0
 | `Place.ratingBreakdown: [RatingBreakdownEntry]` (live-computed, `GROUP BY rating`) | Place Detail's rating-overview bar chart | Not built | same section as above |
 
 **`Category.coverImageUrl` note**: the field exists and resolves, but no real URLs
-are seeded yet (content decision, separate from the schema addition). Also surfaced
-while implementing it: the current seed data only has 5 categories, not the 10 the
-Phase 4 frontend design assumes — a real gap to resolve before the Categories screen
-can be wired to real data. See [03-architecture.md](../03-architecture.md) for detail.
+are seeded yet (content decision, separate from the schema addition).
+
+**Category count fixed (2026-08-13)**: the seed data used to have only 5 categories,
+not the 10 the Phase 4 frontend design assumes — now fixed, 10 Figma categories +
+`Bar` kept as an 11th (no Figma counterpart). `icon` also now holds lucide-react
+icon names, matching every prototype, not the original flaticon image URLs. Full
+detail, plus a real seeder-idempotency issue found and not yet fixed, in
+[03-architecture.md](../03-architecture.md).
 
 **Sequencing implication**: none of these block the *design* work (already done —
 every prototype uses illustrative mock data for these fields), but each blocks
