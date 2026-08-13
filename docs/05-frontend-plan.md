@@ -1,8 +1,18 @@
 # Frontend Plan
 
-No frontend code exists yet. This is a recommendation to start from, not a decision
-already made — flag disagreement early since it's much cheaper to change before code
-exists than after.
+**Scaffold done (2026-08-13)**: `frontend/` exists — Vite + React + TypeScript +
+Tailwind CSS v4 + shadcn/ui (Radix base) + React Router + Apollo Client + GraphQL
+Code Generator (typed hooks, verified against the live backend schema) + React
+Hook Form + Zod, all installed and wired together (not just installed
+side-by-side — a real query round-trips through a codegen-generated hook against
+the running backend). No real screens yet — that's the next work. See
+`frontend/README.md` for exact commands and three version-pinning workarounds
+hit during setup (Node/Vite/Apollo Client version mismatches with the current
+toolchain generation), documented there rather than repeated here.
+
+This doc otherwise remains the recommendation this scaffold started from — flag
+disagreement early since it's much cheaper to change before more code exists
+than after.
 
 **Framework decision: plain React, not Next.js.** An earlier draft of this doc
 recommended Next.js for its server-rendered marketing pages and SEO story. That's been

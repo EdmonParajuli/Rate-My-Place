@@ -226,10 +226,14 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
 
 ## Suggested build sequencing
 
-1. **Repo restructuring** ✅ **Done** (2026-08-13) **+ project scaffold + design
-   tokens** (not yet done) — `git mv` into `backend/`/`frontend/` (per
-   [05-frontend-plan.md](../05-frontend-plan.md)), Vite + Tailwind config from
-   screen 0's extracted tokens. Everything else depends on this existing.
+1. **Repo restructuring + project scaffold** ✅ **Done** (2026-08-13) **+ design
+   tokens** (not yet done) — `git mv` into `backend/`/`frontend/`, Vite+React+TS+
+   Tailwind+shadcn/ui+React Router+Apollo Client+GraphQL Code Generator+React
+   Hook Form+Zod all installed and wired (see
+   [05-frontend-plan.md](../05-frontend-plan.md) and `frontend/README.md`) — but
+   using shadcn/ui's default theme, not yet screen 0's extracted tokens
+   (`.scratch/phase-4-frontend-mvp/research/design-tokens.md`). Wiring those in
+   is the next step before real screens can match the Figma design exactly.
 2. **`signUpBusiness` mutation** (backend) — needed before Auth screens' business
    wizard can be wired to anything real; the screen's own design doesn't block on
    it, but demoing it end-to-end does.
