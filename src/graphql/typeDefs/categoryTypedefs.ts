@@ -9,6 +9,7 @@ export const categoryTypedefs: DocumentNode = gql`
         label: String
         description: String
         icon: String
+        coverImageUrl: String
     }
 
     type CategoryResponse {

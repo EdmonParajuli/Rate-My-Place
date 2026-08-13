@@ -226,12 +226,42 @@ now.
 the same ticket to ship category cards without these fields, once matching the
 Figma design exactly (cover photo + "N businesses · X★ avg" per card) turned out
 to be what was actually wanted, not just a visual reference to loosely adapt.
+**`coverImageUrl` is now built** (2026-08-13); `businessCount`/`avgRating` below
+are still planned, not yet implemented.
 
-- **`coverImageUrl: String`** — new nullable column on `providers_category` (plain
-  migration, matches every other new-column pattern in this doc) + matching
-  GraphQL field. Categories are migration/seed-managed today ("no mutations" per
-  `CLAUDE.md`) and stay that way — this is 10 seed rows getting a new column
-  value, not a new mutation.
+- ~~**`coverImageUrl: String`**~~ **Done.** New nullable `cover_image_url` column
+  on `providers_category` (migration `20260813120000-add-cover-image-url-to-category.js`)
+  + matching GraphQL field, resolved via default field resolution off the model
+  instance (no field resolver needed). Categories are migration/seed-managed
+  ("no mutations" per `CLAUDE.md`) and stay that way — no mutation was added.
+  **Not yet seeded**: the field exists and resolves (verified `null` for every
+  category via a live query) but no actual URLs have been set — populating real
+  per-category images is a content decision, not part of this addition.
+
+  **Category count fixed (2026-08-13)**: the seed data used to have only 5
+  categories (Restaurant, Cafe, Bar, Hotel, Gym), not the 10 the Phase 4
+  frontend design was built against. Fixed via a new seeder,
+  `20260813130000-update-categories-to-figma-ten.js` — 4 of the 5 renamed in
+  place (Restaurant→Restaurants, Cafe→Cafés, Hotel→Hotels, Gym→Fitness,
+  preserving their ids so any existing `Place.categoryId` stays valid), `Bar`
+  kept as an 11th category (no Figma counterpart, deliberately not deleted),
+  plus 6 new categories (Shopping, Healthcare, Education, Beauty & Wellness,
+  Entertainment, Professional Services). `icon` also switched meaning here:
+  the original seed held flaticon.com image URLs, but every Phase 4 prototype
+  (and the design-tokens research) uses lucide-react icon *names* instead — no
+  real frontend consumed the old convention yet, so the whole table moved onto
+  the one that's actually going to be built against.
+
+  **Real issue found while doing this, not yet fixed**: this project's
+  seeders aren't tracked/idempotent — `sequelize-cli db:seed:all` has no
+  seed-storage config, so it **re-runs every seeder file every time**,
+  regardless of whether it already ran. Running `npm run db:seed` after adding
+  the new seeder above silently re-inserted 5 duplicate rows from the
+  *original* `20260704104520-create-categories` seeder (cleaned up manually
+  this time). Worth fixing properly before anyone else runs `db:seed` again —
+  either a custom `seederStorage` config (sequelize-cli supports tracking
+  seeders the same way it tracks migrations) or rewriting seeders to be
+  idempotent (`findOrCreate`-style) rather than raw `bulkInsert`.
 - **`businessCount: Int` / `avgRating: Float`** — computed **live at query time**,
   not materialized/cached columns. This matches the *existing* precedent already
   set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md` documents as
@@ -285,12 +315,22 @@ per-category, so it doesn't fit inside `Category`.
 
 **New scope, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
 (ticket `06-place-detail-review.md`) against a real, complete Figma design for it.
-Three small, independent additions:
+Three small, independent additions. **`ReviewReply.createdAt` is now built**
+(2026-08-13); the other two are still planned, not yet implemented.
 
-- **`ReviewReply.createdAt: DateTime`** — the underlying row already has
-  `created_at` (every table does, per this doc's soft-delete/timestamp
-  convention) but `reviewReplyTypedefs.ts`'s `ReviewReply` type doesn't expose
-  it. Trivial: add the field, no migration needed.
+- ~~**`ReviewReply.createdAt: DateTime`**~~ **Done**, typed `String` not
+  `DateTime` — this schema has no `DateTime` scalar anywhere (checked); every
+  existing date field (`Session.createdAt`/`lastUsedAt`) is plain `String`, so
+  `ReviewReply.createdAt` matches that convention instead of introducing a new
+  one. The underlying row already had `created_at` (`ModelTimestampExtend`,
+  `timestamps: true` + `underscored: true` on the model) — no migration needed,
+  no field resolver needed either, resolves via GraphQL's default field
+  resolution off the model instance exactly like `Session.createdAt` does.
+  Verified live: renders as a raw epoch-millisecond string (e.g.
+  `"1786588033234"`), not an ISO date string — confirmed this is `Session`'s
+  existing behavior too, not a defect introduced here. A real frontend will
+  need to `new Date(Number(createdAt))` to format it, same as it already has to
+  for sessions.
 - **`placeReviews(placeId, first, after, sort: ReviewSortEnum)`** — currently
   has no sort argument at all. A new `ReviewSortEnum` (`RECENT`/`HELPFUL`)
   mirrors the existing `PlaceSortEnum` pattern on `listPlaces` — `RECENT` orders

@@ -17,6 +17,7 @@ export const reviewReplyTypedefs: DocumentNode = gql`
         reviewId: Int
         ownerId: Int
         description: String
+        createdAt: String
     }
 
     type ReviewReplyResponse {
