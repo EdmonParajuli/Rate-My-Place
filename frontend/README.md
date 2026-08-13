@@ -36,3 +36,15 @@ GraphQL Code Generator (typed Apollo hooks), React Hook Form + Zod.
   `@apollo/client/react` in v4 (previously the package root) — `codegen.ts`'s
   `apolloReactCommonImportFrom`/`apolloReactHooksImportFrom` point the generated hooks there; hand-written
   code (`src/lib/graphql/client.ts`, `src/App.tsx`) imports from the same path directly.
+- **`@graphql-codegen/typescript`/`typescript-operations` pinned to `5.x`, not their `6.x` line**:
+  combining `typescript@6.x`+`typescript-operations@6.x` with `typescript-react-apollo@4.4.2` (its latest
+  - there's no `5.x`/`6.x` line for it yet) produced duplicate top-level `input`/`enum` type declarations
+  (`TS2300`) the moment an operation actually took one as a variable (first hit once auth operations were
+  added - `platformStats`, the only query before that, takes none). Pinning the first two plugins to their
+  latest `5.x` (matching `typescript-react-apollo`'s own generation) fixed it - a plugin-family
+  version-generation mismatch, not a config error.
+- **`withMutationFn`/`withMutationOptionsType` set to `false`**: `typescript-react-apollo@4.4.2` still
+  references Apollo Client v3's flat `MutationFunction<T,V>`/`BaseMutationOptions<T,V>` exports for these
+  two helper types - neither exists in v4's `@apollo/client/react` (mutation typings moved to a
+  namespace-based shape). Only disables those two extra helper-type exports; the `useXMutation()` hooks
+  themselves (`withHooks`) still generate and work correctly.

@@ -22,6 +22,16 @@ const config: CodegenConfig = {
         // declarations - union string-literal types instead, same as every
         // GraphQL enum value already being a plain string at runtime.
         enumsAsTypes: true,
+        // typescript-react-apollo@4.4.2 (latest stable) still references
+        // Apollo Client v3's flat MutationFunction<T,V>/BaseMutationOptions<T,V>
+        // exports for these two helper types - neither exists in v4's
+        // @apollo/client/react (mutation typings moved to a namespace-based
+        // shape, MutationFunction lives unexported inside useMutation.ts,
+        // BaseMutationOptions was dropped entirely). Only affects these two
+        // extra helper-type exports, not the useXMutation() hooks themselves
+        // (withHooks) - the hooks still generate and work correctly.
+        withMutationFn: false,
+        withMutationOptionsType: false,
       },
     },
   },

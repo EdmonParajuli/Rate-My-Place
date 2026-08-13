@@ -70,17 +70,7 @@ export const authTypedefs: DocumentNode = gql`
         priceRange: PriceRangeEnum
     }
 
-    type SignUpData {
-        email: String
-        userType: UserTypeEnum
-    }
-
-    type SignUpResponse {
-        message: String
-        data: SignUpData
-    }
-
-    type LoginToken { 
+    type LoginToken {
         access: String
         refresh: String
     }
@@ -88,6 +78,14 @@ export const authTypedefs: DocumentNode = gql`
     type UserData {
         user: User
         token : LoginToken
+    }
+
+    # Reuses UserData - AuthService.signUp has always returned {user, token}
+    # (same as login), this type just didn't match that until now. No resolver
+    # change needed, only this SDL fix.
+    type SignUpResponse {
+        message: String
+        data: UserData
     }
 
     type LoginResponse {

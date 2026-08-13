@@ -11,7 +11,7 @@ const signUpSchema = Joi.object({
         "string.pattern.base": "Name should contain only letters."
     }),
     email: emailSchema.label('Email').required().trim(),
-    password: stringSchema.label('Password').required().max(64).messages({
+    password: stringSchema.label('Password').required().min(8).max(64).messages({
     "string.empty": "Password should not be Empty.",
     "string.min": "Password should be at least 8 characters.",
     "string.max": "Password should be at most 64 characters."
@@ -66,7 +66,7 @@ const signUpBusinessSchema = Joi.object({
         "string.pattern.base": "Name should contain only letters."
     }),
     email: emailSchema.label('Email').required().trim(),
-    password: stringSchema.label('Password').required().max(64).messages({
+    password: stringSchema.label('Password').required().min(8).max(64).messages({
         "string.empty": "Password should not be Empty.",
         "string.min": "Password should be at least 8 characters.",
         "string.max": "Password should be at most 64 characters."

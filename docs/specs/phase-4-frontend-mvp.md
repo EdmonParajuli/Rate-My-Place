@@ -111,7 +111,7 @@ don't query anything themselves.
 Ticket: [02-marketing-landing-page.md](../../.scratch/phase-4-frontend-mvp/tickets/02-marketing-landing-page.md).
 Prototype: `prototype/marketing-landing-page` (commit `1d65535`).
 
-### 2. Auth screens (signup / login)
+### 2. Auth screens (signup / login) ✅ Built (2026-08-13)
 
 **Chosen: Variant A.** Split-screen: dark hero-gradient left panel with a rotating
 testimonial carousel (3 reviews, 5s auto-advance + manual next, avatars), Sign
@@ -126,7 +126,23 @@ GraphQL: `login`, `signUp` (REGULAR), `signUpBusiness` (BUSINESS, new — see ab
 Ticket: [03-auth-screens.md](../../.scratch/phase-4-frontend-mvp/tickets/03-auth-screens.md).
 Prototype: `prototype/auth-screens` (commit `519cb0e`).
 
-### 3. Authenticated shell (sidebar + top bar)
+**Real implementation** (`frontend/src/routes/auth/`): `LoginPage.tsx` (layout +
+tabs), `TestimonialCarousel.tsx`, `SignInForm.tsx`, `SignUpForm.tsx` (type cards +
+the 2-step BUSINESS wizard, React Hook Form + Zod validating field-for-field
+against `backend/src/validators/authValidators.ts`/`placeValidators.ts`). Two
+real backend bugs surfaced and fixed while building this (not new scope,
+pre-existing gaps): **`SignUpResponse.data`** was typed `{email, userType}` but
+the resolver always returned `{user, token}` (same shape as `LoginResponse`) —
+fixed the GraphQL SDL to match, no resolver change needed; **the password
+schema's `.min(8)`** was missing from both `signUpSchema` and
+`signUpBusinessSchema` despite their own Joi messages claiming an 8-character
+minimum — added. Auth session state: `lib/auth/AuthContext.tsx` (access token
+in memory, refresh token in `localStorage`, trades a stored refresh token for a
+fresh session on page load via `refreshAccessToken`) + `lib/auth/accessToken.ts`
+(module-level holder the Apollo auth link reads on every request) — implements
+`05-frontend-plan.md`'s "Auth on the frontend" MVP decision exactly.
+
+### 3. Authenticated shell (sidebar + top bar) ✅ Built (2026-08-13)
 
 **Chosen: Variant A.** Faithful `w-60` (240px) sidebar adapted from the real
 source, holding only the 3 Phase-4 nav items (Discover, Categories, My Reviews) —
@@ -145,6 +161,17 @@ GraphQL: `authMeUser` (load current user for the shell's avatar/name), `signOut`
 
 Ticket: [04-authenticated-shell.md](../../.scratch/phase-4-frontend-mvp/tickets/04-authenticated-shell.md).
 Prototype: `prototype/authenticated-shell` (commit `59b721a`).
+
+**Real implementation** (`frontend/src/routes/app/AppLayout.tsx`): the collapse
+toggle, mobile drawer, tooltips, and dropdown ported faithfully; `Log out` calls
+`AuthContext.logout()` for real (revokes the session server-side, best-effort)
+and navigates to `/`. One deviation from the prototype's hardcoded avatar photo:
+since no profile-picture upload flow exists yet, `profilePicture` is `null` for
+essentially every real user - rather than fake a stock photo as if it were the
+user's own, unset avatars render as initials-in-a-circle instead. `Discover`/
+`Categories`/`My Reviews` are routed and titled correctly but still placeholder
+content (`ScreenPlaceholder.tsx`) - each is its own not-yet-built screen ticket.
+`PrivateRoute.tsx` gates the whole `/app` branch, redirecting to `/login`.
 
 ### 4. Discover screen
 
@@ -235,11 +262,14 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    [05-frontend-plan.md](../05-frontend-plan.md#design-tokens) and
    `frontend/README.md`). Real screens can now match the Figma design's
    palette/typography exactly — next up is the first real screen.
-2. **`signUpBusiness` mutation** (backend) — needed before Auth screens' business
-   wizard can be wired to anything real; the screen's own design doesn't block on
-   it, but demoing it end-to-end does.
-3. **Auth screens + Authenticated shell** — nothing past login exists without
-   these; build together since the shell is what a successful login lands on.
+2. **`signUpBusiness` mutation** ✅ **Done** (backend) — needed before Auth
+   screens' business wizard can be wired to anything real; the screen's own
+   design doesn't block on it, but demoing it end-to-end does.
+3. **Auth screens + Authenticated shell** ✅ **Done** (2026-08-13) — nothing
+   past login exists without these; built together since the shell is what a
+   successful login lands on. `/login`, `/app` (gated by `PrivateRoute`), and
+   its three nested routes all real and navigable; `Discover`/`Categories`/
+   `My Reviews` still placeholder content pending their own screen tickets.
 4. **Discover screen** — the default authenticated landing screen, no new backend
    scope needed (Leaflet integration is frontend-only work).
 5. **Place Detail** — reachable from Discover, closes the core "find → review"

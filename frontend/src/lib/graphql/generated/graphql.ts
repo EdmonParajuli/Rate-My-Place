@@ -1,12 +1,13 @@
-/** Internal type. DO NOT USE DIRECTLY. */
-type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
-/** Internal type. DO NOT USE DIRECTLY. */
-export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 import { gql } from '@apollo/client';
 import * as ApolloReactCommon from '@apollo/client/react';
 import * as ApolloReactHooks from '@apollo/client/react';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 const defaultOptions = {} as const;
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
@@ -15,8 +16,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  _Any: { input: unknown; output: unknown; }
-  _FieldSet: { input: unknown; output: unknown; }
+  _Any: { input: any; output: any; }
+  _FieldSet: { input: any; output: any; }
 };
 
 export type ActiveSessionsResponse = {
@@ -507,15 +508,9 @@ export type SignUpBusinessResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
-export type SignUpData = {
-  __typename?: 'SignUpData';
-  email?: Maybe<Scalars['String']['output']>;
-  userType?: Maybe<UserTypeEnum>;
-};
-
 export type SignUpResponse = {
   __typename?: 'SignUpResponse';
-  data?: Maybe<SignUpData>;
+  data?: Maybe<UserData>;
   message?: Maybe<Scalars['String']['output']>;
 };
 
@@ -557,12 +552,315 @@ export type AuthMeUserResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type LoginMutationVariables = Exact<{
+  input?: InputMaybe<InputAuthLogin>;
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login?: { __typename?: 'LoginResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+
+export type SignUpMutationVariables = Exact<{
+  input?: InputMaybe<InputAuthSignUp>;
+}>;
+
+
+export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUpResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+
+export type SignUpBusinessMutationVariables = Exact<{
+  input?: InputMaybe<InputSignUpBusiness>;
+}>;
+
+
+export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?: { __typename?: 'SignUpBusinessResponse', message?: string | null, data?: { __typename?: 'SignUpBusinessData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+
+export type AuthMeUserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type AuthMeUserQuery = { __typename?: 'Query', authMeUser?: { __typename?: 'authMeUserResponse', data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null };
+
+export type SignOutMutationVariables = Exact<{
+  input?: InputMaybe<InputRefreshToken>;
+}>;
+
+
+export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?: 'Message', message?: string | null } | null };
+
+export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CategoriesQuery = { __typename?: 'Query', categories?: { __typename?: 'CategoryListResponse', data?: Array<{ __typename?: 'Category', id?: number | null, label?: string | null } | null> | null } | null };
+
 export type PlatformStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type PlatformStatsQuery = { platformStats: { data: { totalPlaces: number | null, totalReviews: number | null } | null } | null };
+export type PlatformStatsQuery = { __typename?: 'Query', platformStats?: { __typename?: 'PlatformStatsResponse', data?: { __typename?: 'PlatformStats', totalPlaces?: number | null, totalReviews?: number | null } | null } | null };
+
+export type RefreshAccessTokenMutationVariables = Exact<{
+  input: InputRefreshAccessToken;
+}>;
 
 
+export type RefreshAccessTokenMutation = { __typename?: 'Mutation', refreshAccessToken?: { __typename?: 'RefreshTokenResponse', data?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null } | null };
+
+
+export const LoginDocument = gql`
+    mutation Login($input: InputAuthLogin) {
+  login(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useLoginMutation__
+ *
+ * To run a mutation, you first call `useLoginMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useLoginMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [loginMutation, { data, loading, error }] = useLoginMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useLoginMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<LoginMutation, LoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<LoginMutation, LoginMutationVariables>(LoginDocument, options);
+      }
+export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
+export type LoginMutationResult = ApolloReactCommon.MutationResult<LoginMutation>;
+export const SignUpDocument = gql`
+    mutation SignUp($input: InputAuthSignUp) {
+  signUp(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useSignUpMutation__
+ *
+ * To run a mutation, you first call `useSignUpMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSignUpMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [signUpMutation, { data, loading, error }] = useSignUpMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSignUpMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SignUpMutation, SignUpMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SignUpMutation, SignUpMutationVariables>(SignUpDocument, options);
+      }
+export type SignUpMutationHookResult = ReturnType<typeof useSignUpMutation>;
+export type SignUpMutationResult = ApolloReactCommon.MutationResult<SignUpMutation>;
+export const SignUpBusinessDocument = gql`
+    mutation SignUpBusiness($input: InputSignUpBusiness) {
+  signUpBusiness(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useSignUpBusinessMutation__
+ *
+ * To run a mutation, you first call `useSignUpBusinessMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSignUpBusinessMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [signUpBusinessMutation, { data, loading, error }] = useSignUpBusinessMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSignUpBusinessMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SignUpBusinessMutation, SignUpBusinessMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SignUpBusinessMutation, SignUpBusinessMutationVariables>(SignUpBusinessDocument, options);
+      }
+export type SignUpBusinessMutationHookResult = ReturnType<typeof useSignUpBusinessMutation>;
+export type SignUpBusinessMutationResult = ApolloReactCommon.MutationResult<SignUpBusinessMutation>;
+export const AuthMeUserDocument = gql`
+    query AuthMeUser {
+  authMeUser {
+    data {
+      id
+      email
+      fullName
+      userType
+      profilePicture
+    }
+  }
+}
+    `;
+
+/**
+ * __useAuthMeUserQuery__
+ *
+ * To run a query within a React component, call `useAuthMeUserQuery` and pass it any options that fit your needs.
+ * When your component renders, `useAuthMeUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useAuthMeUserQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useAuthMeUserQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+      }
+export function useAuthMeUserLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+        }
+// @ts-ignore
+export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<AuthMeUserQuery, AuthMeUserQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<AuthMeUserQuery | undefined, AuthMeUserQueryVariables>;
+export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+        }
+export type AuthMeUserQueryHookResult = ReturnType<typeof useAuthMeUserQuery>;
+export type AuthMeUserLazyQueryHookResult = ReturnType<typeof useAuthMeUserLazyQuery>;
+export type AuthMeUserSuspenseQueryHookResult = ReturnType<typeof useAuthMeUserSuspenseQuery>;
+export type AuthMeUserQueryResult = ApolloReactCommon.QueryResult<AuthMeUserQuery, AuthMeUserQueryVariables>;
+export const SignOutDocument = gql`
+    mutation SignOut($input: InputRefreshToken) {
+  signOut(input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useSignOutMutation__
+ *
+ * To run a mutation, you first call `useSignOutMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSignOutMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [signOutMutation, { data, loading, error }] = useSignOutMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useSignOutMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SignOutMutation, SignOutMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SignOutMutation, SignOutMutationVariables>(SignOutDocument, options);
+      }
+export type SignOutMutationHookResult = ReturnType<typeof useSignOutMutation>;
+export type SignOutMutationResult = ApolloReactCommon.MutationResult<SignOutMutation>;
+export const CategoriesDocument = gql`
+    query Categories {
+  categories {
+    data {
+      id
+      label
+    }
+  }
+}
+    `;
+
+/**
+ * __useCategoriesQuery__
+ *
+ * To run a query within a React component, call `useCategoriesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCategoriesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCategoriesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCategoriesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+      }
+export function useCategoriesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+        }
+// @ts-ignore
+export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoriesQuery, CategoriesQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoriesQuery | undefined, CategoriesQueryVariables>;
+export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+        }
+export type CategoriesQueryHookResult = ReturnType<typeof useCategoriesQuery>;
+export type CategoriesLazyQueryHookResult = ReturnType<typeof useCategoriesLazyQuery>;
+export type CategoriesSuspenseQueryHookResult = ReturnType<typeof useCategoriesSuspenseQuery>;
+export type CategoriesQueryResult = ApolloReactCommon.QueryResult<CategoriesQuery, CategoriesQueryVariables>;
 export const PlatformStatsDocument = gql`
     query PlatformStats {
   platformStats {
@@ -609,3 +907,37 @@ export type PlatformStatsQueryHookResult = ReturnType<typeof usePlatformStatsQue
 export type PlatformStatsLazyQueryHookResult = ReturnType<typeof usePlatformStatsLazyQuery>;
 export type PlatformStatsSuspenseQueryHookResult = ReturnType<typeof usePlatformStatsSuspenseQuery>;
 export type PlatformStatsQueryResult = ApolloReactCommon.QueryResult<PlatformStatsQuery, PlatformStatsQueryVariables>;
+export const RefreshAccessTokenDocument = gql`
+    mutation RefreshAccessToken($input: InputRefreshAccessToken!) {
+  refreshAccessToken(input: $input) {
+    data {
+      access
+      refresh
+    }
+  }
+}
+    `;
+
+/**
+ * __useRefreshAccessTokenMutation__
+ *
+ * To run a mutation, you first call `useRefreshAccessTokenMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRefreshAccessTokenMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [refreshAccessTokenMutation, { data, loading, error }] = useRefreshAccessTokenMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useRefreshAccessTokenMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RefreshAccessTokenMutation, RefreshAccessTokenMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RefreshAccessTokenMutation, RefreshAccessTokenMutationVariables>(RefreshAccessTokenDocument, options);
+      }
+export type RefreshAccessTokenMutationHookResult = ReturnType<typeof useRefreshAccessTokenMutation>;
+export type RefreshAccessTokenMutationResult = ApolloReactCommon.MutationResult<RefreshAccessTokenMutation>;
