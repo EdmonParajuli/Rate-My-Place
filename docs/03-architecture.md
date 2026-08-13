@@ -179,6 +179,136 @@ Notes on the additions:
   tables — pairs with an actual object-storage decision (see doc 6).
 - Add `price_range` (`enum $/$$/$$$`) directly onto `PLACES` rather than a new table.
 
+## Planned: `signUpBusiness` (atomic account + place creation)
+
+**New scope, surfaced 2026-08-12** while designing Phase 4's Auth screens (see
+[04-roadmap.md](./04-roadmap.md) Phase 4 and
+[05-frontend-plan.md](./05-frontend-plan.md)'s "Business-owner signup" section) —
+not yet built, recorded here so the shape is decided before implementation starts.
+
+Business-owner signup needs to create the `User` (`userType: BUSINESS`) and their
+first `Place` **atomically in one transaction**, not as two chained calls to the
+existing `signUp` + `createPlace` mutations — chaining them risks a business-type
+user left with no place if the caller drops off between steps. A new mutation,
+`signUpBusiness`, does both:
+
+- **Input**: the existing `InputAuthSignUp` fields minus `userType` (implied
+  `BUSINESS`) — `name`, `email`, `password` — plus the place fields `createPlace`
+  already takes: `label`, `description`, `address`, `phone`, `website`,
+  `categoryId`, `priceRange`.
+- **Output**: same shape `signUp` already returns (tokens + `User`) plus the
+  created `Place`.
+- **Validator**: a new Joi schema, per convention — not a thin wrapper around the
+  two existing schemas, since some fields (e.g. `categoryId`) are required here in
+  a way `createPlace`'s standalone schema may not enforce identically.
+
+**Open implementation question, not resolved here**: `CLAUDE.md`'s service rule is
+"own exactly one repository each" — this mutation's orchestration spans two
+repositories (`UserRepository`, `PlaceRepository`). Two ways to keep that rule
+intact rather than reaching straight for both repositories from a new service:
+1. A new orchestration-only service (e.g. `BusinessOnboardingService`) that calls
+   the *existing* `AuthService`/`UserService` and `PlaceService` methods rather
+   than touching either repository directly — but those methods would need to
+   accept and pass through a shared Sequelize transaction, the same way review
+   creation already threads a transaction through to keep `Place.averageRating`/
+   `reviewCount` recomputation atomic with the review write (an existing
+   precedent worth reusing here, not inventing a new transaction pattern).
+2. Or accept a one-off exception to the one-repository rule for this specific
+   orchestration service, if threading a shared transaction through two existing
+   services turns out awkward in practice.
+Worth settling once this is actually picked up for implementation, not guessed at
+now.
+
+## Planned: `Category` cover image + live business-count/avg-rating
+
+**New scope, surfaced 2026-08-12** while designing Phase 4's Categories screen
+(see [04-roadmap.md](./04-roadmap.md) Phase 4) — reverses an earlier decision on
+the same ticket to ship category cards without these fields, once matching the
+Figma design exactly (cover photo + "N businesses · X★ avg" per card) turned out
+to be what was actually wanted, not just a visual reference to loosely adapt.
+
+- **`coverImageUrl: String`** — new nullable column on `providers_category` (plain
+  migration, matches every other new-column pattern in this doc) + matching
+  GraphQL field. Categories are migration/seed-managed today ("no mutations" per
+  `CLAUDE.md`) and stay that way — this is 10 seed rows getting a new column
+  value, not a new mutation.
+- **`businessCount: Int` / `avgRating: Float`** — computed **live at query time**,
+  not materialized/cached columns. This matches the *existing* precedent already
+  set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md` documents as
+  "recomputed from source... never incrementally adjusted" — same philosophy
+  applied one level up (categories aggregating over places, instead of places
+  aggregating over reviews). Given there are only 10 categories, a single grouped
+  query is cheap: `COUNT`/`AVG` over non-deleted `Place`s joined on `category_id`,
+  grouped by category. Both `categories()` and `category(id)` need these fields —
+  the category-detail screen's banner copy ("N businesses · X★ average rating")
+  uses them too, not just the browse-grid cards.
+- **Layering — no exception needed, unlike `signUpBusiness` above**: this stays
+  inside `CategoryRepository`'s ownership. `BaseRepository` already exposes
+  `rawQuery` (`docs/02-current-state.md` lists it among the generic repo's
+  methods) — the joined aggregate query runs through that, so `CategoryService`
+  still owns exactly one repository, no cross-repository orchestration question
+  like `signUpBusiness` had.
+- **Open design note, worth being explicit about rather than silently picking
+  one**: `avgRating` here is an *average of each place's already-averaged
+  rating* (average-of-averages), not a true weighted average across every
+  individual review in the category. Simpler to compute and matches what the
+  Figma design almost certainly intended, but worth knowing it can diverge
+  slightly from a places-weighted-by-review-count calculation if that precision
+  ever matters later.
+
+### Also needed: platform-wide stats (`totalPlaces`/`totalReviews`)
+
+**Addendum, surfaced 2026-08-12** after this same ticket was reopened to restore
+the Categories screen's "56,700+ Total Businesses / 10 Categories / 14M+
+Reviews" stats row — same reasoning as above, but platform-wide rather than
+per-category, so it doesn't fit inside `Category`.
+
+- A new top-level query, e.g. `platformStats: PlatformStatsResponse { data:
+  { totalPlaces: Int, totalReviews: Int } }` — `totalPlaces` is `COUNT` over
+  non-deleted `Place`, `totalReviews` is `COUNT` over non-deleted `Review`.
+  "Categories" doesn't need this query at all — it's already real today via
+  `categories().data.length`, no backend change for that number.
+- Same **live, not materialized** philosophy as the rest of this doc. Given
+  this is two unrelated `COUNT`s (not a join), it doesn't obviously belong to
+  either `CategoryRepository` or `PlaceRepository`/`ReviewRepository` alone —
+  simplest is a small dedicated `PlatformStatsService` composing the two
+  existing repositories' own `count()` methods (already part of
+  `BaseRepository`, per `docs/02-current-state.md`) rather than adding a new
+  cross-domain repository. Each repository still owns exactly one table's
+  concerns; the service only orchestrates two independent reads, not a shared
+  write transaction, so this doesn't carry the same complication
+  `signUpBusiness` above does.
+- Not yet built — recorded here so the shape is decided before implementation
+  starts, same as everything else in this section.
+
+## Planned: Place Detail follow-ups (`ReviewReply.createdAt`, review sort, rating breakdown)
+
+**New scope, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
+(ticket `06-place-detail-review.md`) against a real, complete Figma design for it.
+Three small, independent additions:
+
+- **`ReviewReply.createdAt: DateTime`** — the underlying row already has
+  `created_at` (every table does, per this doc's soft-delete/timestamp
+  convention) but `reviewReplyTypedefs.ts`'s `ReviewReply` type doesn't expose
+  it. Trivial: add the field, no migration needed.
+- **`placeReviews(placeId, first, after, sort: ReviewSortEnum)`** — currently
+  has no sort argument at all. A new `ReviewSortEnum` (`RECENT`/`HELPFUL`)
+  mirrors the existing `PlaceSortEnum` pattern on `listPlaces` — `RECENT` orders
+  by `created_at DESC`, `HELPFUL` by the existing `helpfulCount`. Same
+  cursor-pagination shape, just a new ordering.
+- **Rating breakdown** — a per-place count of reviews at each star value
+  (5★→1★), for a bar-chart-style breakdown on the detail page. Same "live,
+  not materialized" treatment as `Place.averageRating` itself and as
+  Categories' `businessCount`/`avgRating` above: a single grouped `COUNT` query
+  (`GROUP BY rating` over that place's non-deleted `Review`s), likely exposed
+  as a new `Place.ratingBreakdown: [RatingBreakdownEntry]` field
+  (`{ stars: Int, count: Int }`) resolved through `ReviewRepository`'s existing
+  `rawQuery` capability — no cross-repository complication, same reasoning as
+  Categories' stats.
+
+None of these are built yet — recorded here so the shape is decided before
+implementation starts, same as everything else in this section.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

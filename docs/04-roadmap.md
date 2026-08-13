@@ -33,35 +33,82 @@ Still open, not part of this phase: doc 2's issue 7 (no tests/CI — see
 `providers_category` table name), the newly-found `SignUpData` schema mismatch, and
 `updatePlace`'s all-fields-required validator.
 
-## Phase 2 — Reviews (the core loop)
+## Phase 2 — Reviews (the core loop) — Done
 
 This is the feature the entire product is named after — prioritize it over dashboards
-or notifications.
+or notifications. Implemented and manually verified end to end across tickets 01-07
+(branches `rmp-4-ticket-01-...` through `rmp-10-ticket-07-helpful-vote-toggle`,
+stacked) — see [PHASE-2-REVIEWS-TICKETS.md](../PHASE-2-REVIEWS-TICKETS.md) for the
+elaborated per-ticket record (design rationale, bugs found during verification,
+code-review fixes). The original design spec, `specs/phase-2-reviews.md`, exists
+only on branch `rmp-3-phase-2-reviews` (not yet merged to `main`), same caveat
+`PHASE-2-REVIEWS-TICKETS.md` itself already notes.
 
-- [ ] `Category` model/repository/service/resolver (migration already exists) — needed as an FK target and for the Categories screen
-- [ ] `Review` model/repository/service/resolver: create/update/delete/getByPlace/getByReviewer, enforcing one review per (user, place)
-- [ ] `ReviewReply` model/repository/service/resolver: owner-only reply, one reply per review
-- [ ] Recompute `Place.averageRating`/`reviewCount` on review create/update/delete (service-layer, inside a transaction)
-- [ ] `REVIEW_VOTES` table + helpful-vote mutation/query
+- [x] `Category` model/repository/service/resolver (migration already exists) — needed as an FK target and for the Categories screen
+- [x] `Review` model/repository/service/resolver: create/update/delete/getByPlace/getByReviewer, enforcing one review per (user, place)
+- [x] `ReviewReply` model/repository/service/resolver: owner-only reply, one reply per review
+- [x] Recompute `Place.averageRating`/`reviewCount` on review create/update/delete (service-layer, inside a transaction)
+- [x] `REVIEW_VOTES` table + helpful-vote mutation/query
 
-## Phase 3 — Discovery
+## Phase 3 — Discovery — Done (backend)
 
-Makes the Discover screen real instead of a single `getPlaceById`.
+Makes the Discover screen real instead of a single `getPlaceById`. Implemented and
+manually verified end to end across two PRs on branch
+`rmp-11-ticket-01-geo-nearby-search` (PR #12: geo/`NEAREST`; PR #13: `price_range`,
+`PLACE_HOURS`/`setPlaceHours`, `HIGHEST_RATED`/`TRENDING` sorts, remaining filters),
+both merged to `main` — see [specs/phase-3-discovery.md](./specs/phase-3-discovery.md)
+for the design, decisions, and acceptance criteria, and
+[07-geo-and-location-strategy.md](./07-geo-and-location-strategy.md) /
+[08-trending-strategy.md](./08-trending-strategy.md) for the geo and trending
+reasoning. One item remains open, deliberately deferred: query-cost/depth limiting
+on `listPlaces` (spec's Open Question 4) — this is now the first fully public,
+caller-controlled, filterable list endpoint in the product, worth revisiting before
+real traffic.
 
-- [ ] `listPlaces` query: filters (category, price range, min rating, open now), sort (rating/trending/new/nearby), pagination via the existing `PageInfoInterface`/`edges` shape
-- [ ] `price_range` column + `PLACE_HOURS` table, "open now" computed from hours + server timezone
-- [ ] Basic geolocation/"nearby" — decide now whether this is PostGIS/lat-lng + Haversine, or deferred to a real geo service later (see open questions)
+- [x] `listPlaces` query: filters (category, price range, min rating, open now, free-text query), sort (rating/trending/new/nearby), pagination via the existing `PageInfoInterface`/`edges` shape
+- [x] `price_range` column + `PLACE_HOURS` table, "open now" computed from hours + server timezone
+- [x] Basic geolocation/"nearby" — decided: lat-lng + Haversine (Tier 0, see [07-geo-and-location-strategy.md](./07-geo-and-location-strategy.md))
 
 ## Phase 4 — Frontend MVP
+
+**Status: ✅ Design decided, not yet built.** Every screen was designed via
+`/wayfinder` + `/prototype` (map and 8 tickets in
+`.scratch/phase-4-frontend-mvp/`, all closed 2026-08-11 → 2026-08-13) — see
+[specs/phase-4-frontend-mvp.md](./specs/phase-4-frontend-mvp.md) for the full
+spec: chosen variant per screen, exact GraphQL operations, new backend scope
+surfaced along the way, and suggested build sequencing. The checkboxes below are
+kept as the roadmap's own tracking, updated as the real `frontend/` build
+actually lands — check the spec for what "done" means per item.
 
 Stand up the frontend against Phases 1–3's API. See
 [05-frontend-plan.md](./05-frontend-plan.md) for the stack decision.
 
 - [ ] Project scaffold + design tokens matching the Figma dark-gradient aesthetic
 - [ ] Auth flows: signup, login, authenticated shell (sidebar nav matching Figma)
+  - [ ] **New scope, surfaced 2026-08-12 while planning the Auth screens**:
+        business-owner signup continues into a "create your place" step right after
+        choosing the Business account type, rather than leaving new business
+        accounts with no listing yet. Requires a new `signUpBusiness` mutation that
+        creates the `User` and `Place` atomically in one transaction — see
+        [03-architecture.md](./03-architecture.md) for the backend shape and
+        [05-frontend-plan.md](./05-frontend-plan.md) for the frontend wizard
+        behavior. Flagged separately rather than folded into the line above since
+        it wasn't part of the original Phase 4 ticket set; may slip to a later
+        phase if it doesn't fit this phase's timeline.
 - [ ] Discover screen (search, filters, sort, card grid)
+  - [ ] **New scope, surfaced 2026-08-12 while prototyping this screen**: a real
+        map view — a "See in map" button next to the results list switches to a
+        map+list split, with a "Back to list" button to return. Ships with
+        **Leaflet + OpenStreetMap** (see [05-frontend-plan.md](./05-frontend-plan.md))
+        — no new backend work, `listPlaces` already returns real lat/lng per place.
 - [ ] Place detail + write/edit a review
 - [ ] Categories screen
+  - [ ] **New scope, surfaced 2026-08-12, reverses an earlier decision on this
+        same ticket**: category cards match Figma exactly — cover photo +
+        "N businesses · X★ avg" — instead of shipping without them. Needs a new
+        `coverImageUrl` field on `Category` plus live-computed `businessCount`/
+        `avgRating` (not materialized). See
+        [03-architecture.md](./03-architecture.md) for the backend shape.
 - [ ] My Reviews screen
 
 ## Phase 5 — Personalization
@@ -102,6 +149,28 @@ cheaper to build once the shapes of those three are stable.
 Not really sequential — start doc 6's testing/CI recommendations as early as Phase 1,
 don't save all of it for the end. This phase is "the remaining, harder ops work":
 deployment pipeline, rate limiting/query cost limiting, observability, load testing.
+
+## Phase 10 — Place attributes & amenities
+
+**New phase, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
+(ticket `06-place-detail-review.md` — a real Figma design for this screen turned up
+with amenity pills like "Great for laptops," "Dog-friendly," "Good WiFi," "Outdoor
+seating"). No backend concept for this exists anywhere today — not a field on
+`Place`, not mentioned in any doc before now. Rather than force it into Phase 4 (it's
+a real, if small, new data model + curation question — a fixed taxonomy of
+attributes? Owner-editable free tags? Curated by category?) or drop it permanently,
+it gets its own phase: shown as illustrative placeholder pills in the Phase 4
+prototype (not wired to any real field), built for real here once the shape of the
+`Place` entity has settled further.
+
+- [ ] Decide the attribute model: fixed taxonomy (enum-like, curated) vs. free-form
+      owner-entered tags vs. category-scoped presets
+- [ ] Data model: likely a join table (`PLACE_ATTRIBUTES` or similar), not a column on
+      `Place` directly, since a place can have several
+- [ ] Owner-editable via the "Manage Listing" flow the Place Detail screen already
+      points at (see ticket 06)
+- [ ] Wire into the Place Detail screen's amenity pills, replacing the Phase 4
+      placeholder content
 
 ## Open questions worth resolving before/around Phase 3-4
 

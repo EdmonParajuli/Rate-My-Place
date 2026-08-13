@@ -1,0 +1,540 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/02-marketing-landing-page.md
+  Sub-shape B (new page) per prototype/UI.md — no frontend/ app exists yet in
+  this repo to host variants inside (Phase 4 hasn't been scaffolded), so there's
+  no existing route to adapt sub-shape A into. This is a standalone static file,
+  same pattern as the ticket-01 design-tokens-reference prototype.
+
+  SOURCE GROUNDING: the real Figma Make source for "Version 2" was located at
+  fileKey oVTXc2TbEHvaGM5mVXL6L1 (App.tsx's ACTIVE default render is actually
+  UserDashboardLayout now — a later iteration — but the marketing components
+  Hero.tsx / Navigation.tsx / Features.tsx / FeaturedBusinesses.tsx /
+  Testimonials.tsx / Footer.tsx still exist as unused files from an earlier
+  iteration of the same Make thread, read directly via ReadMcpResourceTool).
+
+  DISCREPANCY vs. docs/01-vision-and-scope.md, flagged rather than silently
+  resolved: doc 1 describes a "dark-gradient hero" + "animated mesh background"
+  + "recent reviews carousel with helpful-vote interaction" + separate "stats
+  strip". The actual real source's Hero.tsx is LIGHT-themed (blurred color
+  blobs on slate-50, no dark gradient, no mesh), has no reviews-carousel
+  component at all, and its stats (5M+ Active Users / 1.2M Businesses Listed /
+  10M+ Reviews Shared / 98% Satisfaction Rate — literal hardcoded numbers, not
+  computed from any prop/API, which also resolves this ticket's own open
+  question about whether the stats need a backend query: they don't) live
+  embedded inside Testimonials.tsx, not as a standalone strip. Doc 1 was
+  likely written from a different visual read of the Figma file than what
+  this particular Make iteration's buildable source actually contains.
+
+  Rather than silently picking one reading, the 3 variants below deliberately
+  explore both: Variant A stays faithful to the real light-themed source,
+  Variant B builds the doc-1 dark-hero/stats-led version (using ticket 01's
+  actual extracted hero gradient token, not an invented one), Variant C tries
+  a third structural idea neither doc mentions (browse-grid-led, minimal copy)
+  since a UI prototype's job is genuinely distinct structural options, not one
+  faithful port plus filler.
+
+  Photos: reused directly from the real source's own Unsplash URLs (the design
+  itself references remote photos, nothing fabricated here). Icons: real
+  lucide UMD build via CDN + data-lucide attributes — not hand-drawn
+  approximations — since lucide-react is the confirmed icon set (research/
+  design-tokens.md) and the real source imports icons from lucide-react too.
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/marketing-landing-page
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  Variants: ?variant=A (source-faithful) | B (dark-hero, doc-1 reading) | C (browse-grid-led)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Marketing landing page (ticket 02)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#2563EB',
+          accent: '#F59E0B',
+          destructive: '#EF4444',
+        },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+        borderRadius: { xl2: '16px' },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-variant] { display: none; }
+  [data-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 150px; text-align: center; }
+  .hero-gradient {
+    background: linear-gradient(to bottom right, #0F172A, #172554, #0F172A);
+  }
+  .hero-gradient::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 30% 50%, #F59E0B, transparent 50%),
+                       radial-gradient(circle at 70% 30%, #2563EB, transparent 40%);
+    opacity: 0.2;
+  }
+  .scroll-row { display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
+  .scroll-row > * { scroll-snap-align: start; flex-shrink: 0; }
+  .marquee-track { display: flex; gap: 24px; animation: marquee 28s linear infinite; }
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>
+</head>
+<body class="bg-white text-slate-900">
+
+<!-- ============================= VARIANT A ============================= -->
+<!-- Source-faithful: light hero, linear narrative scroll, search is the primary affordance -->
+<div data-variant="A">
+
+  <nav class="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-6 flex justify-between h-20 items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-primary p-2 rounded-xl"><i data-lucide="star" class="w-5 h-5 text-accent fill-accent"></i></div>
+        <span class="heading font-bold text-xl">Rate My <span class="text-primary">Place</span></span>
+      </div>
+      <div class="hidden md:flex items-center gap-3">
+        <button class="text-sm font-medium text-slate-600 hover:text-slate-900 px-4 py-2 rounded-full hover:bg-slate-50">For Users</button>
+        <button class="text-sm font-medium bg-primary text-white px-5 py-2.5 rounded-full hover:bg-blue-700">For Businesses</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="relative overflow-hidden bg-slate-50 pt-16 pb-32">
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-400/20 blur-[100px] pointer-events-none"></div>
+    <div class="absolute top-[20%] right-[-5%] w-[400px] h-[400px] rounded-full bg-emerald-400/20 blur-[100px] pointer-events-none"></div>
+    <div class="relative max-w-4xl mx-auto px-6 text-center">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-primary text-sm font-medium mb-6">
+        <i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i> Over 1 Million Reviews
+      </span>
+      <h1 class="heading text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+        Discover, Review, and<br/>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-500">Grow Places Together.</span>
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto mb-10">Find the best local places, read trusted community reviews, and help your favorite spots shine.</p>
+
+      <div class="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/50 flex flex-col md:flex-row gap-2">
+        <div class="flex-1 flex items-center px-4 py-3 bg-slate-50 rounded-xl">
+          <i data-lucide="search" class="w-5 h-5 text-slate-400 mr-3"></i>
+          <input type="text" placeholder="What are you looking for?" class="w-full bg-transparent outline-none text-sm" />
+        </div>
+        <div class="flex-[0.7] flex items-center px-4 py-3 bg-slate-50 rounded-xl">
+          <i data-lucide="map-pin" class="w-5 h-5 text-slate-400 mr-3"></i>
+          <input type="text" placeholder="Location" class="w-full bg-transparent outline-none text-sm" />
+        </div>
+        <button class="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700">Search</button>
+      </div>
+
+      <div class="mt-8 flex flex-wrap justify-center gap-4 text-sm text-slate-500">
+        <span>Popular:</span>
+        <a class="underline decoration-slate-300 hover:text-primary hover:decoration-primary">Restaurants</a>
+        <a class="underline decoration-slate-300 hover:text-primary hover:decoration-primary">Cafés</a>
+        <a class="underline decoration-slate-300 hover:text-primary hover:decoration-primary">Fitness</a>
+        <a class="underline decoration-slate-300 hover:text-primary hover:decoration-primary">Hotels</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="py-24 max-w-7xl mx-auto px-6">
+    <div class="grid md:grid-cols-2 gap-16 items-center mb-32">
+      <div class="relative">
+        <div class="absolute -inset-4 bg-blue-50 rounded-3xl -rotate-3"></div>
+        <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=800" class="relative rounded-2xl shadow-lg object-cover h-[380px] w-full" />
+        <div class="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-xl flex items-center gap-4">
+          <div class="bg-amber-100 p-2 rounded-full"><i data-lucide="thumbs-up" class="w-5 h-5 text-amber-600"></i></div>
+          <div><p class="text-sm font-bold">Review Submitted</p><p class="text-xs text-slate-500">You earned a helpful badge!</p></div>
+        </div>
+      </div>
+      <div>
+        <h2 class="text-sm font-bold text-primary tracking-wider uppercase mb-2">For Reviewers</h2>
+        <h3 class="heading text-3xl font-bold mb-6">Make your voice heard in the community.</h3>
+        <div class="space-y-5 mb-8">
+          <div class="flex gap-4"><i data-lucide="message-square" class="w-5 h-5 text-primary mt-1"></i><div><h4 class="font-bold">Give ratings and reviews</h4><p class="text-slate-600 text-sm">Share your honest experiences to help others decide.</p></div></div>
+          <div class="flex gap-4"><i data-lucide="bookmark" class="w-5 h-5 text-primary mt-1"></i><div><h4 class="font-bold">Save favorite places</h4><p class="text-slate-600 text-sm">Keep track of the spots you love.</p></div></div>
+          <div class="flex gap-4"><i data-lucide="shield-check" class="w-5 h-5 text-primary mt-1"></i><div><h4 class="font-bold">Read verified opinions</h4><p class="text-slate-600 text-sm">Trust the community — reviews are genuine.</p></div></div>
+        </div>
+        <button class="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700 shadow-lg shadow-blue-600/20">Discover &amp; Review Places</button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-16 items-center">
+      <div class="order-2 md:order-1">
+        <h2 class="text-sm font-bold text-emerald-600 tracking-wider uppercase mb-2">For Businesses</h2>
+        <h3 class="heading text-3xl font-bold mb-6">Take control of your online reputation.</h3>
+        <div class="space-y-5 mb-8">
+          <div class="flex gap-4"><i data-lucide="trending-up" class="w-5 h-5 text-emerald-600 mt-1"></i><div><h4 class="font-bold">Monitor ratings and reviews</h4><p class="text-slate-600 text-sm">Get notified when customers leave feedback.</p></div></div>
+          <div class="flex gap-4"><i data-lucide="message-square" class="w-5 h-5 text-emerald-600 mt-1"></i><div><h4 class="font-bold">Respond to customers</h4><p class="text-slate-600 text-sm">Build trust by engaging directly.</p></div></div>
+          <div class="flex gap-4"><i data-lucide="bar-chart-3" class="w-5 h-5 text-emerald-600 mt-1"></i><div><h4 class="font-bold">View analytics &amp; insights</h4><p class="text-slate-600 text-sm">Track your reputation score over time.</p></div></div>
+        </div>
+        <button class="bg-slate-900 text-white px-6 py-3 rounded-xl font-medium hover:bg-slate-800 shadow-lg">Claim Your Place</button>
+      </div>
+      <div class="order-1 md:order-2 relative">
+        <div class="absolute -inset-4 bg-emerald-50 rounded-3xl rotate-3"></div>
+        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32d7?auto=format&fit=crop&q=80&w=800" class="relative rounded-2xl shadow-lg object-cover h-[380px] w-full" />
+        <div class="absolute top-6 -left-6 bg-white p-4 rounded-xl shadow-xl w-44">
+          <p class="text-sm font-bold">Reputation Score</p>
+          <div class="flex items-end gap-2"><span class="text-3xl font-black text-emerald-500">4.9</span><span class="text-sm text-slate-500 pb-1">/ 5.0</span></div>
+          <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div class="bg-emerald-500 h-2 rounded-full w-[95%]"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex justify-between items-end mb-10">
+        <div><h2 class="heading text-3xl font-bold mb-2">Featured Places</h2><p class="text-slate-600">Top-rated spots trusted by our community.</p></div>
+        <button class="hidden md:flex items-center text-primary font-medium">View All <i data-lucide="external-link" class="w-4 h-4 ml-1"></i></button>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" id="a-biz-grid"></div>
+    </div>
+  </section>
+
+  <section class="py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="heading text-3xl font-bold mb-4">Loved by Users &amp; Places</h2>
+        <p class="text-slate-600 max-w-2xl mx-auto">Don't just take our word for it.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-8 mb-16" id="a-testimonials"></div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 bg-slate-900 rounded-3xl p-10 md:p-16">
+        <div class="text-center"><div class="text-3xl md:text-5xl font-black text-white mb-2">5M+</div><div class="text-slate-400 text-sm">Active Users</div></div>
+        <div class="text-center"><div class="text-3xl md:text-5xl font-black text-white mb-2">1.2M</div><div class="text-slate-400 text-sm">Places Listed</div></div>
+        <div class="text-center"><div class="text-3xl md:text-5xl font-black text-white mb-2">10M+</div><div class="text-slate-400 text-sm">Reviews Shared</div></div>
+        <div class="text-center"><div class="text-3xl md:text-5xl font-black text-white mb-2">98%</div><div class="text-slate-400 text-sm">Satisfaction Rate</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="a-footer"></div>
+</div>
+
+<!-- ============================= VARIANT B ============================= -->
+<!-- Dark-hero, doc-1 reading: stats live in the hero, dual-path chooser is the primary affordance -->
+<div data-variant="B">
+
+  <nav class="sticky top-0 z-40 w-full bg-slate-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-6 flex justify-between h-20 items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-primary p-2 rounded-xl"><i data-lucide="star" class="w-5 h-5 text-accent fill-accent"></i></div>
+        <span class="heading font-bold text-xl text-white">Rate My <span class="text-blue-400">Place</span></span>
+      </div>
+      <div class="hidden md:flex items-center gap-3">
+        <button class="text-sm font-medium text-slate-300 hover:text-white px-4 py-2 rounded-full hover:bg-white/5">Sign In</button>
+        <button class="text-sm font-medium bg-accent text-slate-900 px-5 py-2.5 rounded-full hover:brightness-95">Get Started</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="relative hero-gradient pt-20 pb-16 overflow-hidden">
+    <div class="relative max-w-4xl mx-auto px-6 text-center">
+      <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-sm font-medium mb-6">
+        <i data-lucide="sparkles" class="w-4 h-4 text-accent"></i> Trusted by millions of local reviewers
+      </span>
+      <h1 class="heading text-5xl md:text-6xl font-extrabold tracking-tight mb-6 text-white">
+        Find it. Review it.<br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-blue-400">Help it grow.</span>
+      </h1>
+      <p class="text-lg text-slate-300 max-w-2xl mx-auto mb-10">The reviews marketplace connecting reviewers and local businesses.</p>
+
+      <div class="max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 mb-6">
+        <div class="flex-1 flex items-center px-4 py-3 bg-slate-50 rounded-xl">
+          <i data-lucide="search" class="w-5 h-5 text-slate-400 mr-3"></i>
+          <input type="text" placeholder="Search places..." class="w-full bg-transparent outline-none text-sm text-slate-900" />
+        </div>
+        <button class="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-blue-700">Search</button>
+      </div>
+      <div class="flex flex-wrap justify-center gap-2 mb-14">
+        <span class="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium">🍽️ Restaurants</span>
+        <span class="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium">☕ Cafés</span>
+        <span class="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium">🏨 Hotels</span>
+        <span class="px-3 py-1.5 rounded-full bg-white/10 text-white text-xs font-medium">💪 Fitness</span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
+        <div class="text-center"><div class="heading text-2xl md:text-4xl font-black text-white">5M+</div><div class="text-slate-400 text-xs md:text-sm">Active Users</div></div>
+        <div class="text-center"><div class="heading text-2xl md:text-4xl font-black text-white">1.2M</div><div class="text-slate-400 text-xs md:text-sm">Places Listed</div></div>
+        <div class="text-center"><div class="heading text-2xl md:text-4xl font-black text-white">10M+</div><div class="text-slate-400 text-xs md:text-sm">Reviews Shared</div></div>
+        <div class="text-center"><div class="heading text-2xl md:text-4xl font-black text-white">98%</div><div class="text-slate-400 text-xs md:text-sm">Satisfaction</div></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="py-16 max-w-5xl mx-auto px-6">
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="rounded-2xl border-2 border-blue-100 bg-blue-50 p-8 hover:border-primary transition-colors cursor-pointer">
+        <div class="w-12 h-12 rounded-xl bg-primary flex items-center justify-center mb-4"><i data-lucide="user" class="w-6 h-6 text-white"></i></div>
+        <h3 class="heading text-xl font-bold mb-2">I'm here to review</h3>
+        <p class="text-slate-600 text-sm mb-4">Discover local places, share honest reviews, and save your favorites.</p>
+        <span class="text-primary font-medium text-sm flex items-center gap-1">Get started <i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+      </div>
+      <div class="rounded-2xl border-2 border-emerald-100 bg-emerald-50 p-8 hover:border-emerald-500 transition-colors cursor-pointer">
+        <div class="w-12 h-12 rounded-xl bg-emerald-600 flex items-center justify-center mb-4"><i data-lucide="building-2" class="w-6 h-6 text-white"></i></div>
+        <h3 class="heading text-xl font-bold mb-2">I run a business</h3>
+        <p class="text-slate-600 text-sm mb-4">Claim your listing, respond to reviews, and grow your reputation.</p>
+        <span class="text-emerald-600 font-medium text-sm flex items-center gap-1">Claim your place <i data-lucide="arrow-right" class="w-4 h-4"></i></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex justify-between items-end mb-8">
+        <h2 class="heading text-2xl font-bold">Trending near you</h2>
+        <span class="text-sm text-slate-500">Scroll for more →</span>
+      </div>
+      <div class="scroll-row" id="b-biz-scroll"></div>
+    </div>
+  </section>
+
+  <section class="py-16 max-w-7xl mx-auto px-6">
+    <div class="grid md:grid-cols-3 gap-6" id="b-features"></div>
+  </section>
+
+  <section class="py-16 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="heading text-2xl font-bold text-center mb-10">What people are saying</h2>
+      <div class="grid md:grid-cols-3 gap-6" id="b-testimonials"></div>
+    </div>
+  </section>
+
+  <section class="py-16 max-w-5xl mx-auto px-6 text-center">
+    <div class="hero-gradient relative rounded-3xl p-12 overflow-hidden">
+      <div class="relative">
+        <h2 class="heading text-3xl font-bold text-white mb-3">Ready to get started?</h2>
+        <p class="text-slate-300 mb-6">Join millions finding and reviewing great local places.</p>
+        <button class="bg-accent text-slate-900 px-8 py-3 rounded-xl font-bold hover:brightness-95">Create your free account</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="b-footer"></div>
+</div>
+
+<!-- ============================= VARIANT C ============================= -->
+<!-- Browse-grid-led: minimal copy, business grid is the primary affordance above the fold -->
+<div data-variant="C">
+
+  <nav class="sticky top-0 z-40 w-full bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-6 flex justify-between h-16 items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i></div>
+        <span class="heading font-bold text-lg">Rate My Place</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="text-sm font-medium text-slate-600 px-3 py-1.5 rounded-full hover:bg-slate-50">Sign In</button>
+        <button class="text-sm font-medium bg-primary text-white px-4 py-1.5 rounded-full">Sign Up</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 pt-10 pb-6">
+    <h1 class="heading text-3xl md:text-4xl font-extrabold mb-4">Great local places, rated by real people.</h1>
+    <div class="flex flex-col md:flex-row gap-2 max-w-2xl">
+      <div class="flex-1 flex items-center px-4 py-2.5 bg-slate-100 rounded-xl">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 mr-2"></i>
+        <input type="text" placeholder="Search places, categories..." class="w-full bg-transparent outline-none text-sm" />
+      </div>
+      <button class="bg-primary text-white px-5 py-2.5 rounded-xl font-medium text-sm">Search</button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 mb-4">
+    <div class="flex flex-wrap gap-2" id="c-chips"></div>
+  </div>
+
+  <section class="max-w-7xl mx-auto px-6 pb-16">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="c-biz-grid"></div>
+    <div class="text-center mt-8">
+      <button class="border border-slate-300 px-6 py-2.5 rounded-xl font-medium text-sm hover:bg-slate-50">Browse all places</button>
+    </div>
+  </section>
+
+  <section class="bg-slate-50 py-14">
+    <div class="max-w-5xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center">
+      <div>
+        <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 flex items-center justify-center mb-3"><i data-lucide="message-square" class="w-6 h-6 text-primary"></i></div>
+        <h4 class="font-bold mb-1">Write reviews</h4>
+        <p class="text-sm text-slate-600">Share honest experiences with the community.</p>
+      </div>
+      <div>
+        <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-50 flex items-center justify-center mb-3"><i data-lucide="bookmark" class="w-6 h-6 text-emerald-600"></i></div>
+        <h4 class="font-bold mb-1">Save favorites</h4>
+        <p class="text-sm text-slate-600">Build your own list of go-to spots.</p>
+      </div>
+      <div>
+        <div class="w-12 h-12 mx-auto rounded-xl bg-amber-50 flex items-center justify-center mb-3"><i data-lucide="building-2" class="w-6 h-6 text-amber-600"></i></div>
+        <h4 class="font-bold mb-1">Own a business?</h4>
+        <p class="text-sm text-slate-600"><a class="text-primary underline">Claim your listing</a> to respond to reviews.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-14 overflow-hidden">
+    <h2 class="heading text-xl font-bold text-center mb-8">Loved by our community</h2>
+    <div class="marquee-track" id="c-marquee"></div>
+  </section>
+
+  <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-6 py-10 border-t border-slate-100 text-center">
+    <div><div class="heading text-xl font-black">5M+</div><div class="text-xs text-slate-500">Active Users</div></div>
+    <div><div class="heading text-xl font-black">1.2M</div><div class="text-xs text-slate-500">Places Listed</div></div>
+    <div><div class="heading text-xl font-black">10M+</div><div class="text-xs text-slate-500">Reviews Shared</div></div>
+    <div><div class="heading text-xl font-black">98%</div><div class="text-xs text-slate-500">Satisfaction</div></div>
+  </div>
+
+  <div id="c-footer" class="pb-20 md:pb-0"></div>
+
+  <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 z-30">
+    <button class="w-full bg-primary text-white py-3 rounded-xl font-bold text-sm">Get Started Free</button>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — Source-faithful</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  const BUSINESSES = [
+    { name: "The Rustic Bean Cafe", category: "Coffee & Bakery", rating: 4.8, reviews: 342, location: "Downtown, Seattle", image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=400", featured: true },
+    { name: "Elite Auto Repair", category: "Automotive Services", rating: 4.9, reviews: 856, location: "Westside, Austin", image: "https://images.unsplash.com/photo-1613214149922-f1809c99b414?auto=format&fit=crop&q=80&w=400", featured: false },
+    { name: "Green Thumb Landscaping", category: "Home Services", rating: 4.6, reviews: 128, location: "Suburbs, Chicago", image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=400", featured: false },
+    { name: "Zenith Fitness Club", category: "Health & Wellness", rating: 4.7, reviews: 512, location: "Midtown, Atlanta", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=400", featured: false },
+  ];
+  const TESTIMONIALS = [
+    { name: "Sarah Jenkins", role: "Local Guide", text: "Rate My Place helped me find the best plumber in town when I had an emergency. The reviews were spot on!", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" },
+    { name: "Michael Chen", role: "Café Owner", text: "Claiming my listing changed everything. I can respond to customers directly and show we care.", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150" },
+    { name: "Emily Rodriguez", role: "Frequent Reviewer", text: "I love the community feel. People share hidden gems, not just complaints.", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150" },
+  ];
+
+  function bizCard(b) {
+    return `<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all">
+      <div class="h-40 relative">
+        ${b.featured ? '<div class="absolute top-3 left-3 bg-primary text-white text-xs font-bold px-2 py-1 rounded-md z-10">FEATURED</div>' : ''}
+        <img src="${b.image}" class="w-full h-full object-cover" />
+      </div>
+      <div class="p-4">
+        <div class="text-xs font-semibold text-primary mb-1">${b.category}</div>
+        <h3 class="font-bold text-sm mb-2 truncate">${b.name}</h3>
+        <div class="flex items-center gap-2 mb-2">
+          <div class="flex items-center bg-amber-50 px-2 py-0.5 rounded-md"><i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent mr-1"></i><span class="font-bold text-amber-700 text-xs">${b.rating}</span></div>
+          <span class="text-xs text-slate-500">(${b.reviews})</span>
+        </div>
+        <div class="flex items-center text-xs text-slate-500"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${b.location}</div>
+      </div>
+    </div>`;
+  }
+  function bizCardWide(b) {
+    return `<div class="w-64 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="h-32"><img src="${b.image}" class="w-full h-full object-cover" /></div>
+      <div class="p-3">
+        <h3 class="font-bold text-sm mb-1 truncate">${b.name}</h3>
+        <div class="flex items-center gap-1 text-xs text-amber-700"><i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i>${b.rating} · ${b.reviews} reviews</div>
+      </div>
+    </div>`;
+  }
+  function testimonialCard(t) {
+    return `<div class="bg-white p-6 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100">
+      <div class="flex gap-1 mb-4">${'<i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i>'.repeat(5)}</div>
+      <p class="text-sm text-slate-700 italic mb-6">"${t.text}"</p>
+      <div class="flex items-center gap-3">
+        <img src="${t.avatar}" class="w-10 h-10 rounded-full object-cover" />
+        <div><h4 class="font-bold text-sm">${t.name}</h4><p class="text-xs text-slate-500">${t.role}</p></div>
+      </div>
+    </div>`;
+  }
+  function footer() {
+    return `<footer class="bg-slate-50 border-t border-slate-200 pt-12 pb-8">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+        <div class="col-span-2">
+          <div class="flex items-center gap-2 mb-3"><div class="bg-primary p-1.5 rounded-lg"><i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i></div><span class="heading font-bold">Rate My Place</span></div>
+          <p class="text-slate-500 text-sm max-w-sm">Empowering communities and helping local places grow through honest reviews.</p>
+        </div>
+        <div><h4 class="font-bold text-sm mb-3">For Users</h4><ul class="space-y-2 text-sm text-slate-500"><li>Write a Review</li><li>Search Places</li></ul></div>
+        <div><h4 class="font-bold text-sm mb-3">For Businesses</h4><ul class="space-y-2 text-sm text-slate-500"><li>Claim your Place</li><li>Dashboard</li></ul></div>
+      </div>
+      <div class="max-w-7xl mx-auto px-6 pt-6 border-t border-slate-200 text-sm text-slate-500 text-center">© 2026 Rate My Place. All rights reserved.</div>
+    </footer>`;
+  }
+
+  document.getElementById('a-biz-grid').innerHTML = BUSINESSES.map(bizCard).join('');
+  document.getElementById('a-testimonials').innerHTML = TESTIMONIALS.map(testimonialCard).join('');
+  document.getElementById('a-footer').innerHTML = footer();
+
+  document.getElementById('b-biz-scroll').innerHTML = BUSINESSES.concat(BUSINESSES).map(bizCardWide).join('');
+  document.getElementById('b-testimonials').innerHTML = TESTIMONIALS.map(testimonialCard).join('');
+  document.getElementById('b-footer').innerHTML = footer();
+  document.getElementById('b-features').innerHTML = [
+    ['message-square', 'bg-blue-50 text-primary', 'Give ratings & reviews', 'Share honest experiences with the community.'],
+    ['trending-up', 'bg-emerald-50 text-emerald-600', 'Monitor your reputation', 'Track ratings and respond to feedback.'],
+    ['shield-check', 'bg-amber-50 text-amber-600', 'Verified opinions', 'Reviews you can actually trust.'],
+  ].map(([icon, cls, title, desc]) => `<div class="p-6 rounded-2xl border border-slate-100"><div class="w-10 h-10 rounded-xl ${cls} flex items-center justify-center mb-3"><i data-lucide="${icon}" class="w-5 h-5"></i></div><h4 class="font-bold mb-1">${title}</h4><p class="text-sm text-slate-600">${desc}</p></div>`).join('');
+
+  document.getElementById('c-biz-grid').innerHTML = BUSINESSES.concat(BUSINESSES.slice(0,4)).map(bizCard).join('');
+  document.getElementById('c-footer').innerHTML = footer();
+  document.getElementById('c-chips').innerHTML = ['All','Restaurants','Cafés','Hotels','Fitness','Shopping'].map((c,i) =>
+    `<button class="px-3 py-1.5 rounded-full text-xs font-medium ${i===0 ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600'}">${c}</button>`).join('');
+  document.getElementById('c-marquee').innerHTML = TESTIMONIALS.concat(TESTIMONIALS).map(t =>
+    `<div class="w-80 flex-shrink-0 bg-white p-5 rounded-xl border border-slate-200"><p class="text-sm text-slate-700 italic mb-3">"${t.text}"</p><div class="flex items-center gap-2"><img src="${t.avatar}" class="w-8 h-8 rounded-full object-cover"/><span class="text-xs font-bold">${t.name}</span></div></div>`).join('');
+
+  // --- switcher ---
+  const variants = [
+    { key: 'A', name: 'Source-faithful' },
+    { key: 'B', name: 'Dark hero, dual-path (doc 1 reading)' },
+    { key: 'C', name: 'Browse-grid-led' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function render() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-variant]').forEach(el => el.classList.toggle('active', el.dataset.variant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    const params = new URLSearchParams(location.search);
+    params.set('variant', variants[i].key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    render();
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  render();
+</script>
+
+</body>
+</html>

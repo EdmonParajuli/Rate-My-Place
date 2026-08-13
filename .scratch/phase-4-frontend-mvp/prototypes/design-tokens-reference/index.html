@@ -1,0 +1,348 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets deleted/captured.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/01-design-tokens.md (Design tokens)
+  Findings this renders: .scratch/phase-4-frontend-mvp/research/design-tokens.md
+
+  Branch-choice note (deviating from the standard prototype/UI.md "3 radically
+  different structural variants + switcher" pattern, stated here per that skill's
+  own instruction to flag the assumption when the mapping is ambiguous):
+
+  Ticket 01 is a CLOSED RESEARCH ticket — its findings are facts read out of the
+  real Figma Make source (theme.css, App.tsx), not an open "which structural layout
+  do we want" decision. Building 3 fake structural variants of the same tokens would
+  manufacture a choice that doesn't exist — the source already answers "light app,
+  dark gradient only on hero sections," not something to A/B here.
+
+  So this is a single reference/validation artifact instead: "do these extracted
+  tokens actually compose into something that looks like the Rate My Place design,
+  before they're carried into the real frontend/ tokens.css?" The one genuinely
+  UNRESOLVED sub-question the research flagged — Plus Jakarta Sans's role vs Manrope
+  (confirmed body font, heading role inferred not confirmed) — gets a real toggle
+  below so that comparison is still interactive, not just asserted.
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/design-tokens-reference
+    python3 -m http.server 8000   # then visit http://localhost:8000
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Design tokens reference (ticket 01)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* --- exact tokens from research/design-tokens.md, light theme --- */
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #ffffff;
+    --primary: #2563EB;
+    --primary-foreground: #ffffff;
+    --secondary: #EFF6FF;
+    --accent: #F59E0B;
+    --destructive: #EF4444;
+    --muted: #E2E8F0;
+    --muted-foreground: #64748B;
+    --border: rgba(15,23,42,0.08);
+    --switch-background: #CBD5E1;
+    --ring: #2563EB;
+    --chart-1: #2563EB;
+    --chart-2: #F59E0B;
+    --chart-3: #10B981;
+    --chart-4: #8B5CF6;
+    --chart-5: #EC4899;
+    /* sidebar-* are oklch in source; approximated to hex here for a browser-safe
+       prototype — close enough for a visual check, not a byte-exact transcription */
+    --sidebar: #FAFAFA;
+    --sidebar-primary: #030213;
+
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-md: 10px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 16px; /* literal rounded-2xl usage, most common on cards/heroes */
+    --shadow-sm: 0 1px 2px rgba(15,23,42,0.06);
+    --shadow-md: 0 4px 10px rgba(15,23,42,0.10);
+    --shadow-lg: 0 10px 25px rgba(15,23,42,0.14);
+    /* shadow-blue's exact value wasn't resolved in the research pass — placeholder,
+       flagged in the ticket for whoever needs it exactly */
+    --shadow-blue: 0 8px 20px rgba(37,99,235,0.35);
+
+    --font-body: 'Manrope', sans-serif;   /* confirmed in source, App.tsx:458 */
+    --font-heading: 'Plus Jakarta Sans', sans-serif; /* inferred, not confirmed */
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 32px 32px 120px;
+  }
+  h1, h2, h3 { font-family: var(--font-heading); margin: 0 0 4px; }
+  /* typography-toggle: when active, swap which face does headings vs body */
+  body.swap-fonts { --font-body: 'Plus Jakarta Sans', sans-serif; --font-heading: 'Manrope', sans-serif; }
+
+  section { margin-bottom: 56px; max-width: 1100px; }
+  section > p.desc { color: var(--muted-foreground); margin-top: 0; max-width: 70ch; }
+  .section-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted-foreground); font-weight: 600; margin-bottom: 8px; }
+
+  .swatch-row { display: flex; flex-wrap: wrap; gap: 16px; }
+  .swatch { width: 140px; }
+  .swatch .chip { height: 64px; border-radius: var(--radius-md); border: 1px solid var(--border); }
+  .swatch .meta { font-size: 12px; margin-top: 6px; }
+  .swatch .meta .name { font-weight: 600; }
+  .swatch .meta .val { color: var(--muted-foreground); font-family: monospace; }
+
+  .hero {
+    border-radius: var(--radius-2xl);
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(to bottom right, #0F172A, #172554, #0F172A);
+    color: white;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 30% 50%, #F59E0B, transparent 50%),
+                       radial-gradient(circle at 70% 30%, #2563EB, transparent 40%);
+    opacity: 0.2;
+  }
+  .hero h2 { position: relative; font-size: 28px; }
+  .hero p { position: relative; color: #CBD5E1; margin: 8px 0 0; }
+  .hero-note { font-size: 12px; color: var(--muted-foreground); margin-top: 8px; }
+
+  .category-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .category-card {
+    border-radius: var(--radius-lg); border: 1px solid var(--border);
+    padding: 16px; background: var(--card); box-shadow: var(--shadow-sm);
+  }
+  .category-icon { width: 36px; height: 36px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
+  .category-name { font-size: 13px; font-weight: 600; }
+
+  .radius-row, .shadow-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .radius-box { width: 88px; height: 88px; background: var(--secondary);
+    border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--muted-foreground); font-family: monospace; }
+  .shadow-box { width: 140px; height: 88px; background: var(--card); border-radius: var(--radius-lg);
+    display: flex; align-items: center; justify-content: center; font-size: 11px;
+    color: var(--muted-foreground); font-family: monospace; }
+
+  button.toggle {
+    font-family: var(--font-body); font-size: 13px; font-weight: 600;
+    padding: 8px 14px; border-radius: var(--radius-md); border: 1px solid var(--border);
+    background: var(--card); color: var(--foreground); cursor: pointer;
+  }
+  button.toggle:hover { background: var(--secondary); }
+
+  .type-specimen h3 { font-size: 26px; margin-bottom: 2px; }
+  .type-specimen .weight-row { display: flex; gap: 24px; align-items: baseline; margin: 6px 0; }
+  .type-specimen .weight-row span.tag { font-family: monospace; font-size: 11px; color: var(--muted-foreground); width: 60px; }
+  .type-specimen .body-sample { max-width: 60ch; color: var(--foreground); margin-top: 12px; }
+
+  /* --- app-shell mockup: sidebar + topbar + content, using real sidebar widths --- */
+  .shell-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
+    box-shadow: var(--shadow-md); display: flex; height: 460px; background: var(--card); }
+  .sidebar { width: 16rem; background: var(--sidebar); border-right: 1px solid var(--border);
+    padding: 16px 12px; transition: width 0.15s ease; flex-shrink: 0; overflow: hidden; }
+  .sidebar.collapsed { width: 3rem; padding: 16px 8px; }
+  .sidebar .brand { font-family: var(--font-heading); font-weight: 800; font-size: 15px; color: var(--sidebar-primary);
+    padding: 0 8px 16px; white-space: nowrap; }
+  .sidebar .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: var(--radius-md);
+    font-size: 14px; font-weight: 500; color: var(--foreground); cursor: default; white-space: nowrap; }
+  .sidebar .nav-item .dot { width: 18px; height: 18px; border-radius: 6px; background: var(--muted); flex-shrink: 0; }
+  .sidebar .nav-item.active { background: var(--secondary); color: var(--primary); }
+  .sidebar .nav-item.active .dot { background: var(--primary); }
+  .shell-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .shell-topbar { height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+    padding: 0 20px; gap: 12px; flex-shrink: 0; }
+  .shell-topbar input { flex: 1; max-width: 320px; border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 7px 12px; font-family: var(--font-body); font-size: 13px; background: var(--background); }
+  .shell-topbar .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); margin-left: auto; }
+  .shell-content { padding: 20px; overflow: auto; background: var(--background); flex: 1; }
+
+  .place-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 14px; box-shadow: var(--shadow-sm); }
+  .place-card .top-badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; background: var(--accent); color: white; padding: 2px 8px; border-radius: var(--radius-sm); margin-bottom: 8px; }
+  .place-card h4 { margin: 0 0 4px; font-family: var(--font-heading); font-size: 15px; }
+  .place-card .meta-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted-foreground); margin-top: 8px; }
+  .place-card .rating { color: var(--foreground); font-weight: 600; }
+
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 16px; box-shadow: var(--shadow-sm); }
+  .stat-card .label { font-size: 12px; color: var(--muted-foreground); margin-bottom: 6px; }
+  .stat-card .value { font-family: var(--font-heading); font-size: 24px; font-weight: 700; }
+
+  .review-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 16px; box-shadow: var(--shadow-sm); }
+  .review-card .stars { color: var(--accent); font-size: 14px; margin-bottom: 6px; }
+  .review-card p { margin: 0 0 10px; font-size: 13px; }
+  .helpful-btn { font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--secondary);
+    color: var(--primary); border-radius: var(--radius-sm); padding: 4px 10px; cursor: pointer; }
+
+  .content-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #0F172A; color: white; font-size: 12px; font-weight: 600;
+    padding: 10px 18px; border-radius: 999px; box-shadow: var(--shadow-lg);
+    font-family: var(--font-body); z-index: 100; letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<h1 style="font-size:22px;">Design tokens reference — ticket 01</h1>
+<p class="desc" style="max-width:70ch;">Not a 3-variant prototype (see the top-of-file
+comment for why) — a single reference implementation of the exact tokens found in
+<code>research/design-tokens.md</code>, assembled into near-real components so they can
+be sanity-checked before landing in the real <code>frontend/</code> app.</p>
+
+<section>
+  <div class="section-label">Color palette (light theme)</div>
+  <div class="swatch-row" id="palette"></div>
+</section>
+
+<section>
+  <div class="section-label">Hero gradient — one-off treatment, not a global dark theme</div>
+  <div class="hero">
+    <h2>Browse by Interest</h2>
+    <p>slate-900 → blue-950 → slate-900 base, two radial blooms (accent + primary) at 20% opacity</p>
+  </div>
+  <p class="hero-note">Per the research: this gradient is scoped to hero sections only — the rest of the app (sidebar, cards, content below) stays on the light palette above, confirmed from theme.css's default (non-.dark) root.</p>
+</section>
+
+<section>
+  <div class="section-label">Category accent colors (10, exact from App.tsx)</div>
+  <div class="category-grid" id="categories"></div>
+</section>
+
+<section>
+  <div class="section-label">Typography — Manrope (confirmed body) × Plus Jakarta Sans (inferred heading role)</div>
+  <button class="toggle" onclick="document.body.classList.toggle('swap-fonts'); document.getElementById('font-state').textContent = document.body.classList.contains('swap-fonts') ? 'Swapped: Plus Jakarta Sans = body, Manrope = heading' : 'Default: Manrope = body, Plus Jakarta Sans = heading';">
+    Toggle heading/body pairing
+  </button>
+  <p id="font-state" style="font-size:12px;color:var(--muted-foreground);margin:8px 0 20px;">Default: Manrope = body, Plus Jakarta Sans = heading</p>
+  <div class="type-specimen">
+    <h3>Discover great places near you</h3>
+    <div class="weight-row"><span class="tag">700</span><span style="font-family:var(--font-heading);font-weight:700;font-size:18px;">Trending this week</span></div>
+    <div class="weight-row"><span class="tag">500</span><span style="font-family:var(--font-heading);font-weight:500;font-size:18px;">New nearby</span></div>
+    <p class="body-sample">Body copy in Manrope — this is what a review or a place description reads like at normal weight and size, the way it'll actually appear across Discover, Place Detail, and My Reviews.</p>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Radius scale</div>
+  <div class="radius-row">
+    <div class="radius-box" style="border-radius:var(--radius-sm)">sm · 8px</div>
+    <div class="radius-box" style="border-radius:var(--radius-md)">md · 10px</div>
+    <div class="radius-box" style="border-radius:var(--radius-lg)">lg · 12px</div>
+    <div class="radius-box" style="border-radius:var(--radius-xl)">xl · 16px</div>
+    <div class="radius-box" style="border-radius:var(--radius-2xl)">2xl · lit.</div>
+    <div class="radius-box" style="border-radius:9999px">full</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Shadow elevation</div>
+  <div class="shadow-row">
+    <div class="shadow-box" style="box-shadow:var(--shadow-sm)">sm (22× — default)</div>
+    <div class="shadow-box" style="box-shadow:var(--shadow-md)">md (5×)</div>
+    <div class="shadow-box" style="box-shadow:var(--shadow-lg)">lg (4×)</div>
+    <div class="shadow-box" style="box-shadow:var(--shadow-blue)">blue (unresolved, approx.)</div>
+  </div>
+</section>
+
+<section>
+  <div class="section-label">Assembled: authenticated shell mock (real sidebar widths: 16rem ⇄ 3rem)</div>
+  <button class="toggle" style="margin-bottom:12px;" onclick="document.getElementById('sidebar-el').classList.toggle('collapsed')">
+    Toggle sidebar collapse
+  </button>
+  <div class="shell-wrap">
+    <div class="sidebar" id="sidebar-el">
+      <div class="brand">Rate My Place</div>
+      <div class="nav-item active"><span class="dot"></span><span>Discover</span></div>
+      <div class="nav-item"><span class="dot"></span><span>Categories</span></div>
+      <div class="nav-item"><span class="dot"></span><span>My Reviews</span></div>
+    </div>
+    <div class="shell-main">
+      <div class="shell-topbar">
+        <input type="text" placeholder="Search places..." />
+        <div class="avatar"></div>
+      </div>
+      <div class="shell-content">
+        <div class="content-grid" style="margin-bottom:14px;">
+          <div class="stat-card"><div class="label">Places nearby</div><div class="value" style="color:var(--primary);">128</div></div>
+          <div class="stat-card"><div class="label">Avg rating</div><div class="value" style="color:var(--accent);">4.6</div></div>
+          <div class="stat-card"><div class="label">New this week</div><div class="value" style="color:var(--chart-3);">9</div></div>
+        </div>
+        <div class="content-grid">
+          <div class="place-card">
+            <span class="top-badge">Top Rated</span>
+            <h4>The Daily Grind</h4>
+            <div class="meta-row"><span>Café · $$</span><span class="rating">★ 4.8</span></div>
+          </div>
+          <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p>"Great atmosphere and the staff remembered my order after one visit."</p>
+            <button class="helpful-btn">Helpful · 12</button>
+          </div>
+          <div class="place-card">
+            <h4>Harbor House Hotel</h4>
+            <div class="meta-row"><span>Hotel · $$$</span><span class="rating">★ 4.4</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marker">PROTOTYPE — ticket 01, throwaway</div>
+
+<script>
+  const palette = [
+    ["background", "#F8FAFC"], ["foreground", "#0F172A"], ["card", "#ffffff"],
+    ["primary", "#2563EB"], ["secondary", "#EFF6FF"], ["accent", "#F59E0B"],
+    ["destructive", "#EF4444"], ["muted", "#E2E8F0"], ["muted-foreground", "#64748B"],
+    ["sidebar", "#FAFAFA"], ["sidebar-primary", "#030213"],
+    ["chart-1", "#2563EB"], ["chart-2", "#F59E0B"], ["chart-3", "#10B981"],
+    ["chart-4", "#8B5CF6"], ["chart-5", "#EC4899"],
+  ];
+  document.getElementById('palette').innerHTML = palette.map(([name, val]) => `
+    <div class="swatch">
+      <div class="chip" style="background:${val}"></div>
+      <div class="meta"><div class="name">--${name}</div><div class="val">${val}</div></div>
+    </div>`).join('');
+
+  const categories = [
+    ["Restaurants", "#FB923C", "#F43F5E", "#FFF7ED", "#F97316"],
+    ["Cafés", "#FBBF24", "#F97316", "#FFFBEB", "#D97706"],
+    ["Hotels", "#38BDF8", "#2563EB", "#F0F9FF", "#0EA5E9"],
+    ["Shopping", "#A78BFA", "#9333EA", "#F5F3FF", "#8B5CF6"],
+    ["Healthcare", "#34D399", "#0D9488", "#ECFDF5", "#10B981"],
+    ["Education", "#60A5FA", "#4F46E5", "#EFF6FF", "#3B82F6"],
+    ["Fitness", "#F87171", "#E11D48", "#FEF2F2", "#EF4444"],
+    ["Beauty & Wellness", "#F472B6", "#F43F5E", "#FDF2F8", "#EC4899"],
+    ["Entertainment", "#FACC15", "#D97706", "#FEFCE8", "#CA8A04"],
+    ["Professional Services", "#94A3B8", "#475569", "#F8FAFC", "#64748B"],
+  ];
+  document.getElementById('categories').innerHTML = categories.map(([name, g1, g2, bg, icon]) => `
+    <div class="category-card" style="background:${bg}">
+      <div class="category-icon" style="background:linear-gradient(to bottom right, ${g1}, ${g2});"></div>
+      <div class="category-name" style="color:${icon}">${name}</div>
+    </div>`).join('');
+</script>
+
+</body>
+</html>

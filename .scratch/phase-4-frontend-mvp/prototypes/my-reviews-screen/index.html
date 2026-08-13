@@ -1,0 +1,533 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/08-my-reviews-screen.md
+
+  Hosted inside the exact approved shell from ticket 04 (pulled verbatim from
+  throwaway branch prototype/authenticated-shell), same pattern as the
+  Discover/Categories tickets.
+
+  SOURCE GROUNDING: read the real `MyReviewsScreen` component directly from
+  the Figma Make file's App.tsx (fileKey uecnUKqT4CI7LuIpWo50Pp, ~lines
+  590-696), from the same cached fetch used for the Discover/Categories
+  tickets.
+
+  DECISIONS made while grounding:
+  - **Stats: 3 cards, not 4** — real source has a 4th "Contribution Level:
+    Elite" card; dropped per this map's charting decision. Kept Total Reviews
+    / Helpful Votes / Businesses, computed client-side from the full
+    `myReviews` list (Helpful Votes = sum of each review's `helpfulCount`).
+  - **Review photos removed** — the real source's cards show photo thumbnails
+    + an "add photo" control; dropped per the Place detail ticket's already-
+    established decision (review photos are Phase 8 Media, out of scope
+    project-wide).
+  - **Edit wired to a real inline form** — the real source's Edit button has
+    no onClick at all (decorative even in the mock). Built a self-contained
+    star+textarea inline edit here.
+  - **Delete gets a confirm step** — real source deletes immediately; added a
+    confirmation since this is a real destructive action.
+  - Share kept as-is — no backend gap, sharing is inherently frontend-only.
+
+  THIS TICKET'S OWN OPEN QUESTION — Published/Drafts tabs — folded into the
+  variant comparison rather than decided upfront:
+    A — faithful, NO Drafts tab (no backend draft concept, dropped entirely).
+    B — Drafts tab KEPT, but explicitly client-side-only / this-device-only
+        (localStorage, never sent to the API) — a real but limited feature,
+        with a visible note saying so.
+    C — structurally different: no dashboard-style stats-card grid at all —
+        stats condense into a slim chip row, the review list is promoted
+        higher, and "most helpful" becomes a ribbon badge on that review's
+        card instead of a separate banner. No Drafts tab (same call as A, via
+        a different structure).
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/my-reviews-screen
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  Variants: ?variant=A (no drafts) | B (drafts, local-only) | C (content-forward, no drafts)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — My Reviews screen (ticket 08)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { primary: '#2563EB', accent: '#F59E0B', destructive: '#EF4444' },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-mr-variant] { display: none; }
+  [data-mr-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 190px; text-align: center; }
+
+  /* --- shell chrome, pulled verbatim from the approved ticket-04 prototype --- */
+  .nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 150ms ease; }
+  .nav-item.active { background: #2563EB; color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.25); }
+  .nav-item:not(.active):not(.locked) { color: #64748B; }
+  .nav-item:not(.active):not(.locked):hover { background: #F8FAFC; color: #0F172A; }
+  .dropdown { display: none; }
+  .dropdown.open { display: block; }
+  #shell-sidebar { transition: width 200ms ease, transform 200ms ease; }
+  #shell-sidebar.collapsed { width: 4.5rem; }
+  #shell-sidebar .logo-row, #shell-sidebar .user-trigger { transition: gap 200ms ease; }
+  #shell-sidebar.collapsed .logo-row, #shell-sidebar.collapsed .user-trigger { gap: 0; }
+  #shell-sidebar .a-label {
+    display: inline-block; opacity: 1; max-width: 200px;
+    overflow: hidden; white-space: nowrap; vertical-align: middle;
+    transition: opacity 150ms ease, max-width 200ms ease;
+  }
+  #shell-sidebar.collapsed .a-label { opacity: 0; max-width: 0; }
+  #shell-sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+  #shell-sidebar.collapsed #shell-user-menu { left: 100%; right: auto; bottom: 0.5rem; margin-left: 8px; width: 190px; }
+  #shell-sidebar .tooltip {
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%) translateX(8px);
+    background: #0F172A; color: white; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 50;
+  }
+  #shell-sidebar.collapsed .nav-item:hover .tooltip,
+  #shell-sidebar.collapsed .user-trigger:hover .tooltip { opacity: 1; }
+  #shell-sidebar:not(.collapsed) .tooltip { display: none; }
+
+  /* --- My Reviews content --- */
+  .star-pick i { cursor: pointer; }
+  .field { display: block; width: 100%; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; }
+  .field:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<script id="review-data-template" type="application/json">
+[
+  { "id": 1, "business": "The Artisan Coffee Co.", "image": "photo-1495474472287-4d71bcdd2085", "rating": 5, "date": "2 weeks ago", "text": "Absolutely love this place. The espresso is consistently excellent and the staff remembers my order every time. My go-to spot for getting work done.", "helpfulCount": 34 },
+  { "id": 2, "business": "Zenith Fitness Club", "image": "photo-1534438327276-14e5300c3a48", "rating": 4, "date": "1 month ago", "text": "Great equipment and knowledgeable trainers. Gets crowded after 6pm on weekdays, so I've started going earlier.", "helpfulCount": 12 },
+  { "id": 3, "business": "Harbor House Hotel", "image": "photo-1566073771259-6a8506099945", "rating": 5, "date": "1 month ago", "text": "Stayed for a long weekend and the harbor view room was worth every penny. Staff went out of their way to help with restaurant recommendations.", "helpfulCount": 8 },
+  { "id": 4, "business": "Sunrise Diner", "image": "photo-1555396273-367ea4eb4db5", "rating": 3, "date": "2 months ago", "text": "Food was fine, service was slow on a Sunday morning. Would try again on a weekday.", "helpfulCount": 2 },
+  { "id": 5, "business": "Serenity Spa & Wellness", "image": "photo-1540555700478-4be289fbecef", "rating": 5, "date": "3 months ago", "text": "The 90-minute deep tissue massage was exactly what I needed. Booking again next month.", "helpfulCount": 19 }
+]
+</script>
+
+<!-- ===================== SHELL (approved, ticket 04 — My Reviews nav item active) ===================== -->
+<div class="flex h-screen overflow-hidden">
+  <div id="shell-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-30 md:hidden" onclick="closeMobileNav()"></div>
+
+  <aside id="shell-sidebar" class="w-60 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col fixed md:sticky top-0 h-screen z-40 -translate-x-full md:translate-x-0">
+    <div class="logo-row px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+        <i data-lucide="star" class="w-4 h-4 fill-white text-white"></i>
+      </div>
+      <span class="heading font-extrabold text-sm a-label">Rate My Place</span>
+      <button class="ml-auto md:hidden text-slate-400" onclick="closeMobileNav()"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <button class="nav-item relative" data-screen="discover" onclick="setScreen('discover')"><i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Discover</span><span class="tooltip">Discover</span></button>
+      <button class="nav-item relative" data-screen="categories" onclick="setScreen('categories')"><i data-lucide="grid-3x3" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Categories</span><span class="tooltip">Categories</span></button>
+      <button class="nav-item active relative" data-screen="my-reviews" onclick="setScreen('my-reviews')"><i data-lucide="message-square" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">My Reviews</span><span class="tooltip">My Reviews</span></button>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-100 relative">
+      <button class="user-trigger relative w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50" onclick="toggleDropdown('shell-user-menu')">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+        <div class="flex-1 min-w-0 text-left a-label">
+          <p class="text-xs font-bold truncate">Marcus Johnson</p>
+          <p class="text-xs text-slate-500 truncate">Reviewer</p>
+        </div>
+        <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 a-label flex-shrink-0"></i>
+        <span class="tooltip">Marcus Johnson</span>
+      </button>
+      <div id="shell-user-menu" class="dropdown absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-lg border border-slate-100 p-1.5">
+        <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-red-50 flex items-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i>Log out</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button class="md:hidden text-slate-500" onclick="openMobileNav()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <button class="hidden md:flex w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 items-center justify-center text-slate-500 flex-shrink-0 transition-colors" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+          <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+        </button>
+        <div class="min-w-0">
+          <h1 class="heading font-extrabold text-lg leading-tight" id="shell-title">My Reviews</h1>
+          <p class="text-xs text-slate-500 mt-0.5" id="shell-subtitle">All your published reviews</p>
+        </div>
+      </div>
+      <button class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-50 flex-shrink-0">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-7 h-7 rounded-full object-cover" />
+        <span class="text-xs font-semibold hidden sm:block">Marcus</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto" id="shell-content">
+      <div id="non-myreviews-placeholder" class="hidden p-4 md:p-6">
+        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center text-slate-400">
+          <i data-lucide="search" class="w-8 h-8 mx-auto mb-3" id="placeholder-icon"></i>
+          <p class="text-sm font-medium text-slate-500" id="placeholder-title"></p>
+          <p class="text-xs text-slate-400 mt-1">Built out in its own ticket — this shell only proves the nav works.</p>
+        </div>
+      </div>
+
+      <!-- ===================== MY REVIEWS CONTENT — 3 switchable variants ===================== -->
+      <div id="myreviews-content">
+
+        <!-- ============= VARIANT A: faithful, no Drafts tab ============= -->
+        <div data-mr-variant="A" class="active">
+          <div class="p-4 md:p-6 space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="ma-stats"></div>
+            <div id="ma-helpful-banner"></div>
+            <div id="ma-list"></div>
+          </div>
+        </div>
+
+        <!-- ============= VARIANT B: Drafts tab kept, client-side-only (localStorage) ============= -->
+        <div data-mr-variant="B">
+          <div class="p-4 md:p-6 space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="mb-stats"></div>
+            <div id="mb-helpful-banner"></div>
+            <div class="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit">
+              <button id="mb-tab-published" onclick="setMbTab('published')" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"></button>
+              <button id="mb-tab-drafts" onclick="setMbTab('drafts')" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all"></button>
+            </div>
+            <p id="mb-drafts-note" class="hidden text-xs text-slate-500 -mt-4 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i>Drafts are saved on this device only — they're never sent anywhere until you publish.</p>
+            <div id="mb-list"></div>
+          </div>
+        </div>
+
+        <!-- ============= VARIANT C: content-forward, no stats-card grid, no Drafts tab ============= -->
+        <div data-mr-variant="C">
+          <div class="p-4 md:p-6 space-y-5">
+            <div class="flex flex-wrap items-center gap-2 text-sm" id="mc-chips"></div>
+            <div id="mc-list"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — No Drafts tab</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  const REVIEWS = JSON.parse(document.getElementById('review-data-template').textContent);
+  const DRAFTS_KEY = 'rmp-prototype-review-drafts';
+  function loadDrafts() {
+    let d = JSON.parse(localStorage.getItem(DRAFTS_KEY) || 'null');
+    if (!d) {
+      d = [{ id: 'draft-1', business: 'The Copper Skillet', image: 'photo-1517248135467-4c7edcad34c4', rating: 4, text: "Really enjoyed the tasting menu, still need to finish writing this up..." }];
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(d));
+    }
+    return d;
+  }
+  function deleteDraft(id) {
+    const d = loadDrafts().filter(x => x.id !== id);
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(d));
+    renderVariantB();
+  }
+
+  function starsHtml(rating, size) {
+    let s = '';
+    for (let i = 0; i < 5; i++) s += `<i data-lucide="star" class="${size || 'w-3.5 h-3.5'} ${i < rating ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}"></i>`;
+    return s;
+  }
+  function statCardHtml(icon, colorClass, value, label) {
+    return `<div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+      <div class="w-9 h-9 rounded-xl ${colorClass} flex items-center justify-center mb-2"><i data-lucide="${icon}" class="w-4 h-4"></i></div>
+      <p class="heading text-2xl font-extrabold">${value}</p>
+      <p class="text-xs text-slate-500 mt-0.5">${label}</p>
+    </div>`;
+  }
+  function helpfulBannerHtml(review) {
+    return `<div class="bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-4 flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0"><i data-lucide="award" class="w-6 h-6 text-white"></i></div>
+      <div class="flex-1">
+        <p class="text-white font-bold text-sm">Most Helpful Review</p>
+        <p class="text-amber-100 text-xs mt-0.5">Your ${review.business} review has been marked helpful ${review.helpfulCount} times — your most impactful review yet!</p>
+      </div>
+    </div>`;
+  }
+  function emptyStateHtml() {
+    return `<div class="text-center py-20 bg-white rounded-2xl border border-slate-200">
+      <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4"><i data-lucide="message-square" class="w-8 h-8 text-slate-300"></i></div>
+      <p class="font-bold text-slate-700 mb-1">No reviews yet</p>
+      <p class="text-sm text-slate-500 mb-4">You haven't written any reviews yet.</p>
+      <button onclick="setScreen('discover')" class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700"><i data-lucide="search" class="w-4 h-4"></i>Discover Places</button>
+    </div>`;
+  }
+
+  function reviewCardHtml(r, opts) {
+    opts = opts || {};
+    const ribbon = opts.ribbon ? `<div class="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-bl-xl flex items-center gap-1"><i data-lucide="award" class="w-3 h-3"></i>Most Helpful</div>` : '';
+    return `<div class="relative bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow" id="review-card-${r.id}">
+      ${ribbon}
+      <div class="flex items-start gap-4 p-5">
+        <img src="https://images.unsplash.com/${r.image}?w=100&h=100&fit=crop&auto=format" class="w-14 h-14 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sm">${r.business}</h3>
+              <div class="flex items-center gap-2 mt-1">
+                <div class="flex gap-0.5">${starsHtml(r.rating)}</div>
+                <span class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>${r.date}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button onclick="openInlineEdit(${r.id})" class="w-8 h-8 rounded-lg hover:bg-blue-50 flex items-center justify-center text-slate-400 hover:text-primary transition-colors"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+              <button class="w-8 h-8 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"><i data-lucide="share-2" class="w-3.5 h-3.5"></i></button>
+              <button onclick="confirmDeleteReview(${r.id})" class="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+          <p id="review-text-${r.id}" class="text-sm text-slate-600 leading-relaxed mt-2">${r.text}</p>
+          <div id="review-edit-${r.id}" class="hidden mt-3"></div>
+          <div class="flex items-center gap-1.5 mt-3 text-xs text-slate-400">
+            <i data-lucide="thumbs-up" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span class="text-emerald-600 font-semibold">${r.helpfulCount} people</span> found this helpful
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function inlineEditFormHtml(r) {
+    return `<div class="border-t border-slate-100 pt-3">
+      <div class="star-pick flex gap-1 mb-2" id="edit-stars-${r.id}"></div>
+      <textarea id="edit-text-${r.id}" class="field text-sm" rows="3">${r.text}</textarea>
+      <div class="flex gap-2 mt-2">
+        <button onclick="saveInlineEdit(${r.id})" class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700">Save changes</button>
+        <button onclick="closeInlineEdit(${r.id})" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-50">Cancel</button>
+      </div>
+    </div>`;
+  }
+  let editingRating = {};
+  function openInlineEdit(id) {
+    const r = REVIEWS.find(x => x.id === id);
+    editingRating[id] = r.rating;
+    document.getElementById(`review-text-${id}`).classList.add('hidden');
+    const editEl = document.getElementById(`review-edit-${id}`);
+    editEl.innerHTML = inlineEditFormHtml(r);
+    editEl.classList.remove('hidden');
+    renderEditStars(id);
+    lucide.createIcons();
+  }
+  function renderEditStars(id) {
+    document.getElementById(`edit-stars-${id}`).innerHTML = [1,2,3,4,5].map(n =>
+      `<i data-lucide="star" class="w-5 h-5 ${n <= editingRating[id] ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}" onclick="setEditRating(${id},${n})"></i>`
+    ).join('');
+    lucide.createIcons();
+  }
+  function setEditRating(id, n) { editingRating[id] = n; renderEditStars(id); }
+  function closeInlineEdit(id) {
+    document.getElementById(`review-text-${id}`).classList.remove('hidden');
+    document.getElementById(`review-edit-${id}`).classList.add('hidden');
+  }
+  function saveInlineEdit(id) {
+    const r = REVIEWS.find(x => x.id === id);
+    r.text = document.getElementById(`edit-text-${id}`).value;
+    r.rating = editingRating[id];
+    closeInlineEdit(id);
+    renderAll();
+  }
+  function confirmDeleteReview(id) {
+    if (!confirm('Delete this review? This can\'t be undone.')) return;
+    const idx = REVIEWS.findIndex(x => x.id === id);
+    if (idx !== -1) REVIEWS.splice(idx, 1);
+    renderAll();
+  }
+
+  function computeStats() {
+    const total = REVIEWS.length;
+    const helpful = REVIEWS.reduce((sum, r) => sum + r.helpfulCount, 0);
+    const businesses = new Set(REVIEWS.map(r => r.business)).size;
+    return { total, helpful, businesses };
+  }
+  function mostHelpful() {
+    return REVIEWS.length ? REVIEWS.reduce((a, b) => b.helpfulCount > a.helpfulCount ? b : a) : null;
+  }
+
+  function renderVariantA() {
+    const s = computeStats();
+    document.getElementById('ma-stats').innerHTML =
+      statCardHtml('message-square', 'text-primary bg-blue-50', s.total, 'Total Reviews') +
+      statCardHtml('thumbs-up', 'text-emerald-600 bg-emerald-50', s.helpful, 'Helpful Votes') +
+      statCardHtml('building-2', 'text-amber-600 bg-amber-50', s.businesses, 'Businesses');
+    const mh = mostHelpful();
+    document.getElementById('ma-helpful-banner').innerHTML = mh ? helpfulBannerHtml(mh) : '';
+    document.getElementById('ma-list').innerHTML = REVIEWS.length
+      ? `<div class="space-y-4">${REVIEWS.map(r => reviewCardHtml(r)).join('')}</div>`
+      : emptyStateHtml();
+  }
+
+  let mbTab = 'published';
+  function setMbTab(tab) { mbTab = tab; renderVariantB(); }
+  function renderVariantB() {
+    const s = computeStats();
+    document.getElementById('mb-stats').innerHTML =
+      statCardHtml('message-square', 'text-primary bg-blue-50', s.total, 'Total Reviews') +
+      statCardHtml('thumbs-up', 'text-emerald-600 bg-emerald-50', s.helpful, 'Helpful Votes') +
+      statCardHtml('building-2', 'text-amber-600 bg-amber-50', s.businesses, 'Businesses');
+    const mh = mostHelpful();
+    document.getElementById('mb-helpful-banner').innerHTML = (mh && mbTab === 'published') ? helpfulBannerHtml(mh) : '';
+    const drafts = loadDrafts();
+    const tabActiveCls = 'bg-white text-primary shadow-sm';
+    const tabInactiveCls = 'text-slate-500 hover:text-slate-700';
+    document.getElementById('mb-tab-published').className = `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mbTab === 'published' ? tabActiveCls : tabInactiveCls}`;
+    document.getElementById('mb-tab-published').textContent = `Published (${REVIEWS.length})`;
+    document.getElementById('mb-tab-drafts').className = `px-4 py-2 rounded-lg text-sm font-semibold transition-all ${mbTab === 'drafts' ? tabActiveCls : tabInactiveCls}`;
+    document.getElementById('mb-tab-drafts').textContent = `Drafts (${drafts.length})`;
+    document.getElementById('mb-drafts-note').classList.toggle('hidden', mbTab !== 'drafts');
+
+    if (mbTab === 'published') {
+      document.getElementById('mb-list').innerHTML = REVIEWS.length ? `<div class="space-y-4">${REVIEWS.map(r => reviewCardHtml(r)).join('')}</div>` : emptyStateHtml();
+    } else {
+      document.getElementById('mb-list').innerHTML = drafts.length ? `<div class="space-y-4">${drafts.map(d => `
+        <div class="bg-white rounded-2xl border border-dashed border-amber-300 shadow-sm overflow-hidden">
+          <div class="flex items-start gap-4 p-5">
+            <img src="https://images.unsplash.com/${d.image}?w=100&h=100&fit=crop&auto=format" class="w-14 h-14 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-sm">${d.business}</h3>
+                  <div class="flex items-center gap-2 mt-1">
+                    <div class="flex gap-0.5">${starsHtml(d.rating)}</div>
+                    <span class="text-[10px] font-bold uppercase bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">Draft</span>
+                  </div>
+                </div>
+                <button onclick="deleteDraft('${d.id}')" class="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <p class="text-sm text-slate-600 leading-relaxed mt-2">${d.text}</p>
+              <button class="mt-3 bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700">Continue writing</button>
+            </div>
+          </div>
+        </div>`).join('')}</div>` : `<div class="text-center py-16 bg-white rounded-2xl border border-slate-200"><p class="text-sm text-slate-500">No drafts saved on this device.</p></div>`;
+    }
+    lucide.createIcons();
+  }
+
+  function renderVariantC() {
+    const s = computeStats();
+    document.getElementById('mc-chips').innerHTML = `
+      <span class="font-bold heading text-lg">${s.total} reviews</span>
+      <span class="text-slate-300">·</span>
+      <span class="text-slate-600 flex items-center gap-1"><i data-lucide="thumbs-up" class="w-3.5 h-3.5 text-emerald-500"></i>${s.helpful} helpful votes</span>
+      <span class="text-slate-300">·</span>
+      <span class="text-slate-600">${s.businesses} places</span>
+    `;
+    const mh = mostHelpful();
+    document.getElementById('mc-list').innerHTML = REVIEWS.length
+      ? `<div class="space-y-4">${REVIEWS.map(r => reviewCardHtml(r, { ribbon: mh && r.id === mh.id })).join('')}</div>`
+      : emptyStateHtml();
+    lucide.createIcons();
+  }
+
+  function renderAll() {
+    renderVariantA();
+    renderVariantB();
+    renderVariantC();
+    lucide.createIcons();
+  }
+  renderAll();
+
+  // --- shell chrome behavior (verbatim from the approved ticket-04 prototype) ---
+  const SCREEN_META = {
+    discover: { title: 'Discover Places', subtitle: 'Find and explore places near you', icon: 'search' },
+    categories: { title: 'Categories', subtitle: 'Browse places by type', icon: 'grid-3x3' },
+    'my-reviews': { title: 'My Reviews', subtitle: 'All your published reviews', icon: 'message-square' },
+  };
+  function setScreen(screen) {
+    document.querySelectorAll('[data-screen]').forEach(el => el.classList.toggle('active', el.dataset.screen === screen));
+    const m = SCREEN_META[screen];
+    document.getElementById('shell-title').textContent = m.title;
+    document.getElementById('shell-subtitle').textContent = m.subtitle;
+    document.getElementById('myreviews-content').classList.toggle('hidden', screen !== 'my-reviews');
+    document.getElementById('non-myreviews-placeholder').classList.toggle('hidden', screen === 'my-reviews');
+    if (screen !== 'my-reviews') {
+      document.getElementById('placeholder-icon').setAttribute('data-lucide', m.icon);
+      document.getElementById('placeholder-title').textContent = `${m.title} content`;
+    }
+    closeMobileNav();
+    lucide.createIcons();
+  }
+  function toggleSidebarCollapse() { document.getElementById('shell-sidebar').classList.toggle('collapsed'); }
+  function openMobileNav() {
+    document.getElementById('shell-sidebar').classList.remove('-translate-x-full');
+    document.getElementById('shell-overlay').classList.remove('hidden');
+  }
+  function closeMobileNav() {
+    document.getElementById('shell-sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('shell-overlay')?.classList.add('hidden');
+  }
+  function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('button') || !e.target.closest('button').onclick?.toString().includes('toggleDropdown')) {
+      if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // --- My Reviews layout variant switcher ---
+  const variants = [
+    { key: 'A', name: 'No Drafts tab' },
+    { key: 'B', name: 'Drafts, local-only' },
+    { key: 'C', name: 'Content-forward, no drafts' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function renderSwitcher() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-mr-variant]').forEach(el => el.classList.toggle('active', el.dataset.mrVariant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    const params = new URLSearchParams(location.search);
+    params.set('variant', variants[i].key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    renderSwitcher();
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  renderSwitcher();
+</script>
+
+</body>
+</html>

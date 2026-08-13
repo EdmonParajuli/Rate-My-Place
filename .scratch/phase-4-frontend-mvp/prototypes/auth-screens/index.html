@@ -1,0 +1,426 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/03-auth-screens.md
+
+  NO FIGMA SOURCE EXISTS for these screens (confirmed on the Marketing landing
+  page ticket — neither Figma Make file has a login/signup component; only a
+  dead `setView('userAuth'|'businessAuth')` reference in Navigation.tsx implying
+  intended separate entry points per user type). This is a from-scratch
+  composition grounded in the extracted design tokens
+  (research/design-tokens.md), not a design-to-code port — flagged rather than
+  faked as a Figma port.
+
+  Fields match the real backend contract exactly (src/graphql/typeDefs/authTypedefs.ts):
+  InputAuthSignUp { name, email, password, userType: REGULAR|BUSINESS }
+  InputAuthLogin { email, password }
+  "Confirm password" is included as a client-side-only UX convention (common
+  signup pattern) — it is NOT part of InputAuthSignUp and would never be sent
+  to the createAccount mutation, only used for client-side match validation.
+  No forgot-password link/flow anywhere — explicitly out of scope (Phase 7).
+
+  The 3 variants explore different answers to the one open design question this
+  ticket flagged: does the REGULAR/BUSINESS choice live as an inline toggle
+  inside one form (map's charting decision), or as a separate first step
+  (the dead userAuth/businessAuth signal from Navigation.tsx)?
+    A — split-screen, dark hero-gradient panel (continuity with the marketing
+        page's chosen Variant B), inline Sign In/Sign Up tabs, REGULAR/BUSINESS
+        as a segmented control inside the signup form.
+    B — two-step flow: a full-bleed "how will you use this" chooser IS the
+        first screen (closest to the dead userAuth/businessAuth signal),
+        landing on a type-aware form afterward.
+    C — minimal centered single card, no imagery, icon-button type picker,
+        password visibility toggle — plain utilitarian SaaS-auth structure.
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/auth-screens
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  Variants: ?variant=A (split-screen) | B (two-step chooser) | C (minimal centered)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Auth screens (ticket 03)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { primary: '#2563EB', accent: '#F59E0B', destructive: '#EF4444' },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-variant] { display: none; }
+  [data-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 170px; text-align: center; }
+  .hero-gradient { background: linear-gradient(to bottom right, #0F172A, #172554, #0F172A); }
+  .hero-gradient::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 30% 50%, #F59E0B, transparent 50%),
+                       radial-gradient(circle at 70% 30%, #2563EB, transparent 40%);
+    opacity: 0.2;
+  }
+  .field { display: block; width: 100%; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; }
+  .field:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .tab-btn { flex: 1; text-align: center; padding: 10px; font-weight: 600; font-size: 14px; border-radius: 10px; color: #64748B; cursor: pointer; }
+  .tab-btn.active { background: white; color: #0F172A; box-shadow: 0 1px 2px rgba(15,23,42,0.08); }
+  .fade-track { transition: opacity 300ms ease; }
+
+  .type-card { position: relative; text-align: left; border: 2px solid #E2E8F0; border-radius: 14px; padding: 14px; background: white; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
+  .type-card:hover { transform: translateY(-2px); border-color: #CBD5E1; }
+  .type-card-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .type-card-check { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 999px; background: #94A3B8; color: white; display: flex; align-items: center; justify-content: center; opacity: 0; transform: scale(0.5); transition: all 150ms ease; }
+  .type-card.active .type-card-check { opacity: 1; transform: scale(1); }
+  .type-card.active[data-type="REGULAR"] { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 6px 16px rgba(37,99,235,0.18); }
+  .type-card.active[data-type="REGULAR"] .type-card-check { background: #2563EB; }
+  .type-card.active[data-type="BUSINESS"] { border-color: #10B981; background: #ECFDF5; box-shadow: 0 6px 16px rgba(16,185,129,0.18); }
+  .type-card.active[data-type="BUSINESS"] .type-card-check { background: #10B981; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<!-- ============================= VARIANT A ============================= -->
+<!-- Split-screen: dark hero-gradient left panel, form card right, inline Sign In/Sign Up tabs -->
+<div data-variant="A">
+  <div class="min-h-screen grid md:grid-cols-2">
+    <div class="relative hero-gradient hidden md:flex flex-col justify-between p-12 text-white overflow-hidden">
+      <div class="relative flex items-center gap-2">
+        <div class="bg-white/10 p-2 rounded-xl"><i data-lucide="star" class="w-5 h-5 text-accent fill-accent"></i></div>
+        <span class="heading font-bold text-xl">Rate My Place</span>
+      </div>
+      <div class="relative">
+        <p class="heading text-3xl font-bold mb-4 max-w-sm">Join millions finding and reviewing great local places.</p>
+        <div class="bg-white/10 backdrop-blur rounded-2xl p-5 max-w-sm min-h-[136px] flex flex-col justify-between">
+          <div>
+            <div class="flex gap-1 mb-3" id="a-stars"></div>
+            <div id="a-testimonial-track" class="fade-track">
+              <p id="a-testimonial-text" class="text-slate-200 text-sm italic"></p>
+              <div class="flex items-center gap-3 mt-3">
+                <img id="a-testimonial-avatar" class="w-8 h-8 rounded-full object-cover border border-white/20" alt="" />
+                <p id="a-testimonial-author" class="text-slate-400 text-xs"></p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-4">
+            <div class="flex gap-1.5" id="a-testimonial-dots"></div>
+            <button type="button" onclick="nextAuthTestimonial()" aria-label="Next review" class="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="relative flex gap-8 text-sm text-slate-300">
+        <span><strong class="text-white">5M+</strong> Users</span>
+        <span><strong class="text-white">1.2M</strong> Places</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-center p-6 md:p-12">
+      <div class="w-full max-w-sm">
+        <div class="flex bg-slate-100 rounded-xl p-1 mb-8">
+          <button class="tab-btn active" data-tab="signin" onclick="setTab('A','signin')">Sign In</button>
+          <button class="tab-btn" data-tab="signup" onclick="setTab('A','signup')">Sign Up</button>
+        </div>
+
+        <div id="a-signin">
+          <h2 class="heading text-2xl font-bold mb-1">Welcome back</h2>
+          <p class="text-slate-500 text-sm mb-6">Sign in to continue.</p>
+          <form class="space-y-4">
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Email</label><input type="email" class="field" placeholder="you@example.com" /></div>
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Password</label><input type="password" class="field" placeholder="••••••••" /></div>
+            <button type="button" class="w-full bg-primary text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700">Sign In</button>
+          </form>
+        </div>
+
+        <div id="a-signup" class="hidden">
+          <h2 class="heading text-2xl font-bold mb-1">Create your account</h2>
+          <p class="text-slate-500 text-sm mb-6">Start reviewing or list your place.</p>
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <button type="button" class="type-card active" data-type="REGULAR" onclick="setType('a', 'REGULAR')">
+              <div class="type-card-check"><i data-lucide="check" class="w-3 h-3"></i></div>
+              <div class="type-card-icon bg-blue-100 text-primary"><i data-lucide="user" class="w-5 h-5"></i></div>
+              <h4 class="text-sm font-bold mt-2.5">Reviewer</h4>
+              <p class="text-xs text-slate-500 mt-0.5">Discover &amp; review places</p>
+            </button>
+            <button type="button" class="type-card" data-type="BUSINESS" onclick="setType('a', 'BUSINESS')">
+              <div class="type-card-check"><i data-lucide="check" class="w-3 h-3"></i></div>
+              <div class="type-card-icon bg-emerald-100 text-emerald-600"><i data-lucide="building-2" class="w-5 h-5"></i></div>
+              <h4 class="text-sm font-bold mt-2.5">Business owner</h4>
+              <p class="text-xs text-slate-500 mt-0.5">List &amp; manage your place</p>
+            </button>
+          </div>
+          <form class="space-y-4">
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Full name</label><input type="text" class="field" placeholder="Jamie Rivera" /></div>
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Email</label><input type="email" class="field" placeholder="you@example.com" /></div>
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Password</label><input type="password" class="field" placeholder="••••••••" /></div>
+            <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Confirm password</label><input type="password" class="field" placeholder="••••••••" /></div>
+            <button type="button" class="w-full bg-primary text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700">Create account</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= VARIANT B ============================= -->
+<!-- Two-step: full-bleed chooser first (closest to the dead userAuth/businessAuth signal), then a type-aware form -->
+<div data-variant="B" class="relative hero-gradient min-h-screen overflow-hidden">
+  <div class="relative min-h-screen flex items-center justify-center p-6">
+    <div id="b-step-choose" class="w-full max-w-2xl text-center">
+      <div class="flex items-center justify-center gap-2 mb-8">
+        <div class="bg-white/10 p-2 rounded-xl"><i data-lucide="star" class="w-5 h-5 text-accent fill-accent"></i></div>
+        <span class="heading font-bold text-xl text-white">Rate My Place</span>
+      </div>
+      <h1 class="heading text-3xl font-bold mb-2 text-white">How will you use Rate My Place?</h1>
+      <p class="text-slate-300 mb-10">You can always change this later — this just tailors your first steps.</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <button onclick="chooseType('REGULAR')" class="text-left rounded-2xl bg-white p-8 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-4"><i data-lucide="user" class="w-6 h-6 text-primary"></i></div>
+          <h3 class="heading text-lg font-bold mb-2">I'm here to review</h3>
+          <p class="text-slate-600 text-sm">Discover local places and share honest reviews.</p>
+        </button>
+        <button onclick="chooseType('BUSINESS')" class="text-left rounded-2xl bg-white p-8 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4"><i data-lucide="building-2" class="w-6 h-6 text-emerald-600"></i></div>
+          <h3 class="heading text-lg font-bold mb-2">I run a business</h3>
+          <p class="text-slate-600 text-sm">Claim your listing and manage your reputation.</p>
+        </button>
+      </div>
+      <p class="text-sm text-slate-300 mt-8">Already have an account? <a onclick="chooseType('SIGNIN')" class="text-blue-400 font-semibold cursor-pointer hover:text-blue-300">Sign in</a></p>
+    </div>
+
+    <div id="b-step-form" class="hidden w-full max-w-sm">
+      <button onclick="backToChoose()" class="flex items-center gap-1 text-sm text-slate-300 hover:text-white mb-4"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back</button>
+      <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div id="b-badge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4"></div>
+        <h2 class="heading text-2xl font-bold mb-1" id="b-heading">Create your account</h2>
+        <p class="text-slate-500 text-sm mb-6" id="b-subheading"></p>
+        <form class="space-y-4" id="b-form-fields">
+          <div id="b-name-field"><label class="text-xs font-semibold text-slate-600 mb-1 block">Full name</label><input type="text" class="field" placeholder="Jamie Rivera" /></div>
+          <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Email</label><input type="email" class="field" placeholder="you@example.com" /></div>
+          <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Password</label><input type="password" class="field" placeholder="••••••••" /></div>
+          <div id="b-confirm-field"><label class="text-xs font-semibold text-slate-600 mb-1 block">Confirm password</label><input type="password" class="field" placeholder="••••••••" /></div>
+        </form>
+        <button type="button" class="w-full bg-primary text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700 mt-2" id="b-submit">Create account</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= VARIANT C ============================= -->
+<!-- Minimal centered card, no imagery, icon-button type picker, password visibility toggle -->
+<div data-variant="C">
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-sm bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+      <div class="flex items-center justify-center gap-2 mb-6">
+        <div class="bg-primary p-1.5 rounded-lg"><i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i></div>
+        <span class="heading font-bold">Rate My Place</span>
+      </div>
+      <div class="flex bg-slate-100 rounded-xl p-1 mb-6">
+        <button class="tab-btn active" onclick="setTab('C','signin')">Sign In</button>
+        <button class="tab-btn" onclick="setTab('C','signup')">Sign Up</button>
+      </div>
+
+      <div id="c-signin">
+        <form class="space-y-4">
+          <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Email</label><input type="email" class="field" placeholder="you@example.com" /></div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 mb-1 block">Password</label>
+            <div class="relative">
+              <input id="c-pw-signin" type="password" class="field pr-10" placeholder="••••••••" />
+              <button type="button" onclick="togglePw('c-pw-signin', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <button type="button" class="w-full bg-primary text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700">Sign In</button>
+        </form>
+      </div>
+
+      <div id="c-signup" class="hidden">
+        <div class="mb-4">
+          <label class="text-xs font-semibold text-slate-600 mb-2 block">I am a...</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="tab-btn active !flex-none !flex flex-col items-center gap-1 py-3 border border-slate-200" data-type="REGULAR" onclick="setType('c','REGULAR')">
+              <i data-lucide="user" class="w-4 h-4"></i><span class="text-xs">Reviewer</span>
+            </button>
+            <button class="tab-btn !flex-none !flex flex-col items-center gap-1 py-3 border border-slate-200" data-type="BUSINESS" onclick="setType('c','BUSINESS')">
+              <i data-lucide="building-2" class="w-4 h-4"></i><span class="text-xs">Business</span>
+            </button>
+          </div>
+        </div>
+        <form class="space-y-4">
+          <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Full name</label><input type="text" class="field" placeholder="Jamie Rivera" /></div>
+          <div><label class="text-xs font-semibold text-slate-600 mb-1 block">Email</label><input type="email" class="field" placeholder="you@example.com" /></div>
+          <div>
+            <label class="text-xs font-semibold text-slate-600 mb-1 block">Password</label>
+            <div class="relative">
+              <input id="c-pw-signup" type="password" class="field pr-10" placeholder="••••••••" />
+              <button type="button" onclick="togglePw('c-pw-signup', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <button type="button" class="w-full bg-primary text-white py-2.5 rounded-xl font-semibold text-sm hover:bg-blue-700">Create account</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — Split-screen</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  // fill the star row in Variant A's testimonial
+  document.getElementById('a-stars').innerHTML = '<i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i>'.repeat(5);
+
+  function setTab(scope, tab) {
+    const root = document.querySelector(`[data-variant="${scope}"]`);
+    root.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    root.querySelector(`#${scope.toLowerCase()}-signin`).classList.toggle('hidden', tab !== 'signin');
+    root.querySelector(`#${scope.toLowerCase()}-signup`).classList.toggle('hidden', tab !== 'signup');
+  }
+  function setType(scope, type) {
+    const root = document.querySelector(`[data-variant="${scope.toUpperCase()}"]`);
+    root.querySelectorAll('[data-type]').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+  }
+
+  // Variant A's rotating testimonial carousel: 3 reviews, 5s interval, cross-fade.
+  const AUTH_TESTIMONIALS = [
+    { text: "Rate My Place helped me find the best plumber in town when I had an emergency.", author: "Sarah Jenkins, Local Guide", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" },
+    { text: "Claiming my listing changed everything — I can respond to customers directly.", author: "Michael Chen, Café Owner", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150" },
+    { text: "I love the community feel. People share hidden gems, not just complaints.", author: "Emily Rodriguez, Frequent Reviewer", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150" },
+  ];
+  let authTestimonialIndex = 0;
+  let authTestimonialTimer = null;
+  function renderAuthTestimonial(i) {
+    const t = AUTH_TESTIMONIALS[i];
+    document.getElementById('a-testimonial-text').textContent = `"${t.text}"`;
+    document.getElementById('a-testimonial-avatar').src = t.avatar;
+    document.getElementById('a-testimonial-author').textContent = `— ${t.author}`;
+    document.querySelectorAll('#a-testimonial-dots span').forEach((d, idx) => {
+      d.className = `w-1.5 h-1.5 rounded-full transition-colors ${idx === i ? 'bg-white' : 'bg-white/30'}`;
+    });
+  }
+  function advanceAuthTestimonial() {
+    const track = document.getElementById('a-testimonial-track');
+    track.style.opacity = '0';
+    setTimeout(() => {
+      authTestimonialIndex = (authTestimonialIndex + 1) % AUTH_TESTIMONIALS.length;
+      renderAuthTestimonial(authTestimonialIndex);
+      track.style.opacity = '1';
+    }, 300);
+  }
+  function startAuthTestimonialTimer() {
+    clearInterval(authTestimonialTimer);
+    authTestimonialTimer = setInterval(advanceAuthTestimonial, 5000);
+  }
+  function nextAuthTestimonial() {
+    advanceAuthTestimonial();
+    startAuthTestimonialTimer(); // manual click resets the 5s countdown so it doesn't double-fire right after
+  }
+  function initAuthTestimonials() {
+    document.getElementById('a-testimonial-dots').innerHTML = AUTH_TESTIMONIALS.map(() => '<span></span>').join('');
+    renderAuthTestimonial(0);
+    startAuthTestimonialTimer();
+  }
+  initAuthTestimonials();
+
+  function chooseType(type) {
+    document.getElementById('b-step-choose').classList.add('hidden');
+    document.getElementById('b-step-form').classList.remove('hidden');
+    const badge = document.getElementById('b-badge');
+    const nameField = document.getElementById('b-name-field');
+    const confirmField = document.getElementById('b-confirm-field');
+    if (type === 'SIGNIN') {
+      badge.className = 'inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4 bg-slate-100 text-slate-600';
+      badge.innerHTML = '<i data-lucide="log-in" class="w-3.5 h-3.5"></i> Sign in';
+      document.getElementById('b-heading').textContent = 'Welcome back';
+      document.getElementById('b-subheading').textContent = 'Sign in to continue.';
+      document.getElementById('b-submit').textContent = 'Sign In';
+      nameField.classList.add('hidden');
+      confirmField.classList.add('hidden');
+    } else {
+      const isBiz = type === 'BUSINESS';
+      badge.className = `inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-4 ${isBiz ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-primary'}`;
+      badge.innerHTML = `<i data-lucide="${isBiz ? 'building-2' : 'user'}" class="w-3.5 h-3.5"></i> ${isBiz ? 'Business account' : 'Reviewer account'}`;
+      document.getElementById('b-heading').textContent = isBiz ? 'List your business' : 'Create your account';
+      document.getElementById('b-subheading').textContent = isBiz ? 'Claim your place and start managing reviews.' : 'Start discovering and reviewing local places.';
+      document.getElementById('b-submit').textContent = 'Create account';
+      nameField.classList.remove('hidden');
+      confirmField.classList.remove('hidden');
+    }
+    lucide.createIcons();
+  }
+  function backToChoose() {
+    document.getElementById('b-step-form').classList.add('hidden');
+    document.getElementById('b-step-choose').classList.remove('hidden');
+  }
+
+  function togglePw(id, btn) {
+    const input = document.getElementById(id);
+    const isPw = input.type === 'password';
+    input.type = isPw ? 'text' : 'password';
+    btn.innerHTML = `<i data-lucide="${isPw ? 'eye-off' : 'eye'}" class="w-4 h-4"></i>`;
+    lucide.createIcons();
+  }
+
+  // --- switcher ---
+  const variants = [
+    { key: 'A', name: 'Split-screen, inline type toggle' },
+    { key: 'B', name: 'Two-step chooser-first' },
+    { key: 'C', name: 'Minimal centered card' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function render() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-variant]').forEach(el => el.classList.toggle('active', el.dataset.variant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    const params = new URLSearchParams(location.search);
+    params.set('variant', variants[i].key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    render();
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  render();
+</script>
+
+</body>
+</html>
