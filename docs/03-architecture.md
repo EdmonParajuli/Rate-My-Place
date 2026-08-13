@@ -179,12 +179,12 @@ Notes on the additions:
   tables — pairs with an actual object-storage decision (see doc 6).
 - Add `price_range` (`enum $/$$/$$$`) directly onto `PLACES` rather than a new table.
 
-## Planned: `signUpBusiness` (atomic account + place creation)
+## `signUpBusiness` (atomic account + place creation)
 
 **New scope, surfaced 2026-08-12** while designing Phase 4's Auth screens (see
 [04-roadmap.md](./04-roadmap.md) Phase 4 and
-[05-frontend-plan.md](./05-frontend-plan.md)'s "Business-owner signup" section) —
-not yet built, recorded here so the shape is decided before implementation starts.
+[05-frontend-plan.md](./05-frontend-plan.md)'s "Business-owner signup" section).
+**Done** (2026-08-13).
 
 Business-owner signup needs to create the `User` (`userType: BUSINESS`) and their
 first `Place` **atomically in one transaction**, not as two chained calls to the
@@ -195,29 +195,69 @@ user left with no place if the caller drops off between steps. A new mutation,
 - **Input**: the existing `InputAuthSignUp` fields minus `userType` (implied
   `BUSINESS`) — `name`, `email`, `password` — plus the place fields `createPlace`
   already takes: `label`, `description`, `address`, `phone`, `website`,
-  `categoryId`, `priceRange`.
-- **Output**: same shape `signUp` already returns (tokens + `User`) plus the
-  created `Place`.
-- **Validator**: a new Joi schema, per convention — not a thin wrapper around the
-  two existing schemas, since some fields (e.g. `categoryId`) are required here in
-  a way `createPlace`'s standalone schema may not enforce identically.
+  `categoryId`, `priceRange`. Flat, not nested under a `place` key
+  (`InputSignUpBusinessInterface`/`InputSignUpBusiness`).
+- **Output**: `{ user, place, token }` (`SignUpBusinessResponse.data`) — not
+  quite the same shape `signUp` claims to return (`signUp`'s `SignUpResponse.data`
+  is typed `SignUpData{email,userType}` but the resolver actually returns
+  `{user,token}` — a **pre-existing schema/resolver mismatch**, unrelated to this
+  work and not touched here; `SignUpBusinessResponse.data` was typed to match
+  what's actually returned, verified live).
+- **Validator**: a new Joi schema (`signUpBusinessSchema`), per convention — not a
+  thin wrapper around the two existing schemas, reusing the same field-level
+  rules as `signUpSchema`/`createPlaceSchema` since this is a flat input, not a
+  nested one.
 
-**Open implementation question, not resolved here**: `CLAUDE.md`'s service rule is
-"own exactly one repository each" — this mutation's orchestration spans two
-repositories (`UserRepository`, `PlaceRepository`). Two ways to keep that rule
-intact rather than reaching straight for both repositories from a new service:
-1. A new orchestration-only service (e.g. `BusinessOnboardingService`) that calls
-   the *existing* `AuthService`/`UserService` and `PlaceService` methods rather
-   than touching either repository directly — but those methods would need to
-   accept and pass through a shared Sequelize transaction, the same way review
-   creation already threads a transaction through to keep `Place.averageRating`/
-   `reviewCount` recomputation atomic with the review write (an existing
-   precedent worth reusing here, not inventing a new transaction pattern).
-2. Or accept a one-off exception to the one-repository rule for this specific
-   orchestration service, if threading a shared transaction through two existing
-   services turns out awkward in practice.
-Worth settling once this is actually picked up for implementation, not guessed at
-now.
+**Architecture question resolved (2026-08-13)**: `CLAUDE.md`'s service rule is "own
+exactly one repository each" — this mutation's orchestration spans two
+repositories (`UserRepository`, `PlaceRepository`). No exception to that rule is
+needed — `BaseRepository.create(input, options?: CreateOptions)` already accepts
+Sequelize's `CreateOptions` (which includes `transaction`), and
+`PlaceService.updateRatingStats` already threads an optional `transaction`
+parameter through to its own repository, the exact shape `ReviewService`'s
+`withTransaction`/`recomputePlaceStats` already uses to keep a review write and
+`Place.averageRating`/`reviewCount` recomputation atomic. `signUpBusiness` reuses
+that same pattern one level up, via a new orchestration-only
+`BusinessOnboardingService` (no repository of its own, same shape as
+`PlatformStatsService`) that composes `AuthService` and `PlaceService`:
+
+1. **Extract user-creation out of `AuthService.signUp`.** `signUp` today bundles
+   three things — validate email, create the `User` row, then sign tokens and
+   create a session (a third repository write, via `SessionService`) — all before
+   returning. Calling `signUp()` as a black box from `BusinessOnboardingService`
+   would create the session *before* the `Place` exists and outside any shared
+   transaction, so `User`+`Place` wouldn't actually be atomic. Instead, pull just
+   the "check email doesn't exist, hash password, create the `User` row" step out
+   into a new `AuthService` method (e.g. `createUser(input, transaction?:
+   Transaction)`) that accepts an optional transaction and returns the created
+   user, with no token-signing or session-creation inside it. `signUp()` itself is
+   refactored to call this same method (without a transaction — it's a single
+   write, doesn't need one) so there's exactly one code path for user creation,
+   not two to keep in sync.
+2. **`PlaceService.createPlace` gains an optional `transaction` parameter**,
+   threaded straight to `repository.create(input, { transaction })` — same shape
+   as `PlaceService.updateRatingStats` already has.
+3. **`BusinessOnboardingService.signUpBusiness`**: check the email doesn't already
+   exist (before opening a transaction, same as `ReviewService.createReview`'s
+   checks happening before `withTransaction`), then open one transaction (reusing
+   `ReviewService`'s `withTransaction` shape) covering exactly the two writes that
+   must be atomic — `AuthService.createUser(..., transaction)` then
+   `PlaceService.createPlace(input, transaction)`, using the newly-created user's
+   id as the place's `ownerId`. **After** the transaction commits — same "re-fetch/
+   follow-up happens after commit" rule `ReviewService.updateReview` already
+   documents — sign tokens (`signToken`, a pure utility, not a repository) and
+   create the session via the existing `SessionService`, then return `{ user,
+   place, token }`. If place creation fails (e.g. an invalid `categoryId`), the
+   transaction rolls back the user creation too — no orphaned business account,
+   which is the exact failure mode this mutation exists to prevent.
+
+**Verified live** (2026-08-13): happy path (user + place + session + tokens all
+created, issued access token authenticates a follow-up `authMeUser` call);
+rollback path (an out-of-range `categoryId` trips the `providers_places`
+category FK, and the `User` row created moments earlier in the same transaction
+is confirmed gone — a subsequent `login` with that email fails with "Invalid
+email or password"); duplicate-email rejection (same as `signUp`'s existing
+check, reused via `createUser`).
 
 ## Planned: `Category` cover image + live business-count/avg-rating
 

@@ -55,6 +55,21 @@ export const authTypedefs: DocumentNode = gql`
         refreshToken: String!
     }
 
+    # Flat, not nested under a place key - mirrors InputSignUpBusinessInterface.
+    # userType isn't an input field here - it's implied BUSINESS.
+    input InputSignUpBusiness {
+        name: String
+        email: String
+        password: String
+        label: String
+        description: String
+        address: String
+        phone: String
+        website: String
+        categoryId: Int
+        priceRange: PriceRangeEnum
+    }
+
     type SignUpData {
         email: String
         userType: UserTypeEnum
@@ -85,6 +100,17 @@ export const authTypedefs: DocumentNode = gql`
         data: User
     }
 
+    type SignUpBusinessData {
+        user: User
+        place: Place
+        token: LoginToken
+    }
+
+    type SignUpBusinessResponse {
+        message: String
+        data: SignUpBusinessData
+    }
+
     type authMeUserResponse {
         message: String
         data: User
@@ -92,6 +118,7 @@ export const authTypedefs: DocumentNode = gql`
 
     extend type Mutation {
         signUp(input: InputAuthSignUp): SignUpResponse
+        signUpBusiness(input: InputSignUpBusiness): SignUpBusinessResponse
         login(input: InputAuthLogin): LoginResponse
         signOut(input: InputRefreshToken): Message
         forgotPassword(input: InputForgotPassword!): Message

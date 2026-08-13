@@ -82,8 +82,12 @@ export default class PlaceService {
     return this.repository.findByPk(id);
   }
 
-  async createPlace(input: InputPlaceInterface) {
-    return this.repository.create(input);
+  // transaction is optional - BusinessOnboardingService.signUpBusiness passes one
+  // so the Place write commits atomically with the owning User's creation;
+  // createPlace's normal caller (placeResolver.ts) omits it, same as
+  // updateRatingStats below.
+  async createPlace(input: InputPlaceInterface, transaction?: Transaction) {
+    return this.repository.create(input, { transaction });
   }
 
   async updatePlace({

@@ -50,11 +50,11 @@ Business Dashboard, Media) is later phases, see Non-goals.
 Every one of these was discovered while designing a Phase 4 screen against the real
 Figma design, reconciled against what the backend actually exposes today. Full shape
 for each is in [03-architecture.md](../03-architecture.md)'s "Planned: ..." sections,
-linked below. **Status updated as items land** — 5 of 7 are built as of 2026-08-13.
+linked below. **Status updated as items land** — 6 of 7 are built as of 2026-08-13.
 
 | Addition | Needed for | Status | Detail |
 |---|---|---|---|
-| `signUpBusiness` mutation (atomic `User` + `Place` creation, one transaction) | Auth screens' business-signup wizard | Not built | [03-architecture.md § signUpBusiness](../03-architecture.md#planned-signupbusiness-atomic-account--place-creation) |
+| `signUpBusiness` mutation (atomic `User` + `Place` creation, one transaction) | Auth screens' business-signup wizard | ✅ Built | [03-architecture.md § signUpBusiness](../03-architecture.md#signupbusiness-atomic-account--place-creation) |
 | `Category.coverImageUrl: String` (seed-managed, no new mutation) | Categories screen's cards matching Figma | ✅ Built, unseeded | [03-architecture.md § Category cover image](../03-architecture.md#planned-category-cover-image--live-business-countavg-rating) |
 | `Category.businessCount: Int` / `avgRating: Float` (live-computed, not materialized) | Categories screen's cards + category-detail banner | ✅ Built | same section as above |
 | `platformStats` query (`totalPlaces`/`totalReviews`, live `COUNT`s) | Categories screen's platform-wide stats row | ✅ Built | [03-architecture.md § platform-wide stats](../03-architecture.md#also-needed-platform-wide-stats-totalplacestotalreviews) |

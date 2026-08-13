@@ -1,4 +1,4 @@
-import { ContextInterface, InputAuthLoginInterface, InputAuthSignUpInterface } from "../../interfaces";
+import { ContextInterface, InputAuthLoginInterface, InputAuthSignUpInterface, InputSignUpBusinessInterface } from "../../interfaces";
 import { Validator } from "../../middlewares";
 import {
   changePasswordSchema,
@@ -6,10 +6,12 @@ import {
   forgotPasswordSchema,
   loginSchema,
   signOutSchema,
+  signUpBusinessSchema,
   signUpSchema,
 } from "../../validators";
 import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { AuthService } from "../../services/authService";
+import { BusinessOnboardingService } from "../../services/businessOnboardingService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { requireAuth } from "../../utils/auth";
@@ -31,6 +33,30 @@ export const authResolvers = {
 
         return SuccessResponse.send({
           message: "Signup successfully",
+          data: result
+        });
+      } catch (error: any) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throwError(error.message, "BAD_USER_INPUT", 404);
+      }
+    },
+
+    signUpBusiness: async (
+      parent: ParentNode,
+      args: { input: InputSignUpBusinessInterface },
+      context: ContextInterface,
+      info: GraphQLResolveInfo
+    ) => {
+      try {
+        args.input.email = args.input?.email.toLowerCase();
+        Validator.check(signUpBusinessSchema, args.input);
+
+        const result = await new BusinessOnboardingService().signUpBusiness(args.input, context);
+
+        return SuccessResponse.send({
+          message: "Business signed up successfully",
           data: result
         });
       } catch (error: any) {
