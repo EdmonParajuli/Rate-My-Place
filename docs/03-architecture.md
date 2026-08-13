@@ -458,6 +458,16 @@ Three small, independent additions. **All three are now built** (2026-08-13).
   the existing `PlaceHourService.getForPlace`/`isOpenNow` convention for the
   same situation.
 
+**One more gap found while building the real Place Detail screen (2026-08-13),
+same class as `ReviewReply.createdAt` above but on `Review` itself**:
+`Review` had no `createdAt` field exposed in GraphQL at all — the model has
+always had the column (`ModelTimestampExtend`/`timestamps: true`, same as
+every table), but nothing surfaced it, so review dates couldn't be shown even
+though `placeReviews`' `RECENT` sort already ordered by it server-side. Added
+`createdAt: String` to the `Review` type — no resolver needed, resolves via
+default field resolution off the model instance, same raw
+epoch-millisecond-string convention as `Session.createdAt`/`ReviewReply.createdAt`.
+
 ## `Place.category`/`trendingScore` bugs found while building Discover (2026-08-13)
 
 Two pre-existing gaps surfaced and fixed while building the real Discover

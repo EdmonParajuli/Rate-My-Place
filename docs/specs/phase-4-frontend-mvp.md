@@ -306,7 +306,7 @@ the real `businessCount`/`avgRating`/`icon` per category), and both
 `listPlaces(filter: {categoryId}, sort: ...)` queries the detail sub-screen
 needs - all confirmed correct with real data before wiring into the UI.
 
-### 6. Place detail + write/edit review
+### 6. Place detail + write/edit review ✅ Built (2026-08-13)
 
 **Chosen: Variant A.** A real, complete `PlaceDetailScreen` turned up in the Figma
 source mid-effort (didn't exist when this ticket was first checked). Faithful
@@ -327,6 +327,39 @@ GraphQL: `getPlaceById`, `placeReviews(placeId, first, after, sort)` (gaining a
 
 Ticket: [06-place-detail-review.md](../../.scratch/phase-4-frontend-mvp/tickets/06-place-detail-review.md).
 Prototype: `prototype/place-detail-review` (commit `0e7746c`).
+
+**Real implementation** (`frontend/src/routes/app/placeDetail/`): `PlaceDetailPage.tsx`
+(header, hours accordion, CTA column, sidebar) + `RatingOverview.tsx` +
+`WriteReviewForm.tsx` (shared for create/edit) + `ReviewCard.tsx` (helpful vote,
+edit/delete, nested reply display, inline owner-reply composer).
+
+- **Viewer/owner mode is derived, never a toggle**: `isOwner = user?.id ===
+  place.owner?.id`, exactly the critical correction this ticket flagged - no
+  toggle UI shipped.
+- **Another real, trivial gap found and fixed**: `Review` had no `createdAt`
+  field exposed in GraphQL at all (only `ReviewReply.createdAt` had been added
+  in an earlier pass) - review dates couldn't be shown even though `RECENT`
+  sort already worked server-side. Added, same "default field resolution off
+  the model instance" pattern as everywhere else this convention applies.
+- **`UserAvatar` extracted to `frontend/src/components/`** - the
+  initials-fallback avatar (no photo upload flow exists) was inline in
+  `AppLayout.tsx`; needed again here (reviewer avatars, owner info sidebar,
+  reply attribution), so it's now a shared component. `AppLayout.tsx` updated
+  to use it too, rather than carrying two copies.
+- **"Manage Listing"/"Report listing"** — matches the ticket's own scope
+  decisions: the former renders per the design but isn't wired to a real
+  destination (Business Dashboard is Phase 6, doesn't exist yet, not even as a
+  stub); the latter is omitted entirely (no moderation pipeline exists
+  anywhere in this project, so not even a client-only stand-in makes sense).
+- **"Similar Places Nearby"** uses `listPlaces(filter: {categoryId})`,
+  filtering out the current place and capping at 3, exactly as scoped.
+
+Verified live end-to-end against the real backend with a fresh business
+account + place created for the purpose: `getPlaceById` (including
+`ratingBreakdown`/`hours`/`owner`), `placeReviews` with real `createdAt`,
+`createReview`/`updateReview`/`deleteReview`, `toggleHelpfulVote`, and
+`createReviewReply` (as the place's real owner) - all confirmed correct with
+real data before wiring into the UI.
 
 ### 7. My Reviews screen
 
@@ -370,10 +403,11 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    real API - see the screen section above for the full list of prototype-vs-
    real-API reconciliations (single-select filters, real geolocation for
    "Nearby," no fake photos/location pill).
-5. **Place Detail** — reachable from Discover, closes the core "find → review"
-   loop. Needs `ReviewReply.createdAt` + `placeReviews`'s new `sort` arg +
-   `Place.ratingBreakdown` (backend, independent small additions — can land
-   before or in parallel with the screen's own frontend work).
+5. **Place Detail** ✅ **Done** (2026-08-13) — reachable from Discover, closes
+   the core "find → review" loop. `ReviewReply.createdAt`/`placeReviews`'s
+   `sort` arg/`Place.ratingBreakdown` were already built in an earlier pass;
+   `Review.createdAt` (a real gap only discovered while building this screen)
+   got added too.
 6. **Categories screen** ✅ **Done** (2026-08-13, built before Place Detail -
    this suggested order wasn't a hard dependency) — needed
    `Category.coverImageUrl`/`businessCount`/`avgRating` + the new

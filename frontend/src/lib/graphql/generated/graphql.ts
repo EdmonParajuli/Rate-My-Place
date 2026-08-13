@@ -443,6 +443,7 @@ export type RefreshTokenResponse = {
 
 export type Review = {
   __typename?: 'Review';
+  createdAt?: Maybe<Scalars['String']['output']>;
   helpfulByMe?: Maybe<Scalars['Boolean']['output']>;
   helpfulCount?: Maybe<Scalars['Int']['output']>;
   id?: Maybe<Scalars['Int']['output']>;
@@ -597,6 +598,61 @@ export type CategoryQueryVariables = Exact<{
 
 
 export type CategoryQuery = { __typename?: 'Query', category?: { __typename?: 'CategoryResponse', data?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null } | null };
+
+export type GetPlaceByIdQueryVariables = Exact<{
+  id: Scalars['Int']['input'];
+}>;
+
+
+export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
+
+export type PlaceReviewsQueryVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  sort?: InputMaybe<ReviewSortEnum>;
+}>;
+
+
+export type PlaceReviewsQuery = { __typename?: 'Query', placeReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, reviewerId?: number | null, createdAt?: string | null, helpfulCount?: number | null, helpfulByMe?: boolean | null, reviewer?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, reply?: { __typename?: 'ReviewReply', id?: number | null, description?: string | null, createdAt?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+
+export type CreateReviewMutationVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+  input: InputReview;
+}>;
+
+
+export type CreateReviewMutation = { __typename?: 'Mutation', createReview?: { __typename?: 'ReviewResponse', message?: string | null } | null };
+
+export type UpdateReviewMutationVariables = Exact<{
+  reviewId: Scalars['Int']['input'];
+  input: InputUpdateReview;
+}>;
+
+
+export type UpdateReviewMutation = { __typename?: 'Mutation', updateReview?: { __typename?: 'ReviewResponse', message?: string | null } | null };
+
+export type DeleteReviewMutationVariables = Exact<{
+  reviewId: Scalars['Int']['input'];
+}>;
+
+
+export type DeleteReviewMutation = { __typename?: 'Mutation', deleteReview?: { __typename?: 'Message', message?: string | null } | null };
+
+export type ToggleHelpfulVoteMutationVariables = Exact<{
+  reviewId: Scalars['Int']['input'];
+}>;
+
+
+export type ToggleHelpfulVoteMutation = { __typename?: 'Mutation', toggleHelpfulVote?: { __typename?: 'ToggleHelpfulVoteResponse', message?: string | null, helpfulCount?: number | null, helpfulByMe?: boolean | null } | null };
+
+export type CreateReviewReplyMutationVariables = Exact<{
+  reviewId: Scalars['Int']['input'];
+  input: InputReviewReply;
+}>;
+
+
+export type CreateReviewReplyMutation = { __typename?: 'Mutation', createReviewReply?: { __typename?: 'ReviewReplyResponse', message?: string | null } | null };
 
 export type ListPlacesQueryVariables = Exact<{
   sort?: InputMaybe<PlaceSortEnum>;
@@ -935,6 +991,310 @@ export type CategoryQueryHookResult = ReturnType<typeof useCategoryQuery>;
 export type CategoryLazyQueryHookResult = ReturnType<typeof useCategoryLazyQuery>;
 export type CategorySuspenseQueryHookResult = ReturnType<typeof useCategorySuspenseQuery>;
 export type CategoryQueryResult = ApolloReactCommon.QueryResult<CategoryQuery, CategoryQueryVariables>;
+export const GetPlaceByIdDocument = gql`
+    query GetPlaceById($id: Int!) {
+  getPlaceById(id: $id) {
+    data {
+      id
+      label
+      description
+      address
+      phone
+      website
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      openNow
+      category {
+        id
+        label
+        icon
+      }
+      owner {
+        id
+        fullName
+        profilePicture
+      }
+      hours {
+        dayOfWeek
+        opensAt
+        closesAt
+      }
+      ratingBreakdown {
+        stars
+        count
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetPlaceByIdQuery__
+ *
+ * To run a query within a React component, call `useGetPlaceByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetPlaceByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetPlaceByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetPlaceByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetPlaceByIdQuery, GetPlaceByIdQueryVariables> & ({ variables: GetPlaceByIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>(GetPlaceByIdDocument, options as any);
+      }
+export function useGetPlaceByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>(GetPlaceByIdDocument, options as any);
+        }
+// @ts-ignore
+export function useGetPlaceByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useGetPlaceByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<GetPlaceByIdQuery | undefined, GetPlaceByIdQueryVariables>;
+export function useGetPlaceByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>(GetPlaceByIdDocument, options as any);
+        }
+export type GetPlaceByIdQueryHookResult = ReturnType<typeof useGetPlaceByIdQuery>;
+export type GetPlaceByIdLazyQueryHookResult = ReturnType<typeof useGetPlaceByIdLazyQuery>;
+export type GetPlaceByIdSuspenseQueryHookResult = ReturnType<typeof useGetPlaceByIdSuspenseQuery>;
+export type GetPlaceByIdQueryResult = ApolloReactCommon.QueryResult<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>;
+export const PlaceReviewsDocument = gql`
+    query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSortEnum) {
+  placeReviews(placeId: $placeId, first: $first, after: $after, sort: $sort) {
+    data {
+      id
+      review
+      rating
+      reviewerId
+      createdAt
+      helpfulCount
+      helpfulByMe
+      reviewer {
+        id
+        fullName
+        profilePicture
+      }
+      reply {
+        id
+        description
+        createdAt
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+
+/**
+ * __usePlaceReviewsQuery__
+ *
+ * To run a query within a React component, call `usePlaceReviewsQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePlaceReviewsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePlaceReviewsQuery({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *      sort: // value for 'sort'
+ *   },
+ * });
+ */
+export function usePlaceReviewsQuery(baseOptions: ApolloReactHooks.QueryHookOptions<PlaceReviewsQuery, PlaceReviewsQueryVariables> & ({ variables: PlaceReviewsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<PlaceReviewsQuery, PlaceReviewsQueryVariables>(PlaceReviewsDocument, options as any);
+      }
+export function usePlaceReviewsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PlaceReviewsQuery, PlaceReviewsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<PlaceReviewsQuery, PlaceReviewsQueryVariables>(PlaceReviewsDocument, options as any);
+        }
+// @ts-ignore
+export function usePlaceReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<PlaceReviewsQuery, PlaceReviewsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlaceReviewsQuery, PlaceReviewsQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function usePlaceReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlaceReviewsQuery, PlaceReviewsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlaceReviewsQuery | undefined, PlaceReviewsQueryVariables>;
+export function usePlaceReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlaceReviewsQuery, PlaceReviewsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<PlaceReviewsQuery, PlaceReviewsQueryVariables>(PlaceReviewsDocument, options as any);
+        }
+export type PlaceReviewsQueryHookResult = ReturnType<typeof usePlaceReviewsQuery>;
+export type PlaceReviewsLazyQueryHookResult = ReturnType<typeof usePlaceReviewsLazyQuery>;
+export type PlaceReviewsSuspenseQueryHookResult = ReturnType<typeof usePlaceReviewsSuspenseQuery>;
+export type PlaceReviewsQueryResult = ApolloReactCommon.QueryResult<PlaceReviewsQuery, PlaceReviewsQueryVariables>;
+export const CreateReviewDocument = gql`
+    mutation CreateReview($placeId: Int!, $input: InputReview!) {
+  createReview(placeId: $placeId, input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useCreateReviewMutation__
+ *
+ * To run a mutation, you first call `useCreateReviewMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateReviewMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createReviewMutation, { data, loading, error }] = useCreateReviewMutation({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateReviewMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateReviewMutation, CreateReviewMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateReviewMutation, CreateReviewMutationVariables>(CreateReviewDocument, options);
+      }
+export type CreateReviewMutationHookResult = ReturnType<typeof useCreateReviewMutation>;
+export type CreateReviewMutationResult = ApolloReactCommon.MutationResult<CreateReviewMutation>;
+export const UpdateReviewDocument = gql`
+    mutation UpdateReview($reviewId: Int!, $input: InputUpdateReview!) {
+  updateReview(reviewId: $reviewId, input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useUpdateReviewMutation__
+ *
+ * To run a mutation, you first call `useUpdateReviewMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateReviewMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateReviewMutation, { data, loading, error }] = useUpdateReviewMutation({
+ *   variables: {
+ *      reviewId: // value for 'reviewId'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateReviewMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateReviewMutation, UpdateReviewMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateReviewMutation, UpdateReviewMutationVariables>(UpdateReviewDocument, options);
+      }
+export type UpdateReviewMutationHookResult = ReturnType<typeof useUpdateReviewMutation>;
+export type UpdateReviewMutationResult = ApolloReactCommon.MutationResult<UpdateReviewMutation>;
+export const DeleteReviewDocument = gql`
+    mutation DeleteReview($reviewId: Int!) {
+  deleteReview(reviewId: $reviewId) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useDeleteReviewMutation__
+ *
+ * To run a mutation, you first call `useDeleteReviewMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useDeleteReviewMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [deleteReviewMutation, { data, loading, error }] = useDeleteReviewMutation({
+ *   variables: {
+ *      reviewId: // value for 'reviewId'
+ *   },
+ * });
+ */
+export function useDeleteReviewMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<DeleteReviewMutation, DeleteReviewMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<DeleteReviewMutation, DeleteReviewMutationVariables>(DeleteReviewDocument, options);
+      }
+export type DeleteReviewMutationHookResult = ReturnType<typeof useDeleteReviewMutation>;
+export type DeleteReviewMutationResult = ApolloReactCommon.MutationResult<DeleteReviewMutation>;
+export const ToggleHelpfulVoteDocument = gql`
+    mutation ToggleHelpfulVote($reviewId: Int!) {
+  toggleHelpfulVote(reviewId: $reviewId) {
+    message
+    helpfulCount
+    helpfulByMe
+  }
+}
+    `;
+
+/**
+ * __useToggleHelpfulVoteMutation__
+ *
+ * To run a mutation, you first call `useToggleHelpfulVoteMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useToggleHelpfulVoteMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [toggleHelpfulVoteMutation, { data, loading, error }] = useToggleHelpfulVoteMutation({
+ *   variables: {
+ *      reviewId: // value for 'reviewId'
+ *   },
+ * });
+ */
+export function useToggleHelpfulVoteMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ToggleHelpfulVoteMutation, ToggleHelpfulVoteMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ToggleHelpfulVoteMutation, ToggleHelpfulVoteMutationVariables>(ToggleHelpfulVoteDocument, options);
+      }
+export type ToggleHelpfulVoteMutationHookResult = ReturnType<typeof useToggleHelpfulVoteMutation>;
+export type ToggleHelpfulVoteMutationResult = ApolloReactCommon.MutationResult<ToggleHelpfulVoteMutation>;
+export const CreateReviewReplyDocument = gql`
+    mutation CreateReviewReply($reviewId: Int!, $input: InputReviewReply!) {
+  createReviewReply(reviewId: $reviewId, input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useCreateReviewReplyMutation__
+ *
+ * To run a mutation, you first call `useCreateReviewReplyMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateReviewReplyMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createReviewReplyMutation, { data, loading, error }] = useCreateReviewReplyMutation({
+ *   variables: {
+ *      reviewId: // value for 'reviewId'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useCreateReviewReplyMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<CreateReviewReplyMutation, CreateReviewReplyMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<CreateReviewReplyMutation, CreateReviewReplyMutationVariables>(CreateReviewReplyDocument, options);
+      }
+export type CreateReviewReplyMutationHookResult = ReturnType<typeof useCreateReviewReplyMutation>;
+export type CreateReviewReplyMutationResult = ApolloReactCommon.MutationResult<CreateReviewReplyMutation>;
 export const ListPlacesDocument = gql`
     query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInput, $first: Int, $after: String) {
   listPlaces(

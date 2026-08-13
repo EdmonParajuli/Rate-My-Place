@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { Star, Search, Grid3x3, MessageSquare, MoreHorizontal, LogOut, Menu, X } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
+import { UserAvatar } from "@/components/UserAvatar"
 
 // Variant A from prototype/authenticated-shell (docs/specs/phase-4-frontend-mvp.md
 // §3) - w-60 sidebar holding only the 3 Phase-4 nav items
@@ -23,23 +24,6 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
 
 function userTypeLabel(userType: string | null): string {
   return userType === "BUSINESS" ? "Business owner" : "Reviewer"
-}
-
-function UserAvatar({ name, profilePicture, className }: { name: string; profilePicture: string | null; className: string }) {
-  if (profilePicture) {
-    return <img src={profilePicture} alt="" className={`${className} object-cover`} />
-  }
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
-  return (
-    <span className={`${className} flex items-center justify-center bg-primary font-bold text-primary-foreground`}>
-      {initials || "?"}
-    </span>
-  )
 }
 
 export function AppLayout() {

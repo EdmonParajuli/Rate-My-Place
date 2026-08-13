@@ -1,0 +1,96 @@
+query GetPlaceById($id: Int!) {
+  getPlaceById(id: $id) {
+    data {
+      id
+      label
+      description
+      address
+      phone
+      website
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      openNow
+      category {
+        id
+        label
+        icon
+      }
+      owner {
+        id
+        fullName
+        profilePicture
+      }
+      hours {
+        dayOfWeek
+        opensAt
+        closesAt
+      }
+      ratingBreakdown {
+        stars
+        count
+      }
+    }
+  }
+}
+
+query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSortEnum) {
+  placeReviews(placeId: $placeId, first: $first, after: $after, sort: $sort) {
+    data {
+      id
+      review
+      rating
+      reviewerId
+      createdAt
+      helpfulCount
+      helpfulByMe
+      reviewer {
+        id
+        fullName
+        profilePicture
+      }
+      reply {
+        id
+        description
+        createdAt
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+mutation CreateReview($placeId: Int!, $input: InputReview!) {
+  createReview(placeId: $placeId, input: $input) {
+    message
+  }
+}
+
+mutation UpdateReview($reviewId: Int!, $input: InputUpdateReview!) {
+  updateReview(reviewId: $reviewId, input: $input) {
+    message
+  }
+}
+
+mutation DeleteReview($reviewId: Int!) {
+  deleteReview(reviewId: $reviewId) {
+    message
+  }
+}
+
+mutation ToggleHelpfulVote($reviewId: Int!) {
+  toggleHelpfulVote(reviewId: $reviewId) {
+    message
+    helpfulCount
+    helpfulByMe
+  }
+}
+
+mutation CreateReviewReply($reviewId: Int!, $input: InputReviewReply!) {
+  createReviewReply(reviewId: $reviewId, input: $input) {
+    message
+  }
+}

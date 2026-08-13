@@ -8,7 +8,7 @@ import { DiscoverPage } from "./app/discover/DiscoverPage"
 import { CategoriesPage } from "./app/categories/CategoriesPage"
 import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
 import { MyReviewsPage } from "./app/MyReviewsPage"
-import { PlaceDetailPage } from "./app/PlaceDetailPage"
+import { PlaceDetailPage } from "./app/placeDetail/PlaceDetailPage"
 
 export const router = createBrowserRouter([
   {
