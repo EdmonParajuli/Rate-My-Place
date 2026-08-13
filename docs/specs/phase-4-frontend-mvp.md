@@ -244,7 +244,7 @@ open-now/search filter combinations, `TRENDING` (including the empty-strip case
 when no place has `trendingScore > 0`), and cursor pagination's `endCursor`/
 `hasNextPage` — all confirmed correct with real data before wiring into the UI.
 
-### 5. Categories screen
+### 5. Categories screen ✅ Built (2026-08-13)
 
 **Chosen: Variant A.** Dark gradient hero ("Explore Places by Category"), card
 grid matching Figma exactly — cover photo + gradient overlay + centered icon/name
@@ -262,6 +262,49 @@ sections.
 
 Ticket: [07-categories-screen.md](../../.scratch/phase-4-frontend-mvp/tickets/07-categories-screen.md).
 Prototype: `prototype/categories-screen` (commits `ae4563f`, `098a76a`).
+
+**Real implementation** (`frontend/src/routes/app/categories/`): `CategoriesPage.tsx`
+(hero + `PlatformStatsRow` + `CategoryCard` grid) and `CategoryDetailPage.tsx`
+(colored banner + `PlaceCard` grid for Top Rated + `RankedPlaceRow` numbered list
+for Trending Now), routed as a real nested route (`/app/categories/:categoryId`,
+not a client-side toggle) since it's genuinely distinct, bookmarkable content -
+unlike Discover's list/map toggle, which is the same data in two view modes.
+Reused `PlaceCard` from the Discover screen directly for Top Rated (same
+`listPlaces` shape, no reason to duplicate it).
+
+- **`coverImageUrl` is real but still unseeded** (`docs/03-architecture.md` has
+  flagged this since it was added) — `CategoryCard`/`CategoryDetailPage` use the
+  category's own accent gradient (`frontend/src/lib/categoryStyles.ts`, not a
+  gray placeholder) as the card background either way; a photo would layer
+  underneath the gradient automatically the moment `coverImageUrl` gets
+  populated, no code change needed then.
+- **`Category.icon` is a lucide-react icon name string** (seed-data managed),
+  resolved via a small explicit lookup (`frontend/src/lib/categoryIcons.ts`)
+  covering the 11 real seeded categories (10 from Figma + `Bar`, kept as an
+  11th per `docs/03-architecture.md`) rather than a dynamic import of lucide's
+  whole icon barrel - fails to a real fallback icon (not a blank render) for
+  any future category whose icon name isn't yet mapped. `categoryStyles.ts`
+  also gained a `Bar` entry (a real accent gradient, not the generic
+  gray fallback the Discover screen's cards already fall back to for
+  unmapped categories).
+- **A fourth, more structural Apollo Client v4/codegen incompatibility found
+  and fixed** while adding `Category($id: Int!)` (the platform's first query
+  with an all-required-variables input) - documented in full in
+  `frontend/README.md`'s "Known workarounds": `typescript-react-apollo`'s
+  required-variables enforcement pattern (an intersected wrapper signature)
+  conflicts with how Apollo Client v4 actually enforces required variables
+  (via `useQuery`'s own overload set, not the `Options` type), breaking the
+  generated wrapper's *internal* call regardless of the outer signature. Fixed
+  by casting only that internal call - the outer signature callers actually
+  see and get type-checked against is untouched, so `variables` is still
+  correctly required at call sites. The post-codegen patch script was renamed
+  `fix-codegen-apollo-v4.mjs` (from `fix-codegen-suspense-overloads.mjs`) to
+  reflect it now fixes two unrelated gaps, not one.
+
+Verified live against the real backend: `categories`/`category(id)` (including
+the real `businessCount`/`avgRating`/`icon` per category), and both
+`listPlaces(filter: {categoryId}, sort: ...)` queries the detail sub-screen
+needs - all confirmed correct with real data before wiring into the UI.
 
 ### 6. Place detail + write/edit review
 
@@ -331,10 +374,10 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    loop. Needs `ReviewReply.createdAt` + `placeReviews`'s new `sort` arg +
    `Place.ratingBreakdown` (backend, independent small additions — can land
    before or in parallel with the screen's own frontend work).
-6. **Categories screen** — needs `Category.coverImageUrl`/`businessCount`/
-   `avgRating` + the new `platformStats` query (backend) before its cards show
-   real data; the screen's own frontend work can start against mock data in the
-   meantime, same as every other screen already did during prototyping.
+6. **Categories screen** ✅ **Done** (2026-08-13, built before Place Detail -
+   this suggested order wasn't a hard dependency) — needed
+   `Category.coverImageUrl`/`businessCount`/`avgRating` + the new
+   `platformStats` query, both already built in an earlier pass.
 7. **My Reviews screen** — no new backend scope; the "Drafts" tab is entirely
    frontend (`localStorage`), safe to build any time after the shell exists.
 8. **Marketing landing page** — logged-out, doesn't depend on or block anything

@@ -3,6 +3,23 @@ query Categories {
     data {
       id
       label
+      icon
+      coverImageUrl
+      businessCount
+      avgRating
+    }
+  }
+}
+
+query Category($id: Int!) {
+  category(id: $id) {
+    data {
+      id
+      label
+      icon
+      coverImageUrl
+      businessCount
+      avgRating
     }
   }
 }

@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "codegen": "graphql-codegen --config codegen.ts && node scripts/fix-codegen-suspense-overloads.mjs"
+    "codegen": "graphql-codegen --config codegen.ts && node scripts/fix-codegen-apollo-v4.mjs"
   },
   "dependencies": {
     "@apollo/client": "^4.2.11",

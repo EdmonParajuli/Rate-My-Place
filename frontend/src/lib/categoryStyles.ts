@@ -14,4 +14,8 @@ export const CATEGORY_STYLES: Record<string, { gradient: string; bg: string; ico
   "Beauty & Wellness": { gradient: "from-pink-400 to-rose-500", bg: "bg-pink-50", iconColor: "text-pink-500" },
   Entertainment: { gradient: "from-yellow-400 to-amber-600", bg: "bg-yellow-50", iconColor: "text-yellow-600" },
   "Professional Services": { gradient: "from-slate-400 to-slate-600", bg: "bg-slate-50", iconColor: "text-slate-500" },
+  // Not one of the Figma source's 10 - kept as an 11th real seeded category
+  // (docs/03-architecture.md), no reason to only fall back to gray when a
+  // real accent color is just as easy to give it.
+  Bar: { gradient: "from-amber-500 to-orange-600", bg: "bg-amber-50", iconColor: "text-amber-600" },
 }

@@ -589,7 +589,14 @@ export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?
 export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CategoriesQuery = { __typename?: 'Query', categories?: { __typename?: 'CategoryListResponse', data?: Array<{ __typename?: 'Category', id?: number | null, label?: string | null } | null> | null } | null };
+export type CategoriesQuery = { __typename?: 'Query', categories?: { __typename?: 'CategoryListResponse', data?: Array<{ __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null> | null } | null };
+
+export type CategoryQueryVariables = Exact<{
+  id: Scalars['Int']['input'];
+}>;
+
+
+export type CategoryQuery = { __typename?: 'Query', category?: { __typename?: 'CategoryResponse', data?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null } | null };
 
 export type ListPlacesQueryVariables = Exact<{
   sort?: InputMaybe<PlaceSortEnum>;
@@ -778,19 +785,19 @@ export const AuthMeUserDocument = gql`
  */
 export function useAuthMeUserQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+        return ApolloReactHooks.useQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options as any);
       }
 export function useAuthMeUserLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+          return ApolloReactHooks.useLazyQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options as any);
         }
 // @ts-ignore
 export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<AuthMeUserQuery, AuthMeUserQueryVariables>;
-// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
 export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<AuthMeUserQuery | undefined, AuthMeUserQueryVariables>;
 export function useAuthMeUserSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<AuthMeUserQuery, AuthMeUserQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<AuthMeUserQuery, AuthMeUserQueryVariables>(AuthMeUserDocument, options as any);
         }
 export type AuthMeUserQueryHookResult = ReturnType<typeof useAuthMeUserQuery>;
 export type AuthMeUserLazyQueryHookResult = ReturnType<typeof useAuthMeUserLazyQuery>;
@@ -833,6 +840,10 @@ export const CategoriesDocument = gql`
     data {
       id
       label
+      icon
+      coverImageUrl
+      businessCount
+      avgRating
     }
   }
 }
@@ -855,24 +866,75 @@ export const CategoriesDocument = gql`
  */
 export function useCategoriesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+        return ApolloReactHooks.useQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options as any);
       }
 export function useCategoriesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+          return ApolloReactHooks.useLazyQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options as any);
         }
 // @ts-ignore
 export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoriesQuery, CategoriesQueryVariables>;
-// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
 export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoriesQuery | undefined, CategoriesQueryVariables>;
 export function useCategoriesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoriesQuery, CategoriesQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<CategoriesQuery, CategoriesQueryVariables>(CategoriesDocument, options as any);
         }
 export type CategoriesQueryHookResult = ReturnType<typeof useCategoriesQuery>;
 export type CategoriesLazyQueryHookResult = ReturnType<typeof useCategoriesLazyQuery>;
 export type CategoriesSuspenseQueryHookResult = ReturnType<typeof useCategoriesSuspenseQuery>;
 export type CategoriesQueryResult = ApolloReactCommon.QueryResult<CategoriesQuery, CategoriesQueryVariables>;
+export const CategoryDocument = gql`
+    query Category($id: Int!) {
+  category(id: $id) {
+    data {
+      id
+      label
+      icon
+      coverImageUrl
+      businessCount
+      avgRating
+    }
+  }
+}
+    `;
+
+/**
+ * __useCategoryQuery__
+ *
+ * To run a query within a React component, call `useCategoryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCategoryQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCategoryQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useCategoryQuery(baseOptions: ApolloReactHooks.QueryHookOptions<CategoryQuery, CategoryQueryVariables> & ({ variables: CategoryQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<CategoryQuery, CategoryQueryVariables>(CategoryDocument, options as any);
+      }
+export function useCategoryLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<CategoryQuery, CategoryQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<CategoryQuery, CategoryQueryVariables>(CategoryDocument, options as any);
+        }
+// @ts-ignore
+export function useCategorySuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<CategoryQuery, CategoryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoryQuery, CategoryQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useCategorySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoryQuery, CategoryQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<CategoryQuery | undefined, CategoryQueryVariables>;
+export function useCategorySuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<CategoryQuery, CategoryQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<CategoryQuery, CategoryQueryVariables>(CategoryDocument, options as any);
+        }
+export type CategoryQueryHookResult = ReturnType<typeof useCategoryQuery>;
+export type CategoryLazyQueryHookResult = ReturnType<typeof useCategoryLazyQuery>;
+export type CategorySuspenseQueryHookResult = ReturnType<typeof useCategorySuspenseQuery>;
+export type CategoryQueryResult = ApolloReactCommon.QueryResult<CategoryQuery, CategoryQueryVariables>;
 export const ListPlacesDocument = gql`
     query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInput, $first: Int, $after: String) {
   listPlaces(
@@ -934,19 +996,19 @@ export const ListPlacesDocument = gql`
  */
 export function useListPlacesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+        return ApolloReactHooks.useQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options as any);
       }
 export function useListPlacesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+          return ApolloReactHooks.useLazyQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options as any);
         }
 // @ts-ignore
 export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ListPlacesQuery, ListPlacesQueryVariables>;
-// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
 export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ListPlacesQuery | undefined, ListPlacesQueryVariables>;
 export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options as any);
         }
 export type ListPlacesQueryHookResult = ReturnType<typeof useListPlacesQuery>;
 export type ListPlacesLazyQueryHookResult = ReturnType<typeof useListPlacesLazyQuery>;
@@ -980,19 +1042,19 @@ export const PlatformStatsDocument = gql`
  */
 export function usePlatformStatsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<PlatformStatsQuery, PlatformStatsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
-        return ApolloReactHooks.useQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options);
+        return ApolloReactHooks.useQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options as any);
       }
 export function usePlatformStatsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PlatformStatsQuery, PlatformStatsQueryVariables>) {
           const options = {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useLazyQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options);
+          return ApolloReactHooks.useLazyQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options as any);
         }
 // @ts-ignore
 export function usePlatformStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<PlatformStatsQuery, PlatformStatsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlatformStatsQuery, PlatformStatsQueryVariables>;
-// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
 export function usePlatformStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlatformStatsQuery, PlatformStatsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlatformStatsQuery | undefined, PlatformStatsQueryVariables>;
 export function usePlatformStatsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlatformStatsQuery, PlatformStatsQueryVariables>) {
           const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
-          return ApolloReactHooks.useSuspenseQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options);
+          return ApolloReactHooks.useSuspenseQuery<PlatformStatsQuery, PlatformStatsQueryVariables>(PlatformStatsDocument, options as any);
         }
 export type PlatformStatsQueryHookResult = ReturnType<typeof usePlatformStatsQuery>;
 export type PlatformStatsLazyQueryHookResult = ReturnType<typeof usePlatformStatsLazyQuery>;
