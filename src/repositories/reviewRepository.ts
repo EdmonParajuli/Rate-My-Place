@@ -1,5 +1,5 @@
 import * as Sequelize from 'sequelize';
-import { Op, Transaction, WhereOptions } from 'sequelize';
+import { col, fn, Op, Transaction, WhereOptions } from 'sequelize';
 import { InputReviewInterface, ReviewInterface } from '../interfaces/reviewInterface';
 import Model from '../models';
 import { BaseRepository } from './baseRepository';
@@ -29,6 +29,26 @@ export class ReviewRepository extends BaseRepository<InputReviewInterface, Revie
     });
 
     return { average: Number(average), count };
+  }
+
+  // Live-computed, not materialized - same "recompute from source" precedent
+  // as getRatingStats above and as Category.businessCount/avgRating
+  // (docs/03-architecture.md's Place Detail follow-ups section). Sequelize's
+  // typed fn/col group-by, not raw SQL - the ORM can express this one fine,
+  // unlike paginateByDistance's Haversine expression above.
+  async getRatingBreakdown(placeId: number | string): Promise<{ stars: number; count: number }[]> {
+    const rows = (await this.model.findAll({
+      attributes: ['rating', [fn('COUNT', col('id')), 'count']],
+      where: { placeId },
+      group: ['rating'],
+      raw: true,
+    })) as unknown as { rating: number; count: string }[];
+
+    // COUNT(*) comes back as a string (Postgres bigint), and only star values
+    // with at least one review get a row at all - fill in the full 5..1 range
+    // with zero counts so callers (the Place Detail bar chart) don't have to.
+    const counts = new Map(rows.map((r) => [Number(r.rating), Number(r.count)]));
+    return [5, 4, 3, 2, 1].map((stars) => ({ stars, count: counts.get(stars) ?? 0 }));
   }
 
   // Keyset (cursor) pagination built directly on Sequelize's own where/Op -

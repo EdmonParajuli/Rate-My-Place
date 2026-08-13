@@ -10,6 +10,7 @@ import { PlaceHourService } from "../../services/placeHourService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
+import { ReviewService } from "../../services/reviewService";
 import { PlaceSortEnum } from "../../enums/placeSortEnum";
 import { InputPlaceHourInterface } from "../../interfaces/placeHourInterface";
 
@@ -193,6 +194,9 @@ export const placeResolver = {
         },
         openNow: async (parent: PlaceInterface) => {
             return new PlaceHourService().isOpenNow(parent.id);
+        },
+        ratingBreakdown: async (parent: PlaceInterface) => {
+            return new ReviewService().getRatingBreakdown(parent.id);
         }
     }
 }

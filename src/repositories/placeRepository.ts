@@ -1,4 +1,4 @@
-import { literal, Op, QueryTypes, WhereOptions } from 'sequelize';
+import { DataTypes, literal, Op, QueryTypes, WhereOptions } from 'sequelize';
 import Model from '../models';
 import { InputPlaceInterface, PlaceFilterOptions, PlaceInterface } from '../interfaces';
 import { BaseRepository } from './baseRepository';
@@ -193,6 +193,31 @@ export default class PlaceRepository extends BaseRepository<InputPlaceInterface,
     );
 
     return rows;
+  }
+
+  // Same shape as ReviewRepository.getRatingStats (count + avg, computed live
+  // rather than materialized) - one level up: categories aggregating over
+  // places instead of places aggregating over reviews. See
+  // docs/03-architecture.md's "Category cover image + live business-count/
+  // avg-rating" section - avgRating here is an average of each place's
+  // already-averaged rating, not a true weighted average across every
+  // individual review in the category.
+  async getCategoryStats(categoryId: number | string): Promise<{ count: number; avgRating: number }> {
+    const count: number = await this.model.count({ where: { categoryId } });
+
+    if (count === 0) {
+      return { count: 0, avgRating: 0 };
+    }
+
+    // averageRating is DECIMAL - same "declared column type coerces the
+    // aggregate result" trap ReviewRepository.getRatingStats already flags,
+    // same fix (explicit FLOAT dataType override).
+    const avgRating = await this.model.aggregate('averageRating', 'avg', {
+      where: { categoryId },
+      dataType: DataTypes.FLOAT,
+    });
+
+    return { count, avgRating: Number(avgRating) };
   }
 
   // Raw 24h review count per place, written straight to the stored column -

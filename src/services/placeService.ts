@@ -125,6 +125,21 @@ export default class PlaceService {
     return this.repository.refreshTrendingScores();
   }
 
+  // Thin passthrough - categoryResolver.ts's Category.businessCount/avgRating
+  // field resolvers call this directly, same pattern as reviewResolver.ts's
+  // Review.reviewer/place field resolvers calling UserService/PlaceService
+  // directly rather than routing through the "owning" service.
+  async getCategoryStats(categoryId: number | string) {
+    return this.repository.getCategoryStats(categoryId);
+  }
+
+  // Thin passthrough - PlatformStatsService composes this with
+  // ReviewService.countAll() rather than either service reaching into the
+  // other's repository directly.
+  async countAll(): Promise<number> {
+    return this.repository.count({});
+  }
+
   // Pure write - the caller (ReviewService, which owns the review data) computes
   // the stats. Keeps PlaceService from needing to know anything about reviews.
   async updateRatingStats(

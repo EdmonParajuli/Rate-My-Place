@@ -5,3 +5,4 @@ export * from "./categoryResolver";
 export * from "./reviewResolver";
 export * from "./reviewReplyResolver";
 export * from "./reviewVoteResolver";
+export * from "./platformStatsResolver";
