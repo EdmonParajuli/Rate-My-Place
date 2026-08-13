@@ -73,7 +73,7 @@ export const placeDefs: DocumentNode = gql`
         address: String
         phone: String
         website: String
-        category: String
+        category: Category
         averageRating: Float
         reviewCount: Int
         isVerified: Boolean
@@ -84,6 +84,7 @@ export const placeDefs: DocumentNode = gql`
         hours: [PlaceHour]
         openNow: Boolean
         ratingBreakdown: [RatingBreakdownEntry]
+        trendingScore: Float
     }
 
     type PlaceResponse {

@@ -1,0 +1,30 @@
+query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInput, $first: Int, $after: String) {
+  listPlaces(sort: $sort, near: $near, filter: $filter, first: $first, after: $after) {
+    message
+    data {
+      id
+      label
+      address
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      trendingScore
+      latitude
+      longitude
+      distance
+      openNow
+      category {
+        id
+        label
+        icon
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}

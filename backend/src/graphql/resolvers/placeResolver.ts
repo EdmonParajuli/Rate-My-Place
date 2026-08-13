@@ -11,6 +11,7 @@ import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { UserService } from "../../services/userService";
 import { ReviewService } from "../../services/reviewService";
+import { CategoryService } from "../../services/categoryService";
 import { PlaceSortEnum } from "../../enums/placeSortEnum";
 import { InputPlaceHourInterface } from "../../interfaces/placeHourInterface";
 
@@ -188,6 +189,17 @@ export const placeResolver = {
     Place: {
         owner: async (parent: PlaceInterface) => {
             return new UserService().getById(parent.ownerId);
+        },
+        // categoryId is optional on InputPlaceInterface - a place can exist
+        // with no category assigned, and CategoryService.getById throws
+        // NOT_FOUND for a missing id, so an uncategorized place must short-
+        // circuit here rather than call it with an undefined id (which would
+        // otherwise 404 the entire containing listPlaces response).
+        category: async (parent: PlaceInterface) => {
+            if (!parent.categoryId) {
+                return null;
+            }
+            return new CategoryService().getById(parent.categoryId);
         },
         hours: async (parent: PlaceInterface) => {
             return new PlaceHourService().getForPlace(parent.id);
