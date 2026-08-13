@@ -173,15 +173,16 @@ user's own, unset avatars render as initials-in-a-circle instead. `Discover`/
 content (`ScreenPlaceholder.tsx`) - each is its own not-yet-built screen ticket.
 `PrivateRoute.tsx` gates the whole `/app` branch, redirecting to `/login`.
 
-### 4. Discover screen
+### 4. Discover screen ✅ Built (2026-08-13)
 
 **Chosen: A (default) + C (via toggle), B dropped.** A is the primary layout: dark
 hero-gradient search section (the real source's own gradient), collapsible top
 filter panel (category/price/min-rating/open-now), sort tabs
 (Highest Rated/Trending/New/Nearby), full-width card grid + Trending strip + New
-Nearby strip. A real "See in map" button (top-right of the results header)
-switches to C — a map+list split view (Leaflet + OpenStreetMap, see Decisions
-table) with hover tooltips on pins and a reciprocal "Back to list" button.
+Places strip (retitled from "New Nearby" - see below). A real "See in map" button
+(top-right of the results header) switches to C — a map+list split view (Leaflet +
+OpenStreetMap, see Decisions table) with hover tooltips on pins and a reciprocal
+"Back to list" button.
 
 Card badges are grounded in real fields only: "Verified" (`Place.isVerified`) and
 "Trending" (`Place.trending_score`) — the Figma source's other two badge variants
@@ -193,6 +194,55 @@ price range, min rating, open now, free-text query; sort covers all four
 
 Ticket: [05-discover-screen.md](../../.scratch/phase-4-frontend-mvp/tickets/05-discover-screen.md).
 Prototype: `prototype/discover-screen` (commit `9c6b40a`).
+
+**Real implementation** (`frontend/src/routes/app/discover/`): `DiscoverPage.tsx`
+(state + queries) driving `DiscoverListView.tsx`/`MapView.tsx`. Several real gaps
+between the prototype's mock data and the actual API, resolved while building:
+
+- **Two real backend bugs found and fixed** (not new scope): `Place.category` was
+  declared `String` in the schema but had **no field resolver at all** — always
+  resolved `null`. Retyped to `Place.category: Category` (a full nested object,
+  matching the `owner: User` field-resolver pattern already established) with a
+  resolver added, guarding the case where `categoryId` is unset (returns `null`
+  rather than 404ing the whole `listPlaces` response). `Place.trendingScore` was
+  never exposed in GraphQL at all despite being a real materialized column the
+  "Trending" badge depends on — added to the schema (default field resolution,
+  no resolver needed).
+- **Category/price filters are single-select, not the prototype's mock
+  multi-select** — `PlaceFilterInput.categoryId`/`priceRange` each take exactly
+  one value (`backend/src/graphql/typeDefs/placeTypedefs.ts`), not an array.
+  Clicking an already-active filter pill clears it (radio-with-off), rather than
+  faking multi-select the API can't express.
+- **"Nearby" sort uses real browser geolocation** (`useGeolocation.ts`,
+  `navigator.geolocation.getCurrentPosition`) — the prototype's fake "Brooklyn,
+  NY" location pill was dropped entirely (no reverse-geocoding exists to make it
+  real). Selecting "Nearby" requests location; results fall back to Highest Rated
+  while pending/denied rather than erroring, and "Nearby" stays visually selected
+  so it flips to real `NEAREST`-sorted results the moment permission is granted.
+- **"New Nearby" strip retitled "New Places"**, driven by the real `NEW` sort only
+  — the backend has no combined "new+nearby" sort, and the prototype's own mock
+  data didn't actually combine them either; the new title doesn't imply
+  geolocation is used there.
+- **No real place photos exist yet** (no upload flow, Phase 8 Media — same gap
+  Place Detail's ticket already flagged) — cards/map pins use a
+  category-tinted placeholder (reusing `frontend/src/lib/categoryStyles.ts`)
+  instead of the prototype's fake Unsplash stock photos.
+- **"View Place" now links somewhere real**: `/app/places/:placeId`, a
+  `ScreenPlaceholder`-style stub (Place Detail is its own not-yet-built ticket) —
+  not a dead button.
+- **Map**: `react-leaflet` + OpenStreetMap tiles, a custom `divIcon` pin (Leaflet's
+  default marker images don't resolve correctly under Vite's bundling — a
+  well-known gotcha, sidestepped rather than hit), centered on the average
+  coordinates of the current result set, hover tooltips showing the place name
+  (no photo, per the point above).
+- **Cursor pagination**: a real "Load more" button using `listPlaces`'
+  `pageInfo`/`fetchMore`, not attempted in the prototype (which had 8 static mock
+  items and no pagination concern at all).
+
+Verified live against the real backend: default sort, category/price/rating/
+open-now/search filter combinations, `TRENDING` (including the empty-strip case
+when no place has `trendingScore > 0`), and cursor pagination's `endCursor`/
+`hasNextPage` — all confirmed correct with real data before wiring into the UI.
 
 ### 5. Categories screen
 
@@ -270,8 +320,13 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    successful login lands on. `/login`, `/app` (gated by `PrivateRoute`), and
    its three nested routes all real and navigable; `Discover`/`Categories`/
    `My Reviews` still placeholder content pending their own screen tickets.
-4. **Discover screen** — the default authenticated landing screen, no new backend
-   scope needed (Leaflet integration is frontend-only work).
+4. **Discover screen** ✅ **Done** (2026-08-13) — the default authenticated
+   landing screen. Turned out not to be backend-scope-free after all: found and
+   fixed two real gaps (`Place.category` had no field resolver at all,
+   `Place.trendingScore` wasn't exposed in GraphQL) while building against the
+   real API - see the screen section above for the full list of prototype-vs-
+   real-API reconciliations (single-select filters, real geolocation for
+   "Nearby," no fake photos/location pill).
 5. **Place Detail** — reachable from Discover, closes the core "find → review"
    loop. Needs `ReviewReply.createdAt` + `placeReviews`'s new `sort` arg +
    `Place.ratingBreakdown` (backend, independent small additions — can land

@@ -305,7 +305,7 @@ export type Place = {
   __typename?: 'Place';
   address?: Maybe<Scalars['String']['output']>;
   averageRating?: Maybe<Scalars['Float']['output']>;
-  category?: Maybe<Scalars['String']['output']>;
+  category?: Maybe<Category>;
   description?: Maybe<Scalars['String']['output']>;
   distance?: Maybe<Scalars['Float']['output']>;
   hours?: Maybe<Array<Maybe<PlaceHour>>>;
@@ -320,6 +320,7 @@ export type Place = {
   priceRange?: Maybe<PriceRangeEnum>;
   ratingBreakdown?: Maybe<Array<Maybe<RatingBreakdownEntry>>>;
   reviewCount?: Maybe<Scalars['Int']['output']>;
+  trendingScore?: Maybe<Scalars['Float']['output']>;
   website?: Maybe<Scalars['String']['output']>;
 };
 
@@ -589,6 +590,17 @@ export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type CategoriesQuery = { __typename?: 'Query', categories?: { __typename?: 'CategoryListResponse', data?: Array<{ __typename?: 'Category', id?: number | null, label?: string | null } | null> | null } | null };
+
+export type ListPlacesQueryVariables = Exact<{
+  sort?: InputMaybe<PlaceSortEnum>;
+  near?: InputMaybe<GeoInput>;
+  filter?: InputMaybe<PlaceFilterInput>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type ListPlacesQuery = { __typename?: 'Query', listPlaces?: { __typename?: 'PlaceListResponse', message?: string | null, data?: Array<{ __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, trendingScore?: number | null, latitude?: number | null, longitude?: number | null, distance?: number | null, openNow?: boolean | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } | null } | null };
 
 export type PlatformStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -861,6 +873,85 @@ export type CategoriesQueryHookResult = ReturnType<typeof useCategoriesQuery>;
 export type CategoriesLazyQueryHookResult = ReturnType<typeof useCategoriesLazyQuery>;
 export type CategoriesSuspenseQueryHookResult = ReturnType<typeof useCategoriesSuspenseQuery>;
 export type CategoriesQueryResult = ApolloReactCommon.QueryResult<CategoriesQuery, CategoriesQueryVariables>;
+export const ListPlacesDocument = gql`
+    query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInput, $first: Int, $after: String) {
+  listPlaces(
+    sort: $sort
+    near: $near
+    filter: $filter
+    first: $first
+    after: $after
+  ) {
+    message
+    data {
+      id
+      label
+      address
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      trendingScore
+      latitude
+      longitude
+      distance
+      openNow
+      category {
+        id
+        label
+        icon
+      }
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+    `;
+
+/**
+ * __useListPlacesQuery__
+ *
+ * To run a query within a React component, call `useListPlacesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useListPlacesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useListPlacesQuery({
+ *   variables: {
+ *      sort: // value for 'sort'
+ *      near: // value for 'near'
+ *      filter: // value for 'filter'
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *   },
+ * });
+ */
+export function useListPlacesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+      }
+export function useListPlacesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+        }
+// @ts-ignore
+export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ListPlacesQuery, ListPlacesQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-suspense-overloads.mjs
+export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ListPlacesQuery | undefined, ListPlacesQueryVariables>;
+export function useListPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ListPlacesQuery, ListPlacesQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<ListPlacesQuery, ListPlacesQueryVariables>(ListPlacesDocument, options);
+        }
+export type ListPlacesQueryHookResult = ReturnType<typeof useListPlacesQuery>;
+export type ListPlacesLazyQueryHookResult = ReturnType<typeof useListPlacesLazyQuery>;
+export type ListPlacesSuspenseQueryHookResult = ReturnType<typeof useListPlacesSuspenseQuery>;
+export type ListPlacesQueryResult = ApolloReactCommon.QueryResult<ListPlacesQuery, ListPlacesQueryVariables>;
 export const PlatformStatsDocument = gql`
     query PlatformStats {
   platformStats {

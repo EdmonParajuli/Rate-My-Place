@@ -458,6 +458,32 @@ Three small, independent additions. **All three are now built** (2026-08-13).
   the existing `PlaceHourService.getForPlace`/`isOpenNow` convention for the
   same situation.
 
+## `Place.category`/`trendingScore` bugs found while building Discover (2026-08-13)
+
+Two pre-existing gaps surfaced and fixed while building the real Discover
+screen against the live API (not new scope):
+
+- **`Place.category` had no field resolver at all.** The type declared
+  `category: String`, but `placeResolver.ts`'s `Place: {...}` block never
+  defined one, and the model has `categoryId`, not `category` — GraphQL's
+  default field resolution silently returned `null` for every place, always.
+  Fixed by retyping to `category: Category` (a full nested object, matching
+  the `owner: User` field-resolver pattern already established for a
+  foreign-key relationship) and adding a resolver that calls
+  `CategoryService.getById(parent.categoryId)` — guarded against
+  `categoryId` being unset (`InputPlaceInterface.categoryId` is optional),
+  since `CategoryService.getById` throws `NOT_FOUND` for a missing id and an
+  uncategorized place would otherwise 404 the entire containing `listPlaces`
+  response.
+- **`Place.trendingScore` was never exposed in GraphQL**, despite being a
+  real materialized column (`docs/08-trending-strategy.md`) that Discover's
+  "Trending" badge and strip both depend on. Added `trendingScore: Float` to
+  the `Place` type — resolves via default field resolution off the model
+  instance, no resolver needed, same as `isVerified`.
+
+Both verified live via direct `listPlaces` queries before being wired into
+the frontend.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`
