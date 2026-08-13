@@ -145,6 +145,21 @@ export class ReviewService {
     return { data, pageInfo };
   }
 
+  // Thin passthrough - placeResolver.ts's Place.ratingBreakdown field resolver
+  // calls this directly, same pattern as Place.owner/hours/openNow calling
+  // UserService/PlaceHourService directly rather than routing through the
+  // "owning" service for the parent type.
+  async getRatingBreakdown(placeId: number | string) {
+    return this.repository.getRatingBreakdown(placeId);
+  }
+
+  // Thin passthrough - PlatformStatsService composes this with
+  // PlaceService.countAll() rather than either service reaching into the
+  // other's repository directly.
+  async countAll(): Promise<number> {
+    return this.repository.count({});
+  }
+
   async listByReviewer(reviewerId: string, { first, after }: { first?: number; after?: string }) {
     const cursorQuery = this.pagination.validateParameters({
       cursor: after,

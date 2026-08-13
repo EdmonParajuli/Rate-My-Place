@@ -55,6 +55,11 @@ export const placeDefs: DocumentNode = gql`
         closesAt: String
     }
 
+    type RatingBreakdownEntry {
+        stars: Int
+        count: Int
+    }
+
     type PlaceHoursResponse {
         message: String
         data: [PlaceHour]
@@ -78,6 +83,7 @@ export const placeDefs: DocumentNode = gql`
         priceRange: PriceRangeEnum
         hours: [PlaceHour]
         openNow: Boolean
+        ratingBreakdown: [RatingBreakdownEntry]
     }
 
     type PlaceResponse {

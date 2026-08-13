@@ -226,8 +226,7 @@ now.
 the same ticket to ship category cards without these fields, once matching the
 Figma design exactly (cover photo + "N businesses · X★ avg" per card) turned out
 to be what was actually wanted, not just a visual reference to loosely adapt.
-**`coverImageUrl` is now built** (2026-08-13); `businessCount`/`avgRating` below
-are still planned, not yet implemented.
+**`coverImageUrl`, `businessCount`, and `avgRating` are now all built** (2026-08-13).
 
 - ~~**`coverImageUrl: String`**~~ **Done.** New nullable `cover_image_url` column
   on `providers_category` (migration `20260813120000-add-cover-image-url-to-category.js`)
@@ -262,22 +261,32 @@ are still planned, not yet implemented.
   either a custom `seederStorage` config (sequelize-cli supports tracking
   seeders the same way it tracks migrations) or rewriting seeders to be
   idempotent (`findOrCreate`-style) rather than raw `bulkInsert`.
-- **`businessCount: Int` / `avgRating: Float`** — computed **live at query time**,
-  not materialized/cached columns. This matches the *existing* precedent already
-  set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md` documents as
-  "recomputed from source... never incrementally adjusted" — same philosophy
-  applied one level up (categories aggregating over places, instead of places
-  aggregating over reviews). Given there are only 10 categories, a single grouped
-  query is cheap: `COUNT`/`AVG` over non-deleted `Place`s joined on `category_id`,
-  grouped by category. Both `categories()` and `category(id)` need these fields —
-  the category-detail screen's banner copy ("N businesses · X★ average rating")
-  uses them too, not just the browse-grid cards.
-- **Layering — no exception needed, unlike `signUpBusiness` above**: this stays
-  inside `CategoryRepository`'s ownership. `BaseRepository` already exposes
-  `rawQuery` (`docs/02-current-state.md` lists it among the generic repo's
-  methods) — the joined aggregate query runs through that, so `CategoryService`
-  still owns exactly one repository, no cross-repository orchestration question
-  like `signUpBusiness` had.
+- ~~**`businessCount: Int` / `avgRating: Float`**~~ **Done.** Computed **live at
+  query time**, not materialized/cached columns. This matches the *existing*
+  precedent already set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md`
+  documents as "recomputed from source... never incrementally adjusted" — same
+  philosophy applied one level up (categories aggregating over places, instead
+  of places aggregating over reviews). Both `categories()` and `category(id)`
+  resolve these fields — the category-detail screen's banner copy
+  ("N businesses · X★ average rating") uses them too, not just the browse-grid
+  cards.
+- **Layering — implemented differently than originally planned below, still no
+  exception needed.** Rather than a joined query living inside
+  `CategoryRepository` (the plan when this section was first written), it's
+  `PlaceRepository.getCategoryStats(categoryId)` — a `count()` + `aggregate()`
+  pair (mirroring `ReviewRepository.getRatingStats`'s existing shape), called by
+  `categoryResolver.ts`'s `Category.businessCount`/`avgRating` field resolvers
+  directly via `PlaceService`. This follows the established convention (see
+  `reviewResolver.ts`'s `Review.reviewer`/`place` field resolvers) that a field
+  resolver calls whichever service *owns* the underlying data, not the parent
+  type's "owning" service — `Category` doesn't gain a second repository, and
+  `Place` data stays inside `PlaceRepository`/`PlaceService`. Uses Sequelize's
+  typed `count`/`aggregate` API, not `rawQuery` — the ORM expresses this fine,
+  same reasoning as `ReviewRepository.getRatingStats`.
+- **Type note**: `CategoryInterface.id` is `string` (not `number`) — both
+  `PlaceRepository.getCategoryStats` and `PlaceService.getCategoryStats` are
+  typed `categoryId: number | string` to match, the same widening already
+  applied to `Place.ratingBreakdown` below for `PlaceInterface.id`.
 - **Open design note, worth being explicit about rather than silently picking
   one**: `avgRating` here is an *average of each place's already-averaged
   rating* (average-of-averages), not a true weighted average across every
@@ -293,30 +302,39 @@ the Categories screen's "56,700+ Total Businesses / 10 Categories / 14M+
 Reviews" stats row — same reasoning as above, but platform-wide rather than
 per-category, so it doesn't fit inside `Category`.
 
-- A new top-level query, e.g. `platformStats: PlatformStatsResponse { data:
+**Done** (2026-08-13).
+
+- A new top-level query, `platformStats: PlatformStatsResponse { data:
   { totalPlaces: Int, totalReviews: Int } }` — `totalPlaces` is `COUNT` over
   non-deleted `Place`, `totalReviews` is `COUNT` over non-deleted `Review`.
   "Categories" doesn't need this query at all — it's already real today via
   `categories().data.length`, no backend change for that number.
-- Same **live, not materialized** philosophy as the rest of this doc. Given
-  this is two unrelated `COUNT`s (not a join), it doesn't obviously belong to
-  either `CategoryRepository` or `PlaceRepository`/`ReviewRepository` alone —
-  simplest is a small dedicated `PlatformStatsService` composing the two
-  existing repositories' own `count()` methods (already part of
-  `BaseRepository`, per `docs/02-current-state.md`) rather than adding a new
+- Same **live, not materialized** philosophy as the rest of this doc. Built
+  exactly as planned: a dedicated `PlatformStatsService` composing
+  `PlaceService.countAll()` and `ReviewService.countAll()` (each a thin
+  passthrough to `BaseRepository.count({})`) rather than adding a new
   cross-domain repository. Each repository still owns exactly one table's
   concerns; the service only orchestrates two independent reads, not a shared
   write transaction, so this doesn't carry the same complication
   `signUpBusiness` above does.
-- Not yet built — recorded here so the shape is decided before implementation
-  starts, same as everything else in this section.
+- **Wiring gotcha worth flagging**: `platformStatsTypedefs`/`platformStatsResolver`
+  are barrel-exported from `typeDefs/index.ts`/`resolvers/index.ts`, but
+  `src/graphql/schema/index.ts` builds the subgraph schema from its own
+  explicit `{typeDefs, resolvers}` array — being barrel-exported doesn't
+  register a new domain with `buildSubgraphSchema`. Verified live only after
+  adding `{typeDefs: platformStatsTypedefs, resolvers: platformStatsResolver}`
+  to that array; before that fix, the barrel exports existed and `npm run
+  build` passed clean, but `platformStats` didn't resolve at runtime
+  ("Cannot query field ... on type Query"). Worth remembering for any future
+  new domain typedefs/resolver pair.
 
 ## Planned: Place Detail follow-ups (`ReviewReply.createdAt`, review sort, rating breakdown)
 
 **New scope, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
 (ticket `06-place-detail-review.md`) against a real, complete Figma design for it.
-Three small, independent additions. **`ReviewReply.createdAt` is now built**
-(2026-08-13); the other two are still planned, not yet implemented.
+Three small, independent additions. **`ReviewReply.createdAt` and rating
+breakdown are now built** (2026-08-13); review sort is still planned, not yet
+implemented.
 
 - ~~**`ReviewReply.createdAt: DateTime`**~~ **Done**, typed `String` not
   `DateTime` — this schema has no `DateTime` scalar anywhere (checked); every
@@ -336,17 +354,27 @@ Three small, independent additions. **`ReviewReply.createdAt` is now built**
   mirrors the existing `PlaceSortEnum` pattern on `listPlaces` — `RECENT` orders
   by `created_at DESC`, `HELPFUL` by the existing `helpfulCount`. Same
   cursor-pagination shape, just a new ordering.
-- **Rating breakdown** — a per-place count of reviews at each star value
-  (5★→1★), for a bar-chart-style breakdown on the detail page. Same "live,
-  not materialized" treatment as `Place.averageRating` itself and as
-  Categories' `businessCount`/`avgRating` above: a single grouped `COUNT` query
-  (`GROUP BY rating` over that place's non-deleted `Review`s), likely exposed
-  as a new `Place.ratingBreakdown: [RatingBreakdownEntry]` field
-  (`{ stars: Int, count: Int }`) resolved through `ReviewRepository`'s existing
-  `rawQuery` capability — no cross-repository complication, same reasoning as
-  Categories' stats.
+- ~~**Rating breakdown**~~ **Done.** A per-place count of reviews at each star
+  value (5★→1★), for a bar-chart-style breakdown on the detail page. Same
+  "live, not materialized" treatment as `Place.averageRating` itself and as
+  Categories' `businessCount`/`avgRating` above: `ReviewRepository.getRatingBreakdown`
+  runs a single grouped query (`group: ['rating']` over that place's
+  non-deleted `Review`s) via Sequelize's typed `fn`/`col` API — not
+  `rawQuery` — same "prefer the ORM's typed API, only drop to raw SQL when it
+  genuinely can't express something" rule `paginateByDistance`'s Haversine
+  query is the actual exception to. Exposed as `Place.ratingBreakdown:
+  [RatingBreakdownEntry]` (`{ stars: Int, count: Int }`), resolved in
+  `placeResolver.ts`'s `Place: {...}` block by calling `ReviewService`
+  directly (same "field resolver calls whichever service owns the data"
+  convention as `Category.businessCount`/`avgRating` above). Postgres returns
+  no row at all for a star value with zero reviews — the repository method
+  fills in the full 5..1 range with zero counts so callers don't have to.
+  **Type note**: `PlaceInterface.id` is `string`, so `getRatingBreakdown` is
+  typed `placeId: number | string` throughout (repository, service), matching
+  the existing `PlaceHourService.getForPlace`/`isOpenNow` convention for the
+  same situation.
 
-None of these are built yet — recorded here so the shape is decided before
+Review sort is not yet built — recorded here so the shape is decided before
 implementation starts, same as everything else in this section.
 
 ## GraphQL schema design principles going forward
