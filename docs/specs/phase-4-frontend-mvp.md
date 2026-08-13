@@ -226,14 +226,15 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
 
 ## Suggested build sequencing
 
-1. **Repo restructuring + project scaffold** ✅ **Done** (2026-08-13) **+ design
-   tokens** (not yet done) — `git mv` into `backend/`/`frontend/`, Vite+React+TS+
+1. **Repo restructuring + project scaffold + design tokens** ✅ **Done**
+   (2026-08-13) — `git mv` into `backend/`/`frontend/`, Vite+React+TS+
    Tailwind+shadcn/ui+React Router+Apollo Client+GraphQL Code Generator+React
-   Hook Form+Zod all installed and wired (see
-   [05-frontend-plan.md](../05-frontend-plan.md) and `frontend/README.md`) — but
-   using shadcn/ui's default theme, not yet screen 0's extracted tokens
-   (`.scratch/phase-4-frontend-mvp/research/design-tokens.md`). Wiring those in
-   is the next step before real screens can match the Figma design exactly.
+   Hook Form+Zod all installed and wired, and the real extracted tokens
+   (colors, radius, fonts, hero gradient, category accent colors) wired into
+   `frontend/src/index.css` in place of shadcn/ui's default theme (see
+   [05-frontend-plan.md](../05-frontend-plan.md#design-tokens) and
+   `frontend/README.md`). Real screens can now match the Figma design's
+   palette/typography exactly — next up is the first real screen.
 2. **`signUpBusiness` mutation** (backend) — needed before Auth screens' business
    wizard can be wired to anything real; the screen's own design doesn't block on
    it, but demoing it end-to-end does.
