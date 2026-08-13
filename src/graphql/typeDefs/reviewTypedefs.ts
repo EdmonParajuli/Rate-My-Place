@@ -14,6 +14,11 @@ export const reviewTypedefs: DocumentNode = gql`
         rating: Int
     }
 
+    enum ReviewSortEnum {
+        RECENT
+        HELPFUL
+    }
+
     type Review {
         id: Int
         review: String
@@ -42,7 +47,7 @@ export const reviewTypedefs: DocumentNode = gql`
     }
 
     extend type Query {
-        placeReviews(placeId: Int!, first: Int, after: String): ReviewListResponse
+        placeReviews(placeId: Int!, first: Int, after: String, sort: ReviewSortEnum): ReviewListResponse
         myReviews(first: Int, after: String): ReviewListResponse
     }
 `

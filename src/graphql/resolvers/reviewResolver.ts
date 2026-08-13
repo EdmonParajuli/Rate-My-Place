@@ -11,6 +11,7 @@ import PlaceService from "../../services/placeService";
 import { ReviewReplyService } from "../../services/reviewReplyService";
 import { ReviewVoteService } from "../../services/reviewVoteService";
 import { ReviewInterface } from "../../interfaces/reviewInterface";
+import { ReviewSortEnum } from "../../enums/reviewSortEnum";
 
 export const reviewResolver = {
     Mutation: {
@@ -99,7 +100,7 @@ export const reviewResolver = {
     Query: {
         placeReviews: async(
             parent: ParentNode,
-            args: { placeId: number, first?: number, after?: string },
+            args: { placeId: number, first?: number, after?: string, sort?: ReviewSortEnum },
             context: ContextInterface,
             info: GraphQLResolveInfo
         ) => {
@@ -107,6 +108,7 @@ export const reviewResolver = {
                 const { data, pageInfo } = await new ReviewService().listByPlace(args.placeId, {
                     first: args.first,
                     after: args.after,
+                    sort: args.sort,
                 });
 
                 return SuccessResponse.send({
@@ -159,9 +161,10 @@ export const reviewResolver = {
         reply: async (parent: ReviewInterface) => {
             return new ReviewReplyService().getByReviewId(parent.id);
         },
-        helpfulCount: async (parent: ReviewInterface) => {
-            return new ReviewVoteService().getHelpfulCount(parent.id);
-        },
+        // helpfulCount needs no field resolver - it's now a real column
+        // (Review.helpfulCount, materialized by ReviewVoteService.toggle) and
+        // resolves via GraphQL's default field resolution off the model
+        // instance, same as ReviewReply.createdAt.
         helpfulByMe: async (parent: ReviewInterface, args: unknown, context: ContextInterface) => {
             return new ReviewVoteService().hasVoted(parent.id, context.user?.id);
         }
