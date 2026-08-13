@@ -259,6 +259,21 @@ is confirmed gone — a subsequent `login` with that email fails with "Invalid
 email or password"); duplicate-email rejection (same as `signUp`'s existing
 check, reused via `createUser`).
 
+**Two pre-existing bugs found and fixed while building the real Auth screens
+against this** (2026-08-13, not new scope):
+- **`SignUpResponse.data`** was typed `SignUpData{email, userType}`, but
+  `AuthService.signUp` (and `authResolver.ts`'s resolver) has always returned
+  `{user, token}` — the same shape `LoginResponse.data`/`SignUpBusinessResponse.data`
+  use. Fixed by retyping `SignUpResponse.data: UserData` (reusing the same type
+  `LoginResponse` already uses) — no resolver change needed, purely a GraphQL SDL
+  fix. Without it, a REGULAR `signUp` had no way to get tokens back from the
+  signup call itself.
+- **`signUpSchema`/`signUpBusinessSchema`'s password field was missing
+  `.min(8)`** despite both schemas' own Joi `messages` explicitly claiming
+  "Password should be at least 8 characters." — a password of any length
+  (even 1 character) passed validation. Added `.min(8)` to both, matching what
+  the messages already asserted.
+
 ## Planned: `Category` cover image + live business-count/avg-rating
 
 **New scope, surfaced 2026-08-12** while designing Phase 4's Categories screen

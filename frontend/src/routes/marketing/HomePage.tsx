@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { usePlatformStatsQuery } from "@/lib/graphql/generated/graphql"
 import { CATEGORY_STYLES } from "@/lib/categoryStyles"
@@ -25,7 +26,9 @@ export function HomePage() {
         {data && `${data.platformStats?.data?.totalPlaces} places, ${data.platformStats?.data?.totalReviews} reviews`}
       </p>
 
-      <Button>Primary button (shadcn/ui)</Button>
+      <Button asChild>
+        <Link to="/login">Sign in / Sign up</Link>
+      </Button>
 
       <div className="flex flex-wrap justify-center gap-2">
         {Object.entries(CATEGORY_STYLES).map(([name, style]) => (

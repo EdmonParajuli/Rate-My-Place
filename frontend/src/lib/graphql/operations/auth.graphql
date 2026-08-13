@@ -1,0 +1,74 @@
+mutation Login($input: InputAuthLogin) {
+  login(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+
+mutation SignUp($input: InputAuthSignUp) {
+  signUp(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+
+mutation SignUpBusiness($input: InputSignUpBusiness) {
+  signUpBusiness(input: $input) {
+    message
+    data {
+      token {
+        access
+        refresh
+      }
+      user {
+        id
+        email
+        fullName
+        userType
+        profilePicture
+      }
+    }
+  }
+}
+
+query AuthMeUser {
+  authMeUser {
+    data {
+      id
+      email
+      fullName
+      userType
+      profilePicture
+    }
+  }
+}
+
+mutation SignOut($input: InputRefreshToken) {
+  signOut(input: $input) {
+    message
+  }
+}
