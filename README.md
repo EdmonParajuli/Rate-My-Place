@@ -4,9 +4,13 @@ A two-sided reviews marketplace: regular users discover and review local busines
 business owners manage listings and respond to reviews. Backend is a GraphQL API
 (Node/TypeScript/Apollo/Sequelize/PostgreSQL); frontend hasn't been started yet.
 
+Monorepo: `backend/` (the GraphQL API) and `frontend/` (not yet scaffolded) as two
+independent apps, `docs/` shared at the root.
+
 ## Getting started
 
 ```bash
+cd backend
 npm install
 cp .env.example .env   # fill in DB + JWT + app config
 npm run db:migrate

@@ -359,7 +359,7 @@ per-category, so it doesn't fit inside `Category`.
   `signUpBusiness` above does.
 - **Wiring gotcha worth flagging**: `platformStatsTypedefs`/`platformStatsResolver`
   are barrel-exported from `typeDefs/index.ts`/`resolvers/index.ts`, but
-  `src/graphql/schema/index.ts` builds the subgraph schema from its own
+  `backend/src/graphql/schema/index.ts` builds the subgraph schema from its own
   explicit `{typeDefs, resolvers}` array — being barrel-exported doesn't
   register a new domain with `buildSubgraphSchema`. Verified live only after
   adding `{typeDefs: platformStatsTypedefs, resolvers: platformStatsResolver}`

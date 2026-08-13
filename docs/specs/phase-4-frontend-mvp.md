@@ -226,10 +226,10 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
 
 ## Suggested build sequencing
 
-1. **Repo restructuring + project scaffold + design tokens** — `git mv` into
-   `backend/`/`frontend/` (per [05-frontend-plan.md](../05-frontend-plan.md)),
-   Vite + Tailwind config from screen 0's extracted tokens. Everything else
-   depends on this existing.
+1. **Repo restructuring** ✅ **Done** (2026-08-13) **+ project scaffold + design
+   tokens** (not yet done) — `git mv` into `backend/`/`frontend/` (per
+   [05-frontend-plan.md](../05-frontend-plan.md)), Vite + Tailwind config from
+   screen 0's extracted tokens. Everything else depends on this existing.
 2. **`signUpBusiness` mutation** (backend) — needed before Auth screens' business
    wizard can be wired to anything real; the screen's own design doesn't block on
    it, but demoing it end-to-end does.
