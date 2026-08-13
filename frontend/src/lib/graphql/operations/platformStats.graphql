@@ -1,0 +1,8 @@
+query PlatformStats {
+  platformStats {
+    data {
+      totalPlaces
+      totalReviews
+    }
+  }
+}

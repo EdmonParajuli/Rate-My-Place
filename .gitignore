@@ -13,5 +13,4 @@ pgdata
 .vscode
 .claude
 .DS_Store
-src/config/firebase-admin-credential.json
-package-lock.json
+backend/src/config/firebase-admin-credential.json
