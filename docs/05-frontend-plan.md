@@ -13,6 +13,11 @@ add-on (prerendering, or a separate static page) rather than a framework swap.
 
 ## Repo shape
 
+**Done (2026-08-13)**: the restructuring below has been carried out — `backend/`
+exists with everything that used to live under repo-root `src/`, verified
+building/running/migrating correctly from its new location. `frontend/` is not
+yet scaffolded.
+
 Monorepo, single Git repo, two independent apps side by side:
 
 ```
@@ -74,12 +79,12 @@ when both apps sit in one working tree — codegen just points at
   machinery ever feels like overkill, but there's no reason to start there.
 - **GraphQL Code Generator** — generate TypeScript types and typed Apollo hooks
   directly from the backend schema (introspection is already enabled in
-  `src/server.ts`). Wire this up immediately, not deferred — with a GraphQL-first
+  `backend/src/server.ts`). Wire this up immediately, not deferred — with a GraphQL-first
   backend it removes an entire class of frontend/backend drift bugs for free, and
   it's cheapest to set up before the first query is hand-typed.
 - **React Hook Form + Zod** — form state (signup, login, write/edit review, settings
   forms) without re-rendering the whole form per keystroke, plus schema validation
-  that mirrors the backend's Joi schemas (`src/validators/schemas.ts`) closely enough
+  that mirrors the backend's Joi schemas (`backend/src/validators/schemas.ts`) closely enough
   in spirit that the two are easy to keep in sync by inspection.
 - **Recharts** — the design's dashboard already specifies AreaChart/BarChart by name
   in the Figma reasoning output; Recharts is what generated those, so using it avoids
@@ -145,9 +150,9 @@ frontend/
 ## Auth on the frontend
 
 The backend returns an access token + refresh token pair from `login`/`signUp` in the
-response body (`src/graphql/resolvers/authResolver.ts`) — there's no cookie handling
-on the server today (`src/server.ts`'s Apollo context reads only the `Authorization`
-header). Two things worth deciding deliberately:
+response body (`backend/src/graphql/resolvers/authResolver.ts`) — there's no cookie
+handling on the server today (`backend/src/server.ts`'s Apollo context reads only the
+`Authorization` header). Two things worth deciding deliberately:
 
 - **Where the refresh token lives.** The original Next.js draft of this plan assumed
   a thin Next.js route handler could set an httpOnly cookie without touching the
