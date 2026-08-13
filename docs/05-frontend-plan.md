@@ -10,6 +10,16 @@ the running backend). No real screens yet — that's the next work. See
 hit during setup (Node/Vite/Apollo Client version mismatches with the current
 toolchain generation), documented there rather than repeated here.
 
+**Design tokens wired in (2026-08-13)**: `frontend/src/index.css` now carries
+the real extracted values (colors, radius, both fonts) instead of shadcn/ui's
+default theme — see [Design tokens](#design-tokens) below for the full
+picture, including a gap this pass closed: the original research
+(`.scratch/phase-4-frontend-mvp/research/design-tokens.md`) could only capture
+a subset of the real `theme.css`'s CSS variables (the "headline" tokens), not
+the complete file — re-fetched live from the Figma Make source this pass
+rather than guessing at the untracked ones (`--popover`, `--card-foreground`,
+`--input`, etc.).
+
 This doc otherwise remains the recommendation this scaffold started from — flag
 disagreement early since it's much cheaper to change before more code exists
 than after.
@@ -206,8 +216,39 @@ REGULAR signup is unaffected — it stays the single-step flow already designed
 
 ## Design tokens
 
-Pull the actual values (colors, gradient stops, spacing scale, border radii, font
-stack) from the Figma file's design panel rather than eyeballing them off screenshots
-— Figma Make prototypes are usually generated with a real token layer underneath
-(Tailwind config or CSS variables) that's worth extracting directly if the file's
-inspect panel exposes it, instead of reverse-engineering approximate hex codes.
+**Done (2026-08-13)**. Pulled the actual values (colors, gradient stops, spacing
+scale, border radii, font stack) directly from the Figma Make source's own
+generated files (`src/styles/theme.css`, `fonts.css`, `App.tsx`) rather than
+eyeballing them off screenshots — confirmed, byte-exact values, not
+approximated hex codes.
+
+- **Colors + radius**: `frontend/src/index.css`'s `:root`/`.dark` blocks now
+  carry the real values (`--primary: #2563EB`, `--radius: 0.75rem`, etc.)
+  instead of shadcn/ui's default theme, verified present in a real production
+  build's output CSS.
+- **Fonts**: Plus Jakarta Sans (headings) + Manrope (body), self-hosted via
+  `@fontsource-variable/*` (matching this scaffold's existing no-CDN-fonts
+  convention, not the source's Google Fonts `<link>`) — centralized as
+  `--font-heading`/`--font-sans` tokens rather than the source's per-component
+  inline `style={{fontFamily}}` pattern, since this project already applies
+  fonts via Tailwind's `font-sans` utility.
+- **Hero gradient**: exact (`bg-gradient-to-br from-slate-900 via-blue-950
+  to-slate-900` + two radial accent blooms), captured as a reusable
+  `.hero-gradient` utility class rather than re-derived per screen.
+- **Category accent colors**: exact per-category gradient/bg/icon-color data,
+  captured in `frontend/src/lib/categoryStyles.ts` (literal Tailwind utility
+  class names — Tailwind's built-in palette, not custom CSS tokens, so
+  nothing needed adding to `index.css` for these).
+- **`shadow-blue` resolved**: the original research flagged this as an
+  unresolved custom shadow value. It isn't one — `shadow-md shadow-blue-200`
+  in the source is just two standard Tailwind v4 utilities composed together
+  (elevation + Tailwind's built-in colored-shadow utility), no custom
+  `--shadow-blue` token needed at all.
+- **Full variable list gap closed**: the original research
+  (`.scratch/phase-4-frontend-mvp/research/design-tokens.md`) referenced "the
+  full variable list... copy directly... to avoid transcription drift" but
+  only actually captured a subset (the ancillary tokens - `--popover`,
+  `--card-foreground`, `--input`, `--input-background`, `--switch-background`,
+  `--font-weight-medium/normal` - were never persisted). Re-fetched the
+  complete, real `theme.css` live from the Figma Make source this pass rather
+  than guessing at those.
