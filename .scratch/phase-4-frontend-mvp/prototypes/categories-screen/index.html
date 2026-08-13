@@ -1,0 +1,535 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/07-categories-screen.md
+
+  Hosted inside the exact approved shell from ticket 04 (pulled verbatim from
+  throwaway branch prototype/authenticated-shell), same pattern established on
+  the Discover screen ticket — a UI prototype is much easier to judge butting
+  up against real chrome.
+
+  SOURCE GROUNDING: read the real `CategoriesScreen`/`CategoryDetailScreen`
+  components directly from the Figma Make file's App.tsx (fileKey
+  uecnUKqT4CI7LuIpWo50Pp, ~lines 456-585), from the same cached fetch used for
+  the Discover screen ticket.
+
+  DECISIONS made while grounding:
+  - **Cover photo + business-count/avg-rating on Variant A's cards, matching
+    Figma exactly** — reversed 2026-08-12 from an initial no-photo/no-count
+    build. The real `Category` GraphQL type has neither field today, but
+    rather than treat that as a reason to drop them from the design, decided
+    to extend the backend for real: a new `coverImageUrl` field (seed-data
+    managed, no new mutation) plus live-computed `businessCount`/`avgRating`
+    (matching the existing `Place.averageRating`/`reviewCount`
+    "recompute-from-source" precedent, not materialized). Full shape in
+    docs/03-architecture.md's "Planned: Category cover image + live
+    business-count/avg-rating" section. The gradient overlay (70% opacity on
+    top of the photo) and per-category accent colors reuse the exact palette
+    already extracted in research/design-tokens.md.
+  - **The "56,700+ Total Businesses / 10 Categories / 14M+ Reviews" stats row —
+    also reversed back in (2026-08-12), a second time on this same ticket.**
+    Originally dropped for having no backend source; restored to match Figma
+    exactly, same call as the per-card photo/count reversal above. "10
+    Categories" is computed live from the real category list
+    (`CATEGORIES.length` here → `categories().data.length` for real); the other
+    two need a new lightweight platform-wide stats query (`totalPlaces`/
+    `totalReviews`, live `COUNT`s — same "compute from source" philosophy as
+    everything else in this doc, not materialized) — not yet added to
+    `docs/03-architecture.md`, flagged there as a follow-up.
+  - Category-detail's "Top Rated"/"Trending Now" sections map directly onto
+    real capability: `listPlaces(filter: {categoryId}, sort: HIGHEST_RATED)` /
+    `sort: TRENDING` — no gap there, faithfully ported. Its banner subtitle now
+    also shows the real count/rating, same as the browse-grid cards.
+
+  3 structurally different variants:
+    A — faithful: dark gradient hero, icon+gradient card grid, click through
+        to a separate category-detail sub-screen (colored banner + Top Rated
+        grid + numbered Trending list).
+    B — compact list rows instead of a card grid (denser, same click-through
+        detail sub-screen).
+    C — structurally different: category pills as an inline filter bar with
+        the places feed rendering directly below on the SAME screen — no
+        separate detail sub-screen/navigation at all.
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/categories-screen
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  Variants: ?variant=A (grid + detail screen) | B (list rows + detail screen) | C (inline pills + feed)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Categories screen (ticket 07)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { primary: '#2563EB', accent: '#F59E0B', destructive: '#EF4444' },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-cat-variant] { display: none; }
+  [data-cat-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 190px; text-align: center; }
+
+  /* --- shell chrome, pulled verbatim from the approved ticket-04 prototype --- */
+  .nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 150ms ease; }
+  .nav-item.active { background: #2563EB; color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.25); }
+  .nav-item:not(.active):not(.locked) { color: #64748B; }
+  .nav-item:not(.active):not(.locked):hover { background: #F8FAFC; color: #0F172A; }
+  .dropdown { display: none; }
+  .dropdown.open { display: block; }
+  #shell-sidebar { transition: width 200ms ease, transform 200ms ease; }
+  #shell-sidebar.collapsed { width: 4.5rem; }
+  #shell-sidebar .logo-row, #shell-sidebar .user-trigger { transition: gap 200ms ease; }
+  #shell-sidebar.collapsed .logo-row, #shell-sidebar.collapsed .user-trigger { gap: 0; }
+  #shell-sidebar .a-label {
+    display: inline-block; opacity: 1; max-width: 200px;
+    overflow: hidden; white-space: nowrap; vertical-align: middle;
+    transition: opacity 150ms ease, max-width 200ms ease;
+  }
+  #shell-sidebar.collapsed .a-label { opacity: 0; max-width: 0; }
+  #shell-sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+  #shell-sidebar.collapsed #shell-user-menu { left: 100%; right: auto; bottom: 0.5rem; margin-left: 8px; width: 190px; }
+  #shell-sidebar .tooltip {
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%) translateX(8px);
+    background: #0F172A; color: white; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 50;
+  }
+  #shell-sidebar.collapsed .nav-item:hover .tooltip,
+  #shell-sidebar.collapsed .user-trigger:hover .tooltip { opacity: 1; }
+  #shell-sidebar:not(.collapsed) .tooltip { display: none; }
+
+  /* --- Categories content --- */
+  .card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(15,23,42,0.06); transition: all 200ms ease; }
+  .card:hover { box-shadow: 0 10px 20px rgba(15,23,42,0.08); transform: translateY(-2px); }
+  .pill { padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid #E2E8F0; color: #64748B; cursor: pointer; transition: all 150ms ease; white-space: nowrap; }
+  .pill.active { color: white; border-color: transparent; }
+  .pill:not(.active):hover { border-color: #CBD5E1; }
+  .hero-gradient { background: linear-gradient(to bottom right, #0F172A, #172554, #0F172A); }
+  .hero-gradient::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 30% 50%, #F59E0B, transparent 50%),
+                       radial-gradient(circle at 70% 30%, #2563EB, transparent 40%);
+    opacity: 0.2;
+  }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<script id="category-data-template" type="application/json">
+[
+  { "key": "restaurants", "name": "Restaurants", "icon": "utensils-crossed", "g1": "#FB923C", "g2": "#F43F5E", "bg": "#FFF7ED", "iconColor": "#F97316", "cover": "photo-1517248135467-4c7edcad34c4", "count": 8420, "rating": 4.5 },
+  { "key": "cafes", "name": "Cafés", "icon": "coffee", "g1": "#FBBF24", "g2": "#F97316", "bg": "#FFFBEB", "iconColor": "#D97706", "cover": "photo-1554118811-1e0d58224f24", "count": 5210, "rating": 4.6 },
+  { "key": "hotels", "name": "Hotels", "icon": "hotel", "g1": "#38BDF8", "g2": "#2563EB", "bg": "#F0F9FF", "iconColor": "#0EA5E9", "cover": "photo-1566073771259-6a8506099945", "count": 3180, "rating": 4.4 },
+  { "key": "shopping", "name": "Shopping", "icon": "shopping-bag", "g1": "#A78BFA", "g2": "#9333EA", "bg": "#F5F3FF", "iconColor": "#8B5CF6", "cover": "photo-1462212210333-335d9538c5a1", "count": 6740, "rating": 4.5 },
+  { "key": "healthcare", "name": "Healthcare", "icon": "stethoscope", "g1": "#34D399", "g2": "#0D9488", "bg": "#ECFDF5", "iconColor": "#10B981", "cover": "photo-1629909613654-28e377c37b09", "count": 4390, "rating": 4.7 },
+  { "key": "education", "name": "Education", "icon": "graduation-cap", "g1": "#60A5FA", "g2": "#4F46E5", "bg": "#EFF6FF", "iconColor": "#3B82F6", "cover": "photo-1503676260728-1c00da094a0b", "count": 2150, "rating": 4.7 },
+  { "key": "fitness", "name": "Fitness", "icon": "dumbbell", "g1": "#F87171", "g2": "#E11D48", "bg": "#FEF2F2", "iconColor": "#EF4444", "cover": "photo-1534438327276-14e5300c3a48", "count": 3860, "rating": 4.6 },
+  { "key": "beauty", "name": "Beauty & Wellness", "icon": "scissors", "g1": "#F472B6", "g2": "#F43F5E", "bg": "#FDF2F8", "iconColor": "#EC4899", "cover": "photo-1540555700478-4be289fbecef", "count": 4970, "rating": 4.7 },
+  { "key": "entertainment", "name": "Entertainment", "icon": "music", "g1": "#FACC15", "g2": "#D97706", "bg": "#FEFCE8", "iconColor": "#CA8A04", "cover": "photo-1538481199705-c710c4e965fc", "count": 2940, "rating": 4.4 },
+  { "key": "professional", "name": "Professional Services", "icon": "briefcase", "g1": "#94A3B8", "g2": "#475569", "bg": "#F8FAFC", "iconColor": "#64748B", "cover": "photo-1521737604893-d14cc237f11d", "count": 3410, "rating": 4.6 }
+]
+</script>
+
+<script id="place-data-template" type="application/json">
+[
+  { "name": "Sunrise Diner", "categoryKey": "restaurants", "rating": 4.3, "reviews": 621, "location": "Downtown, Portland", "distance": "0.6 mi", "image": "photo-1555396273-367ea4eb4db5" },
+  { "name": "The Copper Skillet", "categoryKey": "restaurants", "rating": 4.7, "reviews": 410, "location": "Riverside, Denver", "distance": "1.1 mi", "image": "photo-1517248135467-4c7edcad34c4" },
+  { "name": "The Rustic Bean Cafe", "categoryKey": "cafes", "rating": 4.8, "reviews": 342, "location": "Downtown, Seattle", "distance": "0.4 mi", "image": "photo-1554118811-1e0d58224f24" },
+  { "name": "Northside Espresso", "categoryKey": "cafes", "rating": 4.6, "reviews": 289, "location": "Uptown, Minneapolis", "distance": "0.9 mi", "image": "photo-1521017432531-fbd92d768814" },
+  { "name": "Harbor House Hotel", "categoryKey": "hotels", "rating": 4.4, "reviews": 289, "location": "Waterfront, Boston", "distance": "3.5 mi", "image": "photo-1566073771259-6a8506099945" },
+  { "name": "The Grandview Inn", "categoryKey": "hotels", "rating": 4.5, "reviews": 198, "location": "Old Town, Savannah", "distance": "2.2 mi", "image": "photo-1611892440504-42a792e24d32" },
+  { "name": "Bloom & Co. Florist", "categoryKey": "shopping", "rating": 4.9, "reviews": 94, "location": "Arts District, Denver", "distance": "1.5 mi", "image": "photo-1462212210333-335d9538c5a1" },
+  { "name": "Corner Bookshop", "categoryKey": "shopping", "rating": 4.7, "reviews": 156, "location": "Old Town, Alexandria", "distance": "0.7 mi", "image": "photo-1521123845560-14093637aa7d" },
+  { "name": "Family Dental Care", "categoryKey": "healthcare", "rating": 4.6, "reviews": 231, "location": "Midtown, Sacramento", "distance": "1.8 mi", "image": "photo-1629909613654-28e377c37b09" },
+  { "name": "Clearview Physical Therapy", "categoryKey": "healthcare", "rating": 4.8, "reviews": 112, "location": "Eastside, Columbus", "distance": "2.4 mi", "image": "photo-1519494026892-80bbd2d6fd0d" },
+  { "name": "Riverside Tutoring Center", "categoryKey": "education", "rating": 4.7, "reviews": 88, "location": "Riverside, Austin", "distance": "1.3 mi", "image": "photo-1503676260728-1c00da094a0b" },
+  { "name": "CodeCraft Academy", "categoryKey": "education", "rating": 4.9, "reviews": 67, "location": "Tech District, Raleigh", "distance": "0.5 mi", "image": "photo-1522202176988-66273c2fd55f" },
+  { "name": "Zenith Fitness Club", "categoryKey": "fitness", "rating": 4.7, "reviews": 512, "location": "Midtown, Atlanta", "distance": "0.8 mi", "image": "photo-1534438327276-14e5300c3a48" },
+  { "name": "Ironclad CrossFit", "categoryKey": "fitness", "rating": 4.5, "reviews": 298, "location": "Warehouse District, Nashville", "distance": "1.6 mi", "image": "photo-1517836357463-d25dfeac3438" },
+  { "name": "Serenity Spa & Wellness", "categoryKey": "beauty", "rating": 4.8, "reviews": 203, "location": "Uptown, Miami", "distance": "2.8 mi", "image": "photo-1540555700478-4be289fbecef" },
+  { "name": "The Polished Nail Bar", "categoryKey": "beauty", "rating": 4.6, "reviews": 174, "location": "Downtown, Phoenix", "distance": "0.9 mi", "image": "photo-1487412947147-5cebf100ffc2" },
+  { "name": "Starlight Cinema", "categoryKey": "entertainment", "rating": 4.4, "reviews": 356, "location": "Downtown, Chicago", "distance": "1.4 mi", "image": "photo-1489599162946-4b8b8b8b8b8b" },
+  { "name": "Rhythm & Bowl Lounge", "categoryKey": "entertainment", "rating": 4.5, "reviews": 221, "location": "Entertainment District, Kansas City", "distance": "2.0 mi", "image": "photo-1538481199705-c710c4e965fc" },
+  { "name": "Sterling Legal Group", "categoryKey": "professional", "rating": 4.9, "reviews": 76, "location": "Financial District, Charlotte", "distance": "1.0 mi", "image": "photo-1521737604893-d14cc237f11d" },
+  { "name": "Ledger & Co. Accounting", "categoryKey": "professional", "rating": 4.7, "reviews": 54, "location": "Uptown, Dallas", "distance": "1.9 mi", "image": "photo-1554224155-6726b3ff858f" }
+]
+</script>
+
+<!-- ===================== SHELL (approved, ticket 04 — Categories nav item active) ===================== -->
+<div class="flex h-screen overflow-hidden">
+  <div id="shell-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-30 md:hidden" onclick="closeMobileNav()"></div>
+
+  <aside id="shell-sidebar" class="w-60 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col fixed md:sticky top-0 h-screen z-40 -translate-x-full md:translate-x-0">
+    <div class="logo-row px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+        <i data-lucide="star" class="w-4 h-4 fill-white text-white"></i>
+      </div>
+      <span class="heading font-extrabold text-sm a-label">Rate My Place</span>
+      <button class="ml-auto md:hidden text-slate-400" onclick="closeMobileNav()"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <button class="nav-item relative" data-screen="discover" onclick="setScreen('discover')"><i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Discover</span><span class="tooltip">Discover</span></button>
+      <button class="nav-item active relative" data-screen="categories" onclick="setScreen('categories')"><i data-lucide="grid-3x3" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Categories</span><span class="tooltip">Categories</span></button>
+      <button class="nav-item relative" data-screen="my-reviews" onclick="setScreen('my-reviews')"><i data-lucide="message-square" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">My Reviews</span><span class="tooltip">My Reviews</span></button>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-100 relative">
+      <button class="user-trigger relative w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50" onclick="toggleDropdown('shell-user-menu')">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+        <div class="flex-1 min-w-0 text-left a-label">
+          <p class="text-xs font-bold truncate">Marcus Johnson</p>
+          <p class="text-xs text-slate-500 truncate">Reviewer</p>
+        </div>
+        <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 a-label flex-shrink-0"></i>
+        <span class="tooltip">Marcus Johnson</span>
+      </button>
+      <div id="shell-user-menu" class="dropdown absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-lg border border-slate-100 p-1.5">
+        <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-red-50 flex items-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i>Log out</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button class="md:hidden text-slate-500" onclick="openMobileNav()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <button class="hidden md:flex w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 items-center justify-center text-slate-500 flex-shrink-0 transition-colors" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+          <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+        </button>
+        <div class="min-w-0">
+          <h1 class="heading font-extrabold text-lg leading-tight" id="shell-title">Categories</h1>
+          <p class="text-xs text-slate-500 mt-0.5" id="shell-subtitle">Browse places by type</p>
+        </div>
+      </div>
+      <button class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-50 flex-shrink-0">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-7 h-7 rounded-full object-cover" />
+        <span class="text-xs font-semibold hidden sm:block">Marcus</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto" id="shell-content">
+      <div id="non-categories-placeholder" class="hidden p-4 md:p-6">
+        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center text-slate-400">
+          <i data-lucide="search" class="w-8 h-8 mx-auto mb-3" id="placeholder-icon"></i>
+          <p class="text-sm font-medium text-slate-500" id="placeholder-title"></p>
+          <p class="text-xs text-slate-400 mt-1">Built out in its own ticket — this shell only proves the nav works.</p>
+        </div>
+      </div>
+
+      <!-- ===================== CATEGORIES CONTENT — 3 switchable layout variants ===================== -->
+      <div id="categories-content">
+
+        <!-- ============= VARIANT A: hero + card grid, separate detail screen ============= -->
+        <div data-cat-variant="A" class="active">
+          <div id="ca-browse">
+            <div class="relative hero-gradient overflow-hidden px-6 py-10 text-center m-4 md:m-6 mb-0 rounded-3xl">
+              <div class="relative">
+                <p class="text-accent text-xs font-bold uppercase tracking-widest mb-3">Browse by Interest</p>
+                <h2 class="heading text-white text-3xl font-extrabold mb-3">Explore Places<br/>by Category</h2>
+                <p class="text-slate-400 text-sm max-w-md mx-auto">Find the best places based on your interests — from top-rated restaurants to trusted healthcare providers.</p>
+              </div>
+            </div>
+            <div class="p-4 md:p-6">
+              <div class="grid grid-cols-3 gap-4 mb-8" id="ca-platform-stats"></div>
+              <h3 class="heading font-extrabold text-base mb-4">All Categories</h3>
+              <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="ca-grid"></div>
+            </div>
+          </div>
+          <div id="ca-detail" class="hidden"></div>
+        </div>
+
+        <!-- ============= VARIANT B: compact list rows, separate detail screen ============= -->
+        <div data-cat-variant="B">
+          <div id="cb-browse" class="p-4 md:p-6 max-w-2xl">
+            <h2 class="heading text-xl font-extrabold mb-1">Categories</h2>
+            <p class="text-sm text-slate-500 mb-5">Browse places by type</p>
+            <div class="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 overflow-hidden" id="cb-list"></div>
+          </div>
+          <div id="cb-detail" class="hidden"></div>
+        </div>
+
+        <!-- ============= VARIANT C: inline filter pills + feed, no separate detail screen ============= -->
+        <div data-cat-variant="C">
+          <div class="p-4 md:p-6">
+            <h2 class="heading text-xl font-extrabold mb-1">Categories</h2>
+            <p class="text-sm text-slate-500 mb-4">Filter places by type, right here</p>
+            <div class="flex flex-wrap gap-2 mb-6" id="cc-pills"></div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="heading font-extrabold text-base" id="cc-feed-title">All Categories</h3>
+              <p class="text-xs text-slate-500" id="cc-feed-count"></p>
+            </div>
+            <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4" id="cc-feed"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — Card grid + detail screen</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  const CATEGORIES = JSON.parse(document.getElementById('category-data-template').textContent);
+  const PLACES = JSON.parse(document.getElementById('place-data-template').textContent);
+  const catByKey = k => CATEGORIES.find(c => c.key === k);
+
+  function starsHtml(rating) {
+    let s = '';
+    for (let i = 0; i < 5; i++) s += `<i data-lucide="star" class="w-3 h-3 ${i < Math.round(rating) ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}"></i>`;
+    return s;
+  }
+  function placeCardHtml(p) {
+    return `<div class="card">
+      <div class="relative bg-slate-100 overflow-hidden" style="height:140px">
+        <img src="https://images.unsplash.com/${p.image}?w=480&h=300&fit=crop&auto=format" class="w-full h-full object-cover" />
+      </div>
+      <div class="p-4">
+        <h4 class="font-bold text-sm truncate mb-1">${p.name}</h4>
+        <div class="flex items-center gap-1.5 mb-1.5">
+          <div class="flex gap-0.5">${starsHtml(p.rating)}</div>
+          <span class="text-sm font-bold">${p.rating}</span>
+          <span class="text-xs text-slate-400">(${p.reviews.toLocaleString()})</span>
+        </div>
+        <div class="flex items-center gap-1 text-xs text-slate-400"><i data-lucide="map-pin" class="w-3 h-3"></i>${p.location} · ${p.distance}</div>
+      </div>
+    </div>`;
+  }
+  function placeRowHtml(p, rank) {
+    return `<div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+      <span class="heading text-2xl font-extrabold text-slate-200 w-6 flex-shrink-0">#${rank}</span>
+      <img src="https://images.unsplash.com/${p.image}?w=100&h=100&fit=crop&auto=format" class="w-14 h-14 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-sm truncate">${p.name}</p>
+        <p class="text-xs text-slate-500">${p.location} · ${p.distance}</p>
+        <div class="flex items-center gap-1.5 mt-1">
+          <div class="flex gap-0.5">${starsHtml(p.rating)}</div>
+          <span class="text-xs font-bold">${p.rating}</span>
+          <span class="text-xs text-slate-400">(${p.reviews.toLocaleString()})</span>
+        </div>
+      </div>
+      <button class="bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-blue-700 flex-shrink-0">View</button>
+    </div>`;
+  }
+
+  function categoryCardHtml(cat) {
+    return `<button onclick="openCategoryDetail('a','${cat.key}')" class="card text-left w-full group">
+      <div class="relative h-28 overflow-hidden">
+        <img src="https://images.unsplash.com/${cat.cover}?w=400&h=200&fit=crop&auto=format" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <div class="absolute inset-0" style="background: linear-gradient(to bottom right, ${cat.g1}, ${cat.g2}); opacity: 0.7;"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <i data-lucide="${cat.icon}" class="w-8 h-8 text-white mb-1"></i>
+          <span class="text-white font-bold text-sm">${cat.name}</span>
+        </div>
+      </div>
+      <div class="p-3 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold text-slate-700">${cat.count.toLocaleString()} businesses</p>
+          <div class="flex items-center gap-1 mt-0.5">
+            <i data-lucide="star" class="w-3 h-3 text-accent fill-accent"></i>
+            <span class="text-xs text-slate-500">${cat.rating} avg</span>
+          </div>
+        </div>
+        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all"></i>
+      </div>
+    </button>`;
+  }
+  function categoryRowHtml(cat) {
+    return `<button onclick="openCategoryDetail('b','${cat.key}')" class="w-full flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left">
+      <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:${cat.bg}"><i data-lucide="${cat.icon}" class="w-5 h-5" style="color:${cat.iconColor}"></i></div>
+      <span class="flex-1 font-semibold text-sm">${cat.name}</span>
+      <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i>
+    </button>`;
+  }
+  function categoryPillHtml(cat, active) {
+    const style = active ? `background: linear-gradient(to right, ${cat.g1}, ${cat.g2})` : '';
+    return `<button onclick="selectCategoryPill('${cat.key}')" class="pill ${active ? 'active' : ''}" style="${style}">${cat.name}</button>`;
+  }
+
+  function detailHtml(catKey) {
+    const cat = catByKey(catKey);
+    const places = PLACES.filter(p => p.categoryKey === catKey);
+    const topRated = [...places].sort((a, b) => b.rating - a.rating).slice(0, 3);
+    return `
+      <div class="relative px-6 py-10" style="background: linear-gradient(to bottom right, ${cat.g1}, ${cat.g2})">
+        <button onclick="closeCategoryDetail()" class="flex items-center gap-1.5 text-white/80 text-xs font-semibold mb-5 hover:text-white transition-colors">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> Back to Categories
+        </button>
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center"><i data-lucide="${cat.icon}" class="w-7 h-7 text-white"></i></div>
+          <div>
+            <h2 class="heading text-white text-2xl font-extrabold">${cat.name}</h2>
+            <p class="text-white/70 text-sm">${cat.count.toLocaleString()} businesses · ${cat.rating}★ average rating</p>
+          </div>
+        </div>
+      </div>
+      <div class="px-4 md:px-6 py-6 space-y-8">
+        <section>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="heading font-extrabold">Top Rated</h3>
+            <button class="text-xs text-primary font-semibold">See all</button>
+          </div>
+          <div class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">${topRated.map(placeCardHtml).join('')}</div>
+        </section>
+        <section class="pb-6">
+          <h3 class="heading font-extrabold mb-4">Trending Now</h3>
+          <div class="space-y-3">${places.map((p, i) => placeRowHtml(p, i + 1)).join('')}</div>
+        </section>
+      </div>`;
+  }
+
+  function openCategoryDetail(scope, key) {
+    document.getElementById(`c${scope}-browse`).classList.add('hidden');
+    const detailEl = document.getElementById(`c${scope}-detail`);
+    detailEl.innerHTML = detailHtml(key);
+    detailEl.classList.remove('hidden');
+    lucide.createIcons();
+  }
+  function closeCategoryDetail() {
+    ['a', 'b'].forEach(scope => {
+      document.getElementById(`c${scope}-detail`).classList.add('hidden');
+      document.getElementById(`c${scope}-browse`).classList.remove('hidden');
+    });
+  }
+
+  let ccSelected = null;
+  function selectCategoryPill(key) {
+    ccSelected = ccSelected === key ? null : key;
+    renderVariantC();
+  }
+  function renderVariantC() {
+    document.getElementById('cc-pills').innerHTML =
+      `<button onclick="selectCategoryPill(null)" class="pill ${!ccSelected ? 'active' : ''}" style="${!ccSelected ? 'background:#2563EB' : ''}">All</button>` +
+      CATEGORIES.map(c => categoryPillHtml(c, ccSelected === c.key)).join('');
+    const places = ccSelected ? PLACES.filter(p => p.categoryKey === ccSelected) : PLACES;
+    document.getElementById('cc-feed-title').textContent = ccSelected ? catByKey(ccSelected).name : 'All Categories';
+    document.getElementById('cc-feed-count').textContent = `${places.length} places`;
+    document.getElementById('cc-feed').innerHTML = places.map(placeCardHtml).join('');
+    lucide.createIcons();
+  }
+
+  const PLATFORM_STATS = [
+    { value: '56,700+', label: 'Total Businesses', icon: 'building-2', colorClass: 'text-primary bg-blue-50' },
+    { value: String(CATEGORIES.length), label: 'Categories', icon: 'grid-3x3', colorClass: 'text-amber-600 bg-amber-50' },
+    { value: '14M+', label: 'Reviews', icon: 'message-square', colorClass: 'text-emerald-600 bg-emerald-50' },
+  ];
+  document.getElementById('ca-platform-stats').innerHTML = PLATFORM_STATS.map(s => `
+    <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center ${s.colorClass}"><i data-lucide="${s.icon}" class="w-4 h-4"></i></div>
+      <div>
+        <p class="heading font-extrabold text-lg leading-tight">${s.value}</p>
+        <p class="text-xs text-slate-500">${s.label}</p>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('ca-grid').innerHTML = CATEGORIES.map(categoryCardHtml).join('');
+  document.getElementById('cb-list').innerHTML = CATEGORIES.map(categoryRowHtml).join('');
+  renderVariantC();
+  lucide.createIcons();
+
+  // --- shell chrome behavior (verbatim from the approved ticket-04 prototype) ---
+  const SCREEN_META = {
+    discover: { title: 'Discover Places', subtitle: 'Find and explore places near you', icon: 'search' },
+    categories: { title: 'Categories', subtitle: 'Browse places by type', icon: 'grid-3x3' },
+    'my-reviews': { title: 'My Reviews', subtitle: 'All your published reviews', icon: 'message-square' },
+  };
+  function setScreen(screen) {
+    document.querySelectorAll('[data-screen]').forEach(el => el.classList.toggle('active', el.dataset.screen === screen));
+    const m = SCREEN_META[screen];
+    document.getElementById('shell-title').textContent = m.title;
+    document.getElementById('shell-subtitle').textContent = m.subtitle;
+    document.getElementById('categories-content').classList.toggle('hidden', screen !== 'categories');
+    document.getElementById('non-categories-placeholder').classList.toggle('hidden', screen === 'categories');
+    if (screen !== 'categories') {
+      document.getElementById('placeholder-icon').setAttribute('data-lucide', m.icon);
+      document.getElementById('placeholder-title').textContent = `${m.title} content`;
+    }
+    closeMobileNav();
+    lucide.createIcons();
+  }
+  function toggleSidebarCollapse() { document.getElementById('shell-sidebar').classList.toggle('collapsed'); }
+  function openMobileNav() {
+    document.getElementById('shell-sidebar').classList.remove('-translate-x-full');
+    document.getElementById('shell-overlay').classList.remove('hidden');
+  }
+  function closeMobileNav() {
+    document.getElementById('shell-sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('shell-overlay')?.classList.add('hidden');
+  }
+  function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('button') || !e.target.closest('button').onclick?.toString().includes('toggleDropdown')) {
+      if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // --- Categories layout variant switcher ---
+  const variants = [
+    { key: 'A', name: 'Card grid + detail screen' },
+    { key: 'B', name: 'List rows + detail screen' },
+    { key: 'C', name: 'Inline pills + feed' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function renderSwitcher() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-cat-variant]').forEach(el => el.classList.toggle('active', el.dataset.catVariant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    const params = new URLSearchParams(location.search);
+    params.set('variant', variants[i].key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    renderSwitcher();
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  renderSwitcher();
+</script>
+
+</body>
+</html>

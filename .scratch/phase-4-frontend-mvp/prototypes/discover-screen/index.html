@@ -1,0 +1,594 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/05-discover-screen.md
+
+  REHOSTED (2026-08-12) inside the exact APPROVED shell from ticket 04
+  (Authenticated shell layout, Variant A, captured on throwaway branch
+  `prototype/authenticated-shell`, commit 59b721a) — pulled verbatim via
+  `git show prototype/authenticated-shell:...`, not retyped from memory, so the
+  sidebar/top-bar chrome here is byte-for-byte the already-approved one. Per
+  prototype/UI.md's "sub-shape A is much easier to judge butting up against the
+  rest of the app" guidance: floating the Discover content standalone (the
+  first draft of this prototype) lost real context — real sidebar width, real
+  content padding, real density. The shell itself is no longer a variable here
+  (already decided).
+
+  SOURCE GROUNDING (unchanged from the original build): read the real
+  `DiscoverScreen`/`BusinessCard` components directly from the original Figma
+  Make file's App.tsx (fileKey uecnUKqT4CI7LuIpWo50Pp, ~lines 242-451).
+
+  DECISIONS made while grounding, not silently ported:
+  - **Save/heart icon removed** — real source has one on every card; omitted
+    per this map's charting decision (Saved Places is Phase 5).
+  - **"Recommended For You" section removed** — real source has one (a
+    client-side category filter, not real personalization); dropped per this
+    map's charting decision, no recommendation engine exists.
+  - **Price range: 3 tiers, not 4** — the real source's filter shows
+    $/$$/$$$/$$$$, but the actual backend `price_range` enum is
+    LOW/MEDIUM/HIGH (`docs/03-architecture.md`) — 3 tiers only. A 4th button
+    with no backend value to send would be a UI lie.
+  - **Card badges grounded in real backend fields, not fabricated categories**
+    — kept only "Verified" (`Place.isVerified`) and "Trending"
+    (`Place.trending_score`, a real materialized column from Phase 3); dropped
+    "Top Rated"/"Community Favorite"/"Rising Star" (no backend basis).
+  - Sort tabs (Highest Rated/Trending/New/Nearby) kept as a faithful 1:1 port
+    of the real `PlaceSortEnum`.
+
+  FINAL DIRECTION (2026-08-12): started as a 3-variant comparison (A: top
+  filter panel, B: persistent left filter sidebar, C: map-forward split).
+  Verdict — use **both A and C together**, not pick-one: A is the default
+  view, with a real "See in map" button (top-right of the "All Places /
+  Sorted by" row) switching to C, and C has a reciprocal "Back to list"
+  button. Variant B (persistent sidebar) is dropped and its markup removed —
+  not part of the final design. The floating switcher at the bottom now
+  mirrors this real A↔C toggle exactly (2 states, not 3) rather than being a
+  separate throwaway-only affordance.
+
+  Real map question this raised, resolved as a *docs* decision (not built
+  here — see docs/05-frontend-plan.md): wiring an actual interactive map is
+  low-risk since the backend already returns real lat/lng per place
+  (docs/07-geo-and-location-strategy.md's Tier 0 Haversine decision) — the
+  main choice is Leaflet + OpenStreetMap (free, no API key, matches this
+  project's "start simple" pattern) vs. Google Maps/Mapbox (nicer visuals,
+  needs a billing-enabled API key). C's map area here is a static placeholder
+  with mock pins, not a real map integration — that's real future work, not
+  something to fake convincingly in a throwaway prototype.
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/discover-screen
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  States: ?variant=A (list + filters, default) | C (map view, via "See in map")
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Discover screen (ticket 05)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { primary: '#2563EB', accent: '#F59E0B', destructive: '#EF4444' },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-discover-variant] { display: none; }
+  [data-discover-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 170px; text-align: center; }
+
+  /* --- shell chrome, pulled verbatim from the approved ticket-04 prototype (prototype/authenticated-shell, commit 59b721a) --- */
+  .nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 150ms ease; }
+  .nav-item.active { background: #2563EB; color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.25); }
+  .nav-item:not(.active):not(.locked) { color: #64748B; }
+  .nav-item:not(.active):not(.locked):hover { background: #F8FAFC; color: #0F172A; }
+  .dropdown { display: none; }
+  .dropdown.open { display: block; }
+  #shell-sidebar { transition: width 200ms ease, transform 200ms ease; }
+  #shell-sidebar.collapsed { width: 4.5rem; }
+  #shell-sidebar .logo-row, #shell-sidebar .user-trigger { transition: gap 200ms ease; }
+  #shell-sidebar.collapsed .logo-row, #shell-sidebar.collapsed .user-trigger { gap: 0; }
+  #shell-sidebar .a-label {
+    display: inline-block; opacity: 1; max-width: 200px;
+    overflow: hidden; white-space: nowrap; vertical-align: middle;
+    transition: opacity 150ms ease, max-width 200ms ease;
+  }
+  #shell-sidebar.collapsed .a-label { opacity: 0; max-width: 0; }
+  #shell-sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+  #shell-sidebar.collapsed #shell-user-menu { left: 100%; right: auto; bottom: 0.5rem; margin-left: 8px; width: 190px; }
+  #shell-sidebar .tooltip {
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%) translateX(8px);
+    background: #0F172A; color: white; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 50;
+  }
+  #shell-sidebar.collapsed .nav-item:hover .tooltip,
+  #shell-sidebar.collapsed .user-trigger:hover .tooltip { opacity: 1; }
+  #shell-sidebar:not(.collapsed) .tooltip { display: none; }
+
+  /* --- Discover content --- */
+  .card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(15,23,42,0.06); transition: all 200ms ease; display: flex; flex-direction: column; }
+  .card:hover { box-shadow: 0 10px 20px rgba(15,23,42,0.08); transform: translateY(-2px); }
+  .pill { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid #E2E8F0; color: #64748B; cursor: pointer; transition: all 150ms ease; white-space: nowrap; }
+  .pill.active { background: #2563EB; color: white; border-color: #2563EB; }
+  .pill:not(.active):hover { border-color: #2563EB; color: #2563EB; }
+  .sort-tab { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.1); cursor: pointer; transition: all 150ms ease; }
+  .sort-tab.active { background: white; color: #2563EB; border-color: white; }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<script id="place-data-template" type="application/json">
+[
+  { "name": "The Rustic Bean Cafe", "category": "Cafés", "rating": 4.8, "reviews": 342, "location": "Downtown, Seattle", "distance": "0.4 mi", "price": "$$", "open": true, "verified": true, "trending": false, "image": "photo-1554118811-1e0d58224f24", "desc": "Award-winning specialty coffee roaster with a warm, intimate space perfect for work or conversation." },
+  { "name": "Elite Auto Repair", "category": "Automotive", "rating": 4.9, "reviews": 856, "location": "Westside, Austin", "distance": "1.2 mi", "price": "$$$", "open": true, "verified": true, "trending": true, "image": "photo-1613214149922-f1809c99b414", "desc": "Trusted mechanics with transparent pricing and same-day service for most repairs." },
+  { "name": "Green Thumb Landscaping", "category": "Home Services", "rating": 4.6, "reviews": 128, "location": "Suburbs, Chicago", "distance": "2.1 mi", "price": "$$", "open": false, "verified": false, "trending": false, "image": "photo-1584622650111-993a426fbf0a", "desc": "Full-service lawn care and landscape design for residential properties." },
+  { "name": "Zenith Fitness Club", "category": "Fitness", "rating": 4.7, "reviews": 512, "location": "Midtown, Atlanta", "distance": "0.8 mi", "price": "$$$", "open": true, "verified": true, "trending": true, "image": "photo-1534438327276-14e5300c3a48", "desc": "Modern boutique gym with expert trainers, HIIT classes, and state-of-the-art equipment." },
+  { "name": "Harbor House Hotel", "category": "Hotels", "rating": 4.4, "reviews": 289, "location": "Waterfront, Boston", "distance": "3.5 mi", "price": "$$$", "open": true, "verified": true, "trending": false, "image": "photo-1566073771259-6a8506099945", "desc": "Boutique waterfront hotel with harbor views and a locally-sourced restaurant." },
+  { "name": "Sunrise Diner", "category": "Restaurants", "rating": 4.3, "reviews": 621, "location": "Downtown, Portland", "distance": "0.6 mi", "price": "$", "open": true, "verified": false, "trending": true, "image": "photo-1555396273-367ea4eb4db5", "desc": "Classic all-day breakfast spot with generous portions and friendly service." },
+  { "name": "Bloom & Co. Florist", "category": "Shopping", "rating": 4.9, "reviews": 94, "location": "Arts District, Denver", "distance": "1.5 mi", "price": "$$", "open": false, "verified": true, "trending": false, "image": "photo-1462212210333-335d9538c5a1", "desc": "Locally grown seasonal arrangements for every occasion, same-day delivery available." },
+  { "name": "Serenity Spa & Wellness", "category": "Beauty & Wellness", "rating": 4.8, "reviews": 203, "location": "Uptown, Miami", "distance": "2.8 mi", "price": "$$$", "open": true, "verified": true, "trending": false, "image": "photo-1540555700478-4be289fbecef", "desc": "Full-service spa offering massage therapy, facials, and holistic wellness treatments." }
+]
+</script>
+
+<!-- ===================== SHELL (approved, ticket 04, Variant A — not switchable here) ===================== -->
+<div class="flex h-screen overflow-hidden">
+  <div id="shell-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-30 md:hidden" onclick="closeMobileNav()"></div>
+
+  <aside id="shell-sidebar" class="w-60 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col fixed md:sticky top-0 h-screen z-40 -translate-x-full md:translate-x-0">
+    <div class="logo-row px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+        <i data-lucide="star" class="w-4 h-4 fill-white text-white"></i>
+      </div>
+      <span class="heading font-extrabold text-sm a-label">Rate My Place</span>
+      <button class="ml-auto md:hidden text-slate-400" onclick="closeMobileNav()"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <button class="nav-item active relative" data-screen="discover" onclick="setScreen('discover')"><i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Discover</span><span class="tooltip">Discover</span></button>
+      <button class="nav-item relative" data-screen="categories" onclick="setScreen('categories')"><i data-lucide="grid-3x3" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Categories</span><span class="tooltip">Categories</span></button>
+      <button class="nav-item relative" data-screen="my-reviews" onclick="setScreen('my-reviews')"><i data-lucide="message-square" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">My Reviews</span><span class="tooltip">My Reviews</span></button>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-100 relative">
+      <button class="user-trigger relative w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50" onclick="toggleDropdown('shell-user-menu')">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+        <div class="flex-1 min-w-0 text-left a-label">
+          <p class="text-xs font-bold truncate">Marcus Johnson</p>
+          <p class="text-xs text-slate-500 truncate">Reviewer</p>
+        </div>
+        <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 a-label flex-shrink-0"></i>
+        <span class="tooltip">Marcus Johnson</span>
+      </button>
+      <div id="shell-user-menu" class="dropdown absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-lg border border-slate-100 p-1.5">
+        <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-red-50 flex items-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i>Log out</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button class="md:hidden text-slate-500" onclick="openMobileNav()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <button class="hidden md:flex w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 items-center justify-center text-slate-500 flex-shrink-0 transition-colors" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+          <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+        </button>
+        <div class="min-w-0">
+          <h1 class="heading font-extrabold text-lg leading-tight" id="shell-title">Discover Places</h1>
+          <p class="text-xs text-slate-500 mt-0.5" id="shell-subtitle">Find and explore places near you</p>
+        </div>
+      </div>
+      <button class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-50 flex-shrink-0">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-7 h-7 rounded-full object-cover" />
+        <span class="text-xs font-semibold hidden sm:block">Marcus</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto" id="shell-content">
+      <div id="non-discover-placeholder" class="hidden p-4 md:p-6">
+        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center text-slate-400">
+          <i data-lucide="grid-3x3" class="w-8 h-8 mx-auto mb-3" id="placeholder-icon"></i>
+          <p class="text-sm font-medium text-slate-500" id="placeholder-title"></p>
+          <p class="text-xs text-slate-400 mt-1">Built out in its own ticket — this shell only proves the nav works.</p>
+        </div>
+      </div>
+
+      <!-- ===================== DISCOVER CONTENT — 3 switchable layout variants ===================== -->
+      <div id="discover-content">
+
+        <!-- ============= VARIANT A: top filter panel ============= -->
+        <div data-discover-variant="A" class="active">
+          <div class="bg-gradient-to-r from-blue-950 to-slate-900 px-6 py-8 rounded-3xl m-4 md:m-6 mb-0">
+            <p class="text-blue-200 text-xs font-semibold mb-2 uppercase tracking-wider">Explore your city</p>
+            <h2 class="heading text-white text-2xl font-extrabold mb-4">Find places near you</h2>
+            <div class="flex gap-2">
+              <div class="flex-1 bg-white rounded-xl flex items-center gap-2 px-4 shadow-lg">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                <input id="da-query" oninput="applyFilters('da')" placeholder="Search places, categories..." class="flex-1 text-sm outline-none py-3 bg-transparent" />
+              </div>
+              <button class="bg-white/10 border border-white/20 text-white px-4 rounded-xl flex items-center gap-2 text-sm font-semibold hover:bg-white/20 flex-shrink-0">
+                <i data-lucide="map-pin" class="w-4 h-4"></i> Brooklyn, NY
+              </button>
+            </div>
+            <div class="flex items-center flex-wrap gap-2 mt-3">
+              <button onclick="toggleFilterPanel('da')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/20 bg-white/10 text-white hover:bg-white/20">
+                <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Filters
+              </button>
+              <div class="flex gap-1.5" id="da-sorts"></div>
+            </div>
+          </div>
+
+          <div id="da-filter-panel" class="hidden bg-white border-b border-slate-200 mx-4 md:mx-6 mt-4 rounded-2xl border px-6 py-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="heading font-bold text-sm">Filters</h3>
+              <button onclick="clearFilters('da')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:border-rose-300 transition-colors">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>Clear all
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-6">
+              <div>
+                <p class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Category</p>
+                <div class="flex flex-wrap gap-1.5" id="da-cat-filters"></div>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Price Range</p>
+                <div class="flex gap-1.5" id="da-price-filters"></div>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Min Rating</p>
+                <div class="flex gap-1.5" id="da-rating-filters"></div>
+              </div>
+              <div class="flex items-end"><button id="da-open-now" onclick="toggleOpenNow('da')" class="pill">Open Now</button></div>
+            </div>
+          </div>
+
+          <div class="p-4 md:p-6 space-y-10">
+            <section>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="heading font-extrabold text-base" id="da-results-title">All Places</h2>
+                  <p class="text-xs text-slate-500 mt-0.5" id="da-sort-label">Sorted by: Highest Rated</p>
+                </div>
+                <button onclick="switchDiscoverVariant('C')" class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-colors flex-shrink-0">
+                  <i data-lucide="map" class="w-4 h-4"></i> See in map
+                </button>
+              </div>
+              <div id="da-main-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+              <div id="da-empty" class="hidden text-center py-16">
+                <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3"><i data-lucide="search" class="w-8 h-8 text-slate-300"></i></div>
+                <p class="font-bold text-slate-700">No places found</p>
+                <p class="text-sm text-slate-500 mt-1">Try adjusting your search or filters</p>
+              </div>
+            </section>
+            <section>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2"><i data-lucide="flame" class="w-5 h-5 text-orange-500"></i><h2 class="heading font-extrabold text-base">Trending This Week</h2></div>
+                <button class="text-xs text-primary font-semibold flex items-center gap-1">See all <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4" id="da-trending-strip"></div>
+            </section>
+            <section class="pb-2">
+              <div class="flex items-center gap-2 mb-4"><i data-lucide="sparkles" class="w-5 h-5 text-violet-500"></i><h2 class="heading font-extrabold text-base">New Nearby</h2></div>
+              <div class="flex gap-4 overflow-x-auto pb-2" id="da-new-strip"></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- ============= VARIANT C: map-forward split (bordered card, not full-bleed) ============= -->
+        <div data-discover-variant="C">
+          <div class="p-4 md:p-6">
+            <div class="flex h-[calc(100vh-9.5rem)] rounded-2xl border border-slate-200 overflow-hidden bg-white">
+              <div class="w-full lg:w-[380px] flex-shrink-0 flex flex-col border-r border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-200 space-y-3">
+                  <div class="bg-slate-100 rounded-xl flex items-center gap-2 px-4">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+                    <input id="dc-query" oninput="applyFilters('dc')" placeholder="Search places..." class="flex-1 text-sm outline-none py-2.5 bg-transparent" />
+                  </div>
+                  <div class="flex gap-1.5 overflow-x-auto pb-1" id="dc-sorts"></div>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="toggleFilterPanel('dc')" class="pill flex items-center gap-1"><i data-lucide="sliders-horizontal" class="w-3 h-3"></i>Filters</button>
+                    <button id="dc-open-now" onclick="toggleOpenNow('dc')" class="pill">Open Now</button>
+                  </div>
+                  <div id="dc-filter-panel" class="hidden space-y-3 pt-2 border-t border-slate-100">
+                    <div>
+                      <p class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Category</p>
+                      <div class="flex flex-wrap gap-1.5" id="dc-cat-filters"></div>
+                    </div>
+                    <div>
+                      <p class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Price</p>
+                      <div class="flex gap-1.5" id="dc-price-filters"></div>
+                    </div>
+                    <div>
+                      <p class="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Min Rating</p>
+                      <div class="flex gap-1.5" id="dc-rating-filters"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-2 text-xs text-slate-500 font-medium" id="dc-results-title">All Places</div>
+                <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-3" id="dc-list"></div>
+                <div id="dc-empty" class="hidden text-center py-16 px-4">
+                  <p class="font-bold text-slate-700 text-sm">No places found</p>
+                  <p class="text-xs text-slate-500 mt-1">Try adjusting your search or filters</p>
+                </div>
+              </div>
+              <div class="hidden lg:flex flex-1 relative bg-slate-200 items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 opacity-40" style="background-image: radial-gradient(circle, #94A3B8 1px, transparent 1px); background-size: 24px 24px;"></div>
+                <div id="dc-pins" class="absolute inset-0"></div>
+                <button onclick="switchDiscoverVariant('A')" class="absolute top-4 right-4 flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 shadow-lg hover:shadow-xl hover:text-primary transition-all">
+                  <i data-lucide="list" class="w-4 h-4"></i> Back to list
+                </button>
+                <div class="relative bg-white/90 backdrop-blur px-4 py-2 rounded-full text-xs font-semibold text-slate-500 shadow">Map view — ties to real lat/lng + Nearby sort</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — List + filters</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  const PLACES = JSON.parse(document.getElementById('place-data-template').textContent);
+  const CATEGORIES = ["Restaurants", "Cafés", "Fitness", "Beauty & Wellness", "Shopping", "Hotels", "Automotive", "Home Services"];
+  const PRICES = ["$", "$$", "$$$"];
+  const RATINGS = [0, 3, 4, 4.5];
+  const SORTS = ["Highest Rated", "Trending", "New", "Nearby"];
+
+  const state = {
+    da: { query: '', sort: 'Highest Rated', cats: [], prices: [], ratingMin: 0, openNow: false },
+    dc: { query: '', sort: 'Highest Rated', cats: [], prices: [], ratingMin: 0, openNow: false },
+  };
+
+  function badgeHtml(p) {
+    if (p.verified) return `<div class="absolute top-2.5 left-2.5 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="badge-check" class="w-3 h-3"></i>Verified</div>`;
+    if (p.trending) return `<div class="absolute top-2.5 left-2.5 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i>Trending</div>`;
+    return '';
+  }
+  function starsHtml(rating) {
+    let s = '';
+    for (let i = 0; i < 5; i++) s += `<i data-lucide="star" class="w-3.5 h-3.5 ${i < Math.round(rating) ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}"></i>`;
+    return s;
+  }
+  function cardHtml(p, compact) {
+    return `<div class="card">
+      <div class="relative bg-slate-100 overflow-hidden" style="height:${compact ? '120px' : '160px'}">
+        <img src="https://images.unsplash.com/${p.image}?w=480&h=300&fit=crop&auto=format" class="w-full h-full object-cover" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent"></div>
+        ${badgeHtml(p)}
+        <div class="absolute bottom-2.5 left-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${p.open ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-white'}">${p.open ? 'Open' : 'Closed'}</div>
+      </div>
+      <div class="p-4 flex flex-col flex-1">
+        <h3 class="font-bold text-sm leading-snug truncate mb-0.5">${p.name}</h3>
+        <p class="text-xs text-slate-500 mb-2">${p.category}</p>
+        <div class="flex items-center gap-1.5 mb-1.5">
+          <div class="flex gap-0.5">${starsHtml(p.rating)}</div>
+          <span class="text-sm font-bold">${p.rating}</span>
+          <span class="text-xs text-slate-400">(${p.reviews.toLocaleString()})</span>
+          <span class="ml-auto text-xs text-slate-400 font-medium">${p.price}</span>
+        </div>
+        ${compact ? '' : `<p class="text-xs text-slate-500 leading-relaxed line-clamp-2 mb-3">${p.desc}</p>`}
+        <div class="flex items-center gap-1 text-xs text-slate-400 mt-auto mb-3"><i data-lucide="map-pin" class="w-3 h-3"></i>${p.location} · ${p.distance}</div>
+        <button class="w-full bg-primary text-white py-2 rounded-xl text-xs font-bold hover:bg-blue-700">View Place</button>
+      </div>
+    </div>`;
+  }
+  function listRowHtml(p) {
+    return `<div class="flex gap-3 p-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+      <img src="https://images.unsplash.com/${p.image}?w=200&h=200&fit=crop&auto=format" class="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1.5"><h4 class="font-bold text-sm truncate">${p.name}</h4>${p.verified ? '<i data-lucide="badge-check" class="w-3.5 h-3.5 text-primary flex-shrink-0"></i>' : ''}</div>
+        <p class="text-xs text-slate-500">${p.category} · ${p.price}</p>
+        <div class="flex items-center gap-1 mt-1"><i data-lucide="star" class="w-3 h-3 text-accent fill-accent"></i><span class="text-xs font-bold">${p.rating}</span><span class="text-xs text-slate-400">(${p.reviews})</span></div>
+      </div>
+    </div>`;
+  }
+
+  function sortPlaces(list, sort) {
+    const arr = [...list];
+    if (sort === 'Highest Rated') arr.sort((a, b) => b.rating - a.rating);
+    else if (sort === 'Trending') arr.sort((a, b) => (b.trending === a.trending) ? b.rating - a.rating : (b.trending ? 1 : -1));
+    else if (sort === 'New') arr.reverse();
+    else if (sort === 'Nearby') arr.sort((a, b) => parseFloat(a.distance) - parseFloat(b.distance));
+    return arr;
+  }
+  function filterPlaces(s) {
+    return PLACES.filter(p => {
+      if (s.query && !p.name.toLowerCase().includes(s.query.toLowerCase()) && !p.category.toLowerCase().includes(s.query.toLowerCase())) return false;
+      if (s.cats.length && !s.cats.includes(p.category)) return false;
+      if (s.prices.length && !s.prices.includes(p.price)) return false;
+      if (s.openNow && !p.open) return false;
+      if (s.ratingMin && p.rating < s.ratingMin) return false;
+      return true;
+    });
+  }
+
+  function renderChips(scope) {
+    const s = state[scope];
+    const catEl = document.getElementById(`${scope}-cat-filters`);
+    if (catEl) catEl.innerHTML = CATEGORIES.map(c => `<button class="pill ${s.cats.includes(c) ? 'active' : ''}" onclick="toggleCat('${scope}','${c}')">${c}</button>`).join('');
+    const priceEl = document.getElementById(`${scope}-price-filters`);
+    if (priceEl) priceEl.innerHTML = PRICES.map(p => `<button class="pill ${s.prices.includes(p) ? 'active' : ''}" onclick="togglePrice('${scope}','${p}')">${p}</button>`).join('');
+    const ratingEl = document.getElementById(`${scope}-rating-filters`);
+    if (ratingEl) ratingEl.innerHTML = RATINGS.map(r => `<button class="pill ${s.ratingMin === r ? 'active' : ''}" onclick="setRating('${scope}',${r})">${r === 0 ? 'Any' : r + '+★'}</button>`).join('');
+    const sortsEl = document.getElementById(`${scope}-sorts`);
+    if (sortsEl) sortsEl.innerHTML = SORTS.map(sr => `<button class="${scope === 'da' ? 'sort-tab' : 'pill'} ${s.sort === sr ? 'active' : ''}" onclick="setSort('${scope}','${sr}')">${sr}</button>`).join('');
+    const openBtn = document.getElementById(`${scope}-open-now`);
+    if (openBtn) openBtn.classList.toggle('active', s.openNow);
+  }
+
+  function render(scope) {
+    const s = state[scope];
+    const filtered = sortPlaces(filterPlaces(s), s.sort);
+    const isFiltered = s.query || s.cats.length || s.prices.length || s.openNow || s.ratingMin;
+    const titleEl = document.getElementById(`${scope}-results-title`);
+    const sortLabelEl = document.getElementById(`${scope}-sort-label`);
+    if (titleEl) titleEl.textContent = isFiltered ? `Results (${filtered.length})` : 'All Places';
+    if (sortLabelEl) sortLabelEl.textContent = `Sorted by: ${s.sort}`;
+
+    if (scope === 'dc') {
+      document.getElementById('dc-list').innerHTML = filtered.map(listRowHtml).join('');
+      document.getElementById('dc-empty').classList.toggle('hidden', filtered.length > 0);
+      document.getElementById('dc-list').classList.toggle('hidden', filtered.length === 0);
+      document.getElementById('dc-pins').innerHTML = filtered.slice(0, 6).map((p, i) => {
+        const left = 15 + (i % 3) * 30 + (i * 7 % 10);
+        const top = 20 + Math.floor(i / 3) * 35 + (i * 5 % 15);
+        return `<div class="absolute group" style="left:${left}%; top:${top}%">
+          <div class="w-8 h-8 -ml-4 -mt-4 rounded-full bg-primary text-white flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-110 transition-transform">
+            <i data-lucide="map-pin" class="w-4 h-4 fill-white"></i>
+          </div>
+          <div class="absolute bottom-full left-1/2 -translate-x-1/2 -translate-y-2 hidden group-hover:flex items-center gap-2 bg-white rounded-full pl-1.5 pr-3 py-1.5 shadow-lg border border-slate-100 whitespace-nowrap z-10">
+            <img src="https://images.unsplash.com/${p.image}?w=60&h=60&fit=crop&auto=format" class="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+            <span class="text-xs font-bold text-slate-900">${p.name}</span>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      const grid = document.getElementById(`${scope}-main-grid`);
+      grid.innerHTML = filtered.map(p => cardHtml(p, false)).join('');
+      grid.classList.toggle('hidden', filtered.length === 0);
+      document.getElementById(`${scope}-empty`).classList.toggle('hidden', filtered.length > 0);
+    }
+
+    if (scope === 'da') {
+      document.getElementById('da-trending-strip').innerHTML = PLACES.filter(p => p.trending).map(p => cardHtml(p, true)).join('');
+      document.getElementById('da-new-strip').innerHTML = PLACES.slice(0, 4).map(p => `<div class="flex-shrink-0 w-64">${cardHtml(p, true)}</div>`).join('');
+    }
+    renderChips(scope);
+    lucide.createIcons();
+  }
+
+  function applyFilters(scope) {
+    state[scope].query = document.getElementById(`${scope}-query`).value;
+    render(scope);
+  }
+  function toggleCat(scope, c) {
+    const s = state[scope];
+    s.cats = s.cats.includes(c) ? s.cats.filter(x => x !== c) : [...s.cats, c];
+    render(scope);
+  }
+  function togglePrice(scope, p) {
+    const s = state[scope];
+    s.prices = s.prices.includes(p) ? s.prices.filter(x => x !== p) : [...s.prices, p];
+    render(scope);
+  }
+  function setRating(scope, r) { state[scope].ratingMin = r; render(scope); }
+  function setSort(scope, sr) { state[scope].sort = sr; render(scope); }
+  function toggleOpenNow(scope) { state[scope].openNow = !state[scope].openNow; render(scope); }
+  function clearFilters(scope) {
+    Object.assign(state[scope], { query: '', cats: [], prices: [], ratingMin: 0, openNow: false });
+    const q = document.getElementById(`${scope}-query`); if (q) q.value = '';
+    render(scope);
+  }
+  function toggleFilterPanel(scope) {
+    document.getElementById(`${scope}-filter-panel`).classList.toggle('hidden');
+  }
+
+  ['da', 'dc'].forEach(render);
+
+  // --- shell chrome behavior (verbatim from the approved ticket-04 prototype) ---
+  const SCREEN_META = {
+    discover: { title: 'Discover Places', subtitle: 'Find and explore places near you', icon: 'search' },
+    categories: { title: 'Categories', subtitle: 'Browse places by type', icon: 'grid-3x3' },
+    'my-reviews': { title: 'My Reviews', subtitle: 'All your published reviews', icon: 'message-square' },
+  };
+  function setScreen(screen) {
+    document.querySelectorAll('[data-screen]').forEach(el => el.classList.toggle('active', el.dataset.screen === screen));
+    const m = SCREEN_META[screen];
+    document.getElementById('shell-title').textContent = m.title;
+    document.getElementById('shell-subtitle').textContent = m.subtitle;
+    document.getElementById('discover-content').classList.toggle('hidden', screen !== 'discover');
+    document.getElementById('non-discover-placeholder').classList.toggle('hidden', screen === 'discover');
+    if (screen !== 'discover') {
+      document.getElementById('placeholder-icon').setAttribute('data-lucide', m.icon);
+      document.getElementById('placeholder-title').textContent = `${m.title} content`;
+    }
+    closeMobileNav();
+    lucide.createIcons();
+  }
+  function toggleSidebarCollapse() { document.getElementById('shell-sidebar').classList.toggle('collapsed'); }
+  function openMobileNav() {
+    document.getElementById('shell-sidebar').classList.remove('-translate-x-full');
+    document.getElementById('shell-overlay').classList.remove('hidden');
+  }
+  function closeMobileNav() {
+    document.getElementById('shell-sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('shell-overlay')?.classList.add('hidden');
+  }
+  function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('button') || !e.target.closest('button').onclick?.toString().includes('toggleDropdown')) {
+      if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // --- Discover layout: A (default, list+filters) and C (map view), toggled
+  // by the real "See in map"/"Back to list" buttons above — this is now the
+  // actual production interaction, not just a prototype dev switcher.
+  const variants = [
+    { key: 'A', name: 'List + filters' },
+    { key: 'C', name: 'Map view' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function renderSwitcher() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-discover-variant]').forEach(el => el.classList.toggle('active', el.dataset.discoverVariant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function switchDiscoverVariant(key) {
+    const params = new URLSearchParams(location.search);
+    params.set('variant', key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    renderSwitcher();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    switchDiscoverVariant(variants[i].key);
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  renderSwitcher();
+</script>
+
+</body>
+</html>

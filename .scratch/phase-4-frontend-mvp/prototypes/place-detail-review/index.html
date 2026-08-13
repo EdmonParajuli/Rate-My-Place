@@ -1,0 +1,744 @@
+<!--
+  PROTOTYPE — throwaway, answers one question, then gets captured/deleted.
+  Ticket: .scratch/phase-4-frontend-mvp/tickets/06-place-detail-review.md
+
+  SOURCE GROUNDING: a real, complete `PlaceDetailScreen` component turned up in
+  the Figma Make source (fileKey uecnUKqT4CI7LuIpWo50Pp) on 2026-08-13 — it
+  didn't exist when this ticket was first checked on 2026-08-12 (the `Screen`
+  union had no `place-detail` state then; a fresh fetch showed it now does,
+  along with new icon imports (Send, CornerDownRight, MessageCircle, Flag)).
+  Read directly via ReadMcpResourceTool, not reconstructed. This is a
+  thorough, well-built reference — visitor/owner mode toggle built right in,
+  rating breakdown bars, hours accordion, owner-reply composer, similar
+  places sidebar. Ported faithfully wherever our backend supports it.
+
+  DECISIONS made while reconciling against real backend fields:
+  - **Cover/logo photos → generic placeholder, not real per-place images.**
+    `Place` has no image fields at all; full photo support (place/review/
+    avatar) is Phase 8 Media, real infrastructure work, not a one-column
+    addition. Rendered as a plain gradient/pattern box with an icon — not a
+    polished stock photo that could be mistaken for real backend content.
+  - **Amenity pills ("Great for laptops," "Dog-friendly," etc.) → shown as
+    illustrative placeholders, not wired to any field.** No backend concept
+    exists for this at all. Got its own new roadmap phase (Phase 10 — Place
+    attributes & amenities, docs/04-roadmap.md) rather than being forced into
+    Phase 4 or dropped permanently.
+  - **Owner "response rate" badge → placeholder text, not computed.** This is
+    the same metric Phase 6's own roadmap item flags as a not-yet-decided
+    formula for the Business Dashboard — showing a real computed version here
+    first would risk two screens disagreeing on what "response rate" means.
+  - **Reply timestamp** — `ReviewReply` has no `createdAt` field exposed yet;
+    new scope, trivial (the column already exists via this project's standard
+    `created_at` convention, just needs a GraphQL field).
+  - **Review sort (Most Recent/Most Helpful)** — `placeReviews` has no `sort`
+    arg today; new scope, mirrors `listPlaces`' existing `PlaceSortEnum`
+    pattern (a new `ReviewSortEnum`).
+  - **Rating breakdown bars (5★→1★ counts)** — no backend field; treated like
+    Categories' `businessCount`/`avgRating` — a new live-computed aggregate
+    (`GROUP BY rating COUNT` for the place), not materialized, same
+    "recompute from source" precedent as `Place.averageRating` itself.
+  - **Helpful vote, owner reply, write/edit/delete review** — all faithful
+    1:1 ports, real backend capability already exists for every one of these
+    (`toggleHelpfulVote`, `createReviewReply`, `createReview`/`updateReview`/
+    `deleteReview`).
+  - **Save/heart, "Report listing"** — omitted. Save/heart is out of scope
+    project-wide (Saved Places is Phase 5). "Report listing" has no backend
+    moderation pipeline anywhere in this project — not even a client-only
+    stand-in makes sense without somewhere for it to go, so dropped rather
+    than left as a dead button.
+
+  Hosted inside the exact approved shell from ticket 04 (pulled verbatim from
+  throwaway branch prototype/authenticated-shell), reached by clicking a
+  place card — no single nav item is its "parent" (Discover, Categories, and
+  My Reviews can all lead here), so no nav item is marked active; a real
+  "Back" button in the cover area returns to Discover instead.
+
+  3 structurally different layout variants (the review-management LOGIC is
+  identical and shared across all three — visitor/owner toggle, write/edit/
+  delete, helpful vote, owner reply — only the visual structure differs):
+    A — faithful port of the real source: full-width cover, two-column body
+        (reviews left, info sidebar right).
+    B — split header (condensed image+info side by side, no full-width
+        banner), write-review composer pinned always-visible instead of
+        button-triggered, single-column body (no persistent sidebar).
+    C — tabbed Overview/Reviews: compact summary header, Overview tab
+        (description, amenities, hours, contact, similar places) separate
+        from Reviews tab (breakdown + list + write/edit + owner replies).
+
+  Run: open this file directly in a browser, or
+    cd .scratch/phase-4-frontend-mvp/prototypes/place-detail-review
+    python3 -m http.server 8000   # then visit http://localhost:8000
+  Variants: ?variant=A (full port) | B (pinned composer) | C (tabbed)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PROTOTYPE — Place detail + review (ticket 06)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { primary: '#2563EB', accent: '#F59E0B', destructive: '#EF4444' },
+        fontFamily: {
+          body: ["'Manrope'", 'sans-serif'],
+          heading: ["'Plus Jakarta Sans'", 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  body { font-family: 'Manrope', sans-serif; }
+  .heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+  [data-pd-variant] { display: none; }
+  [data-pd-variant].active { display: block; }
+  .marker {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; align-items: center; gap: 10px;
+    background: #0F172A; color: white; font-size: 13px; font-weight: 600;
+    padding: 8px 10px 8px 16px; border-radius: 999px;
+    box-shadow: 0 10px 25px rgba(15,23,42,0.35);
+  }
+  .marker button { background: rgba(255,255,255,0.12); border-radius: 999px; padding: 6px; display: flex; }
+  .marker button:hover { background: rgba(255,255,255,0.22); }
+  .marker .label { min-width: 190px; text-align: center; }
+
+  /* --- shell chrome, pulled verbatim from the approved ticket-04 prototype --- */
+  .nav-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 150ms ease; }
+  .nav-item.active { background: #2563EB; color: white; box-shadow: 0 4px 10px rgba(37,99,235,0.25); }
+  .nav-item:not(.active):not(.locked) { color: #64748B; }
+  .nav-item:not(.active):not(.locked):hover { background: #F8FAFC; color: #0F172A; }
+  .dropdown { display: none; }
+  .dropdown.open { display: block; }
+  #shell-sidebar { transition: width 200ms ease, transform 200ms ease; }
+  #shell-sidebar.collapsed { width: 4.5rem; }
+  #shell-sidebar .logo-row, #shell-sidebar .user-trigger { transition: gap 200ms ease; }
+  #shell-sidebar.collapsed .logo-row, #shell-sidebar.collapsed .user-trigger { gap: 0; }
+  #shell-sidebar .a-label {
+    display: inline-block; opacity: 1; max-width: 200px;
+    overflow: hidden; white-space: nowrap; vertical-align: middle;
+    transition: opacity 150ms ease, max-width 200ms ease;
+  }
+  #shell-sidebar.collapsed .a-label { opacity: 0; max-width: 0; }
+  #shell-sidebar.collapsed .nav-item { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+  #shell-sidebar.collapsed #shell-user-menu { left: 100%; right: auto; bottom: 0.5rem; margin-left: 8px; width: 190px; }
+  #shell-sidebar .tooltip {
+    position: absolute; left: 100%; top: 50%; transform: translateY(-50%) translateX(8px);
+    background: #0F172A; color: white; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity 120ms ease; z-index: 50;
+  }
+  #shell-sidebar.collapsed .nav-item:hover .tooltip,
+  #shell-sidebar.collapsed .user-trigger:hover .tooltip { opacity: 1; }
+  #shell-sidebar:not(.collapsed) .tooltip { display: none; }
+
+  /* --- Place detail content --- */
+  .card { background: white; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 1px 2px rgba(15,23,42,0.06); }
+  .placeholder-img {
+    background: repeating-linear-gradient(45deg, #F1F5F9, #F1F5F9 10px, #E2E8F0 10px, #E2E8F0 20px);
+    display: flex; align-items: center; justify-content: center; color: #94A3B8;
+  }
+  .field { width: 100%; border: 1px solid #E2E8F0; border-radius: 10px; padding: 10px 14px; font-size: 14px; outline: none; resize: none; }
+  .field:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .pill { padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; color: #64748B; cursor: pointer; }
+  .tab-btn.active { background: white; color: #2563EB; box-shadow: 0 1px 2px rgba(15,23,42,0.08); }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<script id="place-detail-data" type="application/json">
+{
+  "name": "The Artisan Coffee Co.",
+  "category": "Cafés",
+  "verified": true,
+  "rating": 4.8,
+  "reviewCount": 1247,
+  "priceRange": "$$",
+  "open": true,
+  "hoursToday": "7:00 am – 9:00 pm",
+  "hoursWeek": [
+    { "day": "Monday", "hours": "7:00 am – 9:00 pm" },
+    { "day": "Tuesday", "hours": "7:00 am – 9:00 pm" },
+    { "day": "Wednesday", "hours": "7:00 am – 9:00 pm" },
+    { "day": "Thursday", "hours": "7:00 am – 9:00 pm" },
+    { "day": "Friday", "hours": "7:00 am – 10:00 pm" },
+    { "day": "Saturday", "hours": "8:00 am – 10:00 pm" },
+    { "day": "Sunday", "hours": "9:00 am – 8:00 pm" }
+  ],
+  "address": "142 Court Street, Brooklyn, NY 11201",
+  "phone": "(718) 555-0194",
+  "website": "artisancoffeeco.com",
+  "description": "Award-winning specialty coffee roaster with a warm, intimate space perfect for deep work or unhurried conversation. Our beans are ethically sourced, roasted in-house, and brewed with intention.",
+  "ownerName": "Elena Vasquez",
+  "ownerAvatar": "photo-1438761681033-6461ffad8d80",
+  "ratingBreakdown": [
+    { "stars": 5, "count": 842 },
+    { "stars": 4, "count": 268 },
+    { "stars": 3, "count": 87 },
+    { "stars": 2, "count": 34 },
+    { "stars": 1, "count": 16 }
+  ],
+  "attributesPlaceholder": ["Great for laptops", "Good WiFi", "Dog-friendly", "Outdoor seating"]
+}
+</script>
+
+<script id="place-reviews-data" type="application/json">
+[
+  { "id": 1, "reviewer": "Priya Sharma", "avatar": "photo-1494790108377-be9c29b29330", "rating": 5, "date": "Jun 15, 2026", "text": "Genuinely one of the best café experiences I've had anywhere in New York. The single-origin pour-over from the Ethiopian Yirgacheffe was transcendent — floral, bright, and beautifully balanced.", "helpful": 34, "helpfulByMe": true, "reply": { "text": "Priya, this made our whole team's morning! The Yirgacheffe is a personal favorite — we're so glad it landed with you.", "date": "Jun 16, 2026" }, "isCurrentUser": false },
+  { "id": 2, "reviewer": "Marcus Johnson", "avatar": "photo-1507003211169-0a1dd7228f2d", "rating": 5, "date": "Jun 28, 2026", "text": "Absolutely phenomenal espresso and a cozy atmosphere that makes you want to stay for hours. The baristas know their craft — best cortado I've had outside of Barcelona.", "helpful": 47, "helpfulByMe": false, "reply": { "text": "Marcus, comparing us to Barcelona is the highest compliment we've ever received. Thank you!", "date": "Jun 29, 2026" }, "isCurrentUser": true },
+  { "id": 3, "reviewer": "Daniel Okafor", "avatar": "photo-1500648767791-00dcc994a43e", "rating": 4, "date": "May 28, 2026", "text": "Excellent coffee — the filter menu changes seasonally and the baristas are genuinely knowledgeable. Seating is a touch limited during weekend mornings, so arrive early.", "helpful": 12, "helpfulByMe": false, "reply": null, "isCurrentUser": false },
+  { "id": 4, "reviewer": "Sofia Mendez", "avatar": "photo-1487412720507-e7ab37603c6f", "rating": 5, "date": "May 10, 2026", "text": "My remote work headquarters. Fast WiFi, great playlist, non-judgmental staff who never rush you, and the oat milk latte is simply perfect.", "helpful": 28, "helpfulByMe": false, "reply": null, "isCurrentUser": false },
+  { "id": 5, "reviewer": "James Park", "avatar": "photo-1472099645785-5658abf4ff4e", "rating": 3, "date": "Apr 22, 2026", "text": "Nice vibe and clearly quality coffee, but the prices are steep — $8 for a latte is hard to justify regularly. Service was friendly but a bit slow during the afternoon rush.", "helpful": 9, "helpfulByMe": false, "reply": null, "isCurrentUser": false }
+]
+</script>
+
+<!-- ===================== SHELL (approved, ticket 04 — no nav item active, reached via a place card) ===================== -->
+<div class="flex h-screen overflow-hidden">
+  <div id="shell-overlay" class="hidden fixed inset-0 bg-slate-900/40 z-30 md:hidden" onclick="closeMobileNav()"></div>
+
+  <aside id="shell-sidebar" class="w-60 flex-shrink-0 bg-white border-r border-slate-200 flex flex-col fixed md:sticky top-0 h-screen z-40 -translate-x-full md:translate-x-0">
+    <div class="logo-row px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-blue-200 flex-shrink-0">
+        <i data-lucide="star" class="w-4 h-4 fill-white text-white"></i>
+      </div>
+      <span class="heading font-extrabold text-sm a-label">Rate My Place</span>
+      <button class="ml-auto md:hidden text-slate-400" onclick="closeMobileNav()"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <button class="nav-item relative" data-screen="discover"><i data-lucide="search" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Discover</span><span class="tooltip">Discover</span></button>
+      <button class="nav-item relative" data-screen="categories"><i data-lucide="grid-3x3" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">Categories</span><span class="tooltip">Categories</span></button>
+      <button class="nav-item relative" data-screen="my-reviews"><i data-lucide="message-square" class="w-[18px] h-[18px] flex-shrink-0"></i><span class="a-label">My Reviews</span><span class="tooltip">My Reviews</span></button>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-100 relative">
+      <button class="user-trigger relative w-full flex items-center gap-2.5 px-2 py-2 rounded-xl hover:bg-slate-50" onclick="toggleDropdown('shell-user-menu')">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+        <div class="flex-1 min-w-0 text-left a-label">
+          <p class="text-xs font-bold truncate">Marcus Johnson</p>
+          <p class="text-xs text-slate-500 truncate">Reviewer</p>
+        </div>
+        <i data-lucide="more-horizontal" class="w-4 h-4 text-slate-400 a-label flex-shrink-0"></i>
+        <span class="tooltip">Marcus Johnson</span>
+      </button>
+      <div id="shell-user-menu" class="dropdown absolute bottom-full left-3 right-3 mb-2 bg-white rounded-xl shadow-lg border border-slate-100 p-1.5">
+        <button class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-red-50 flex items-center gap-2"><i data-lucide="log-out" class="w-4 h-4"></i>Log out</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200 px-4 md:px-6 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <button class="md:hidden text-slate-500" onclick="openMobileNav()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+        <button class="hidden md:flex w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 items-center justify-center text-slate-500 flex-shrink-0 transition-colors" onclick="toggleSidebarCollapse()" title="Toggle sidebar">
+          <i data-lucide="menu" class="w-[18px] h-[18px]"></i>
+        </button>
+        <div class="min-w-0">
+          <h1 class="heading font-extrabold text-lg leading-tight">The Artisan Coffee Co.</h1>
+          <p class="text-xs text-slate-500 mt-0.5">Cafés · Brooklyn, NY</p>
+        </div>
+      </div>
+      <button class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl hover:bg-slate-50 flex-shrink-0">
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&auto=format" class="w-7 h-7 rounded-full object-cover" />
+        <span class="text-xs font-semibold hidden sm:block">Marcus</span>
+      </button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto" id="shell-content">
+
+      <!-- ===================== PLACE DETAIL CONTENT — 3 switchable layout variants ===================== -->
+
+      <!-- ============= VARIANT A: faithful port — full cover, two-column body ============= -->
+      <div data-pd-variant="A" class="active">
+        <div class="relative h-64 placeholder-img overflow-hidden">
+          <div class="text-center"><i data-lucide="image" class="w-10 h-10 mx-auto mb-1"></i><p class="text-xs font-semibold">Cover photo — Phase 8 Media</p></div>
+          <div class="absolute top-4 left-0 right-0 px-6 flex items-center justify-between">
+            <button class="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white text-sm font-semibold px-3 py-2 rounded-xl border border-white/20"><i data-lucide="chevron-left" class="w-4 h-4"></i>Back</button>
+            <div class="flex items-center gap-2">
+              <div class="flex items-center bg-black/40 backdrop-blur-sm border border-white/20 rounded-xl overflow-hidden text-xs font-bold" id="a-viewer-toggle"></div>
+            </div>
+          </div>
+          <div class="absolute bottom-4 right-6"><span class="pill bg-emerald-500 text-white border border-emerald-400 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-white"></span>Open · Closes 9:00 pm</span></div>
+        </div>
+        <div class="bg-white border-b border-slate-200 px-6 pt-6 pb-5">
+          <div id="a-owner-banner"></div>
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <h1 class="heading text-2xl font-extrabold">The Artisan Coffee Co.</h1>
+                <span class="pill text-primary bg-blue-50 border border-blue-100 flex items-center gap-1"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i>Verified</span>
+              </div>
+              <div class="flex items-center gap-2 flex-wrap mb-3 text-sm">
+                <span class="text-slate-600 font-semibold">Cafés</span><span class="text-slate-300">·</span>
+                <span class="font-bold text-slate-600">$$</span><span class="text-slate-300">·</span>
+                <span class="flex items-center gap-1"><i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i><span class="font-extrabold">4.8</span><span class="text-slate-500">(1,247 reviews)</span></span>
+              </div>
+              <p class="text-sm text-slate-600 leading-relaxed max-w-2xl mb-4">Award-winning specialty coffee roaster with a warm, intimate space perfect for deep work or unhurried conversation.</p>
+              <div class="flex flex-wrap gap-1.5 mb-4" id="a-attributes"></div>
+              <div class="flex flex-col sm:flex-row sm:flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 mb-3">
+                <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>142 Court Street, Brooklyn, NY 11201</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>(718) 555-0194</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="globe" class="w-4 h-4 text-slate-400"></i>artisancoffeeco.com</span>
+              </div>
+              <button onclick="toggleHours('a')" class="flex items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-primary">
+                <i data-lucide="clock" class="w-4 h-4 text-slate-400"></i>Today: 7:00 am – 9:00 pm<i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400" id="a-hours-chevron"></i>
+              </button>
+              <div id="a-hours-week" class="hidden mt-2 ml-6 space-y-1"></div>
+            </div>
+            <div class="flex flex-col items-start lg:items-end gap-2 flex-shrink-0" id="a-cta-column"></div>
+          </div>
+        </div>
+        <div class="px-6 py-6 flex flex-col lg:flex-row gap-6 max-w-6xl">
+          <div class="flex-1 min-w-0 space-y-5">
+            <div class="card p-5">
+              <h2 class="heading font-bold mb-4">Rating Overview</h2>
+              <div class="flex items-center gap-8" id="a-rating-overview"></div>
+            </div>
+            <div id="a-write-form"></div>
+            <div class="card overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 class="heading font-bold" id="a-reviews-heading">5 Reviews</h2>
+                <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5" id="a-sort-tabs"></div>
+              </div>
+              <div class="divide-y divide-slate-100" id="a-review-list"></div>
+            </div>
+          </div>
+          <div class="w-full lg:w-72 flex-shrink-0 space-y-4">
+            <div class="card p-5">
+              <h3 class="heading font-bold text-sm mb-3">Place Info</h3>
+              <div class="space-y-3 text-xs text-slate-600">
+                <div class="flex items-start gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5"></i>142 Court Street, Brooklyn, NY 11201</div>
+                <div class="flex items-start gap-2"><i data-lucide="phone" class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5"></i>(718) 555-0194</div>
+                <div class="flex items-start gap-2"><i data-lucide="clock" class="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5"></i>Open now · 7:00 am – 9:00 pm</div>
+              </div>
+            </div>
+            <div class="card p-5">
+              <h3 class="heading font-bold text-sm mb-3">Similar Places Nearby</h3>
+              <div class="space-y-3" id="a-similar"></div>
+            </div>
+            <div class="card p-5">
+              <h3 class="heading font-bold text-sm mb-3">About the Owner</h3>
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full placeholder-img flex-shrink-0"><i data-lucide="user" class="w-5 h-5"></i></div>
+                <div>
+                  <p class="text-sm font-bold">Elena Vasquez</p>
+                  <p class="text-xs text-slate-500">Business Owner · Verified</p>
+                  <p class="text-xs text-slate-400 mt-0.5 italic">Response rate — placeholder, pending Phase 6</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============= VARIANT B: split header, pinned composer, single column ============= -->
+      <div data-pd-variant="B">
+        <div class="p-4 md:p-6 max-w-4xl mx-auto space-y-5">
+          <button class="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-800"><i data-lucide="chevron-left" class="w-4 h-4"></i>Back</button>
+          <div class="card p-5 flex flex-col sm:flex-row gap-5">
+            <div class="w-full sm:w-40 h-32 placeholder-img rounded-xl flex-shrink-0"><i data-lucide="image" class="w-6 h-6"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="flex items-center gap-2"><h1 class="heading text-xl font-extrabold">The Artisan Coffee Co.</h1><span class="pill text-primary bg-blue-50 border border-blue-100 flex items-center gap-1 flex-shrink-0"><i data-lucide="badge-check" class="w-3 h-3"></i>Verified</span></div>
+                  <div class="flex items-center gap-2 mt-1 text-sm text-slate-600"><span>Cafés · $$</span><span class="text-slate-300">·</span><span class="flex items-center gap-1"><i data-lucide="star" class="w-4 h-4 text-accent fill-accent"></i><b>4.8</b> (1,247)</span><span class="text-slate-300">·</span><span class="text-emerald-600 font-semibold">Open now</span></div>
+                </div>
+                <div id="b-viewer-toggle" class="flex items-center bg-slate-100 rounded-xl overflow-hidden text-xs font-bold flex-shrink-0"></div>
+              </div>
+              <div class="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-xs text-slate-500">
+                <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i>142 Court Street, Brooklyn, NY</span>
+                <span class="flex items-center gap-1"><i data-lucide="phone" class="w-3.5 h-3.5"></i>(718) 555-0194</span>
+                <span class="flex items-center gap-1"><i data-lucide="globe" class="w-3.5 h-3.5"></i>artisancoffeeco.com</span>
+              </div>
+            </div>
+          </div>
+          <div id="b-owner-banner"></div>
+          <div id="b-composer-pinned" class="card p-5"></div>
+          <div class="card overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 class="heading font-bold" id="b-reviews-heading">5 Reviews</h2>
+              <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5" id="b-sort-tabs"></div>
+            </div>
+            <div class="divide-y divide-slate-100" id="b-review-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============= VARIANT C: tabbed Overview / Reviews ============= -->
+      <div data-pd-variant="C">
+        <div class="bg-white border-b border-slate-200 px-4 md:px-6 py-5">
+          <button class="flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-800 mb-3"><i data-lucide="chevron-left" class="w-4 h-4"></i>Back</button>
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-14 h-14 rounded-2xl placeholder-img flex-shrink-0"><i data-lucide="image" class="w-5 h-5"></i></div>
+              <div>
+                <div class="flex items-center gap-2"><h1 class="heading text-xl font-extrabold">The Artisan Coffee Co.</h1><span class="pill text-primary bg-blue-50 border border-blue-100"><i data-lucide="badge-check" class="w-3 h-3 inline"></i></span></div>
+                <div class="flex items-center gap-2 text-sm text-slate-600"><span class="flex items-center gap-1"><i data-lucide="star" class="w-3.5 h-3.5 text-accent fill-accent"></i><b>4.8</b> (1,247)</span><span class="text-slate-300">·</span><span>Cafés · $$</span><span class="text-slate-300">·</span><span class="text-emerald-600 font-semibold">Open now</span></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div id="c-viewer-toggle" class="flex items-center bg-slate-100 rounded-xl overflow-hidden text-xs font-bold"></div>
+              <div id="c-cta"></div>
+            </div>
+          </div>
+          <div class="flex gap-1 bg-slate-100 rounded-xl p-1 w-fit mt-4">
+            <button id="c-tab-overview" onclick="setCTab('overview')" class="tab-btn">Overview</button>
+            <button id="c-tab-reviews" onclick="setCTab('reviews')" class="tab-btn">Reviews (5)</button>
+          </div>
+        </div>
+        <div class="p-4 md:p-6 max-w-4xl">
+          <div id="c-panel-overview" class="space-y-5">
+            <div class="card p-5">
+              <h3 class="heading font-bold mb-2">About</h3>
+              <p class="text-sm text-slate-600 leading-relaxed mb-4">Award-winning specialty coffee roaster with a warm, intimate space perfect for deep work or unhurried conversation.</p>
+              <div class="flex flex-wrap gap-1.5" id="c-attributes"></div>
+            </div>
+            <div class="card p-5">
+              <h3 class="heading font-bold mb-3">Hours & Contact</h3>
+              <div class="space-y-1.5 text-sm text-slate-600 mb-3" id="c-hours-week"></div>
+              <div class="flex flex-col gap-1.5 text-sm text-slate-600 border-t border-slate-100 pt-3">
+                <span class="flex items-center gap-1.5"><i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>142 Court Street, Brooklyn, NY 11201</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>(718) 555-0194</span>
+                <span class="flex items-center gap-1.5"><i data-lucide="globe" class="w-4 h-4 text-slate-400"></i>artisancoffeeco.com</span>
+              </div>
+            </div>
+            <div class="card p-5">
+              <h3 class="heading font-bold mb-3">Similar Places Nearby</h3>
+              <div class="space-y-3" id="c-similar"></div>
+            </div>
+          </div>
+          <div id="c-panel-reviews" class="hidden space-y-5">
+            <div class="card p-5">
+              <h2 class="heading font-bold mb-4">Rating Overview</h2>
+              <div class="flex items-center gap-8" id="c-rating-overview"></div>
+            </div>
+            <div id="c-write-form"></div>
+            <div class="card overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <span class="text-sm text-slate-500">Sorted by</span>
+                <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5" id="c-sort-tabs"></div>
+              </div>
+              <div class="divide-y divide-slate-100" id="c-review-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="marker">
+  <button id="prev-btn" aria-label="Previous variant"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+  <span class="label" id="variant-label">A — Faithful port</span>
+  <button id="next-btn" aria-label="Next variant"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+</div>
+
+<script>
+  const PLACE = JSON.parse(document.getElementById('place-detail-data').textContent);
+  let REVIEWS = JSON.parse(document.getElementById('place-reviews-data').textContent);
+  const SIMILAR = [
+    { name: 'Northside Espresso', rating: 4.6, image: 'photo-1521017432531-fbd92d768814' },
+    { name: 'The Rustic Bean Cafe', rating: 4.8, image: 'photo-1554118811-1e0d58224f24' },
+    { name: 'Corner Bookshop Café', rating: 4.7, image: 'photo-1521123845560-14093637aa7d' },
+  ];
+
+  // shared state across all 3 variants — same underlying "screen", different layout
+  let viewerMode = 'visitor'; // 'visitor' | 'owner'
+  let sortBy = 'recent'; // 'recent' | 'helpful'
+  let showWriteForm = false;
+  let isEditingReview = false;
+  let draftRating = 0;
+  let draftText = '';
+  let replyOpen = {};
+  let replyDraft = {};
+  let hoursOpen = { a: false };
+
+  function isOwner() { return viewerMode === 'owner'; }
+  function myReview() { return REVIEWS.find(r => r.isCurrentUser); }
+
+  function starsHtml(rating, size) {
+    let s = '';
+    for (let i = 0; i < 5; i++) s += `<i data-lucide="star" class="${size || 'w-3.5 h-3.5'} ${i < rating ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}"></i>`;
+    return s;
+  }
+
+  function viewerToggleHtml() {
+    return `
+      <button onclick="setViewerMode('visitor')" class="px-3 py-2 transition-colors ${!isOwner() ? 'bg-white text-slate-900' : 'text-slate-500 hover:text-slate-800'}">Visitor view</button>
+      <button onclick="setViewerMode('owner')" class="px-3 py-2 transition-colors ${isOwner() ? 'bg-amber-500 text-white' : 'text-slate-500 hover:text-slate-800'}">Owner view</button>`;
+  }
+  function setViewerMode(mode) { viewerMode = mode; showWriteForm = false; renderAll(); }
+
+  function ownerBannerHtml() {
+    if (!isOwner()) return '';
+    return `<div class="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+      <div class="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0"><i data-lucide="badge-check" class="w-4 h-4 text-amber-600"></i></div>
+      <div class="flex-1"><p class="text-sm font-bold text-amber-800">You're viewing your own listing</p><p class="text-xs text-amber-600 mt-0.5">Owners can reply to reviews but can't write a review for their own business.</p></div>
+      <button class="text-xs font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg flex-shrink-0">Manage Listing</button>
+    </div>`;
+  }
+
+  function attributesHtml() {
+    return PLACE.attributesPlaceholder.map(a => `<span class="inline-flex items-center gap-1 text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full font-medium"><i data-lucide="check" class="w-3 h-3 text-slate-400"></i>${a}</span>`).join('');
+  }
+
+  function ratingOverviewHtml() {
+    const total = PLACE.ratingBreakdown.reduce((s, r) => s + r.count, 0);
+    const bars = PLACE.ratingBreakdown.map(({ stars, count }) => {
+      const pct = Math.round((count / total) * 100);
+      return `<div class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 w-3 text-right">${stars}</span>
+        <i data-lucide="star" class="w-3 h-3 text-accent fill-accent flex-shrink-0"></i>
+        <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full bg-accent" style="width:${pct}%"></div></div>
+        <span class="text-xs text-slate-400 w-8">${pct}%</span>
+      </div>`;
+    }).join('');
+    return `<div class="text-center flex-shrink-0">
+        <p class="heading text-5xl font-extrabold leading-none">${PLACE.rating}</p>
+        <div class="flex gap-0.5 justify-center mt-1">${starsHtml(Math.round(PLACE.rating))}</div>
+        <p class="text-xs text-slate-400 mt-1">${total.toLocaleString()} reviews</p>
+      </div>
+      <div class="flex-1 space-y-2">${bars}</div>`;
+  }
+
+  function ctaColumnHtml() {
+    if (isOwner()) return `<button class="flex items-center gap-2 border-2 border-primary text-primary px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary hover:text-white transition-colors"><i data-lucide="settings" class="w-4 h-4"></i>Manage Listing</button>`;
+    if (myReview() && !showWriteForm) return `<div class="flex items-center gap-2 text-xs text-emerald-600 font-semibold bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-xl"><i data-lucide="check" class="w-3.5 h-3.5"></i>You've reviewed this place</div>`;
+    if (!showWriteForm) return `<button onclick="openWriteForm()" class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-200"><i data-lucide="edit-3" class="w-4 h-4"></i>Write a Review</button>`;
+    return '';
+  }
+  function openWriteForm() { showWriteForm = true; isEditingReview = false; draftRating = 0; draftText = ''; renderAll(); }
+  function openEditReview() {
+    const r = myReview(); if (!r) return;
+    draftRating = r.rating; draftText = r.text; isEditingReview = true; showWriteForm = true; renderAll();
+  }
+  function cancelWriteForm() { showWriteForm = false; isEditingReview = false; renderAll(); }
+  function setDraftRating(n) { draftRating = n; renderAll(); }
+  function submitReview() {
+    if (!draftRating || !draftText.trim()) return;
+    if (isEditingReview) {
+      REVIEWS = REVIEWS.map(r => r.isCurrentUser ? { ...r, rating: draftRating, text: draftText, date: 'Just now' } : r);
+    } else {
+      REVIEWS = [...REVIEWS, { id: Date.now(), reviewer: 'Marcus Johnson', avatar: 'photo-1507003211169-0a1dd7228f2d', rating: draftRating, date: 'Just now', text: draftText, helpful: 0, helpfulByMe: false, reply: null, isCurrentUser: true }];
+    }
+    showWriteForm = false; isEditingReview = false; renderAll();
+  }
+  function deleteMyReview() {
+    if (!confirm("Delete your review? This can't be undone.")) return;
+    REVIEWS = REVIEWS.filter(r => !r.isCurrentUser);
+    renderAll();
+  }
+
+  function writeFormHtml() {
+    if (isOwner()) return `<div class="card p-4 flex items-center gap-3 text-sm text-slate-500 border-dashed"><i data-lucide="message-circle" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>Business owners can't write reviews for their own listing. Reply to reviews below instead.</div>`;
+    if (!showWriteForm) return '';
+    const label = { 1: 'Poor', 2: 'Fair', 3: 'Good', 4: 'Great', 5: 'Excellent' }[draftRating] || '';
+    return `<div class="card p-5 border-2 border-primary/20">
+      <h2 class="heading font-bold mb-1">${isEditingReview ? 'Edit Your Review' : 'Write a Review'}</h2>
+      <p class="text-xs text-slate-500 mb-4">Share your honest experience with The Artisan Coffee Co.</p>
+      <div class="mb-4">
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">Your Rating</p>
+        <div class="flex items-center gap-3">
+          <div class="flex gap-1">${[1,2,3,4,5].map(n => `<i data-lucide="star" class="w-6 h-6 cursor-pointer ${n <= draftRating ? 'text-accent fill-accent' : 'text-slate-200 fill-slate-200'}" onclick="setDraftRating(${n})"></i>`).join('')}</div>
+          ${draftRating ? `<span class="text-sm font-bold text-amber-600">${label}</span>` : ''}
+        </div>
+      </div>
+      <div class="mb-4">
+        <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2">Your Review</p>
+        <textarea class="field" rows="4" placeholder="What did you love (or not love)?" oninput="draftText=this.value">${draftText}</textarea>
+      </div>
+      <div class="flex items-center justify-between">
+        <button onclick="cancelWriteForm()" class="text-sm font-semibold text-slate-500 hover:text-slate-700 px-4 py-2 rounded-xl hover:bg-slate-50">Cancel</button>
+        <button onclick="submitReview()" ${(!draftRating || !draftText.trim()) ? 'disabled' : ''} class="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-200 disabled:opacity-40"><i data-lucide="send" class="w-4 h-4"></i>${isEditingReview ? 'Save Changes' : 'Submit Review'}</button>
+      </div>
+    </div>`;
+  }
+
+  function toggleHelpful(id) {
+    REVIEWS = REVIEWS.map(r => r.id === id ? { ...r, helpful: r.helpfulByMe ? r.helpful - 1 : r.helpful + 1, helpfulByMe: !r.helpfulByMe } : r);
+    renderAll();
+  }
+  function openReply(id) { replyOpen[id] = true; renderAll(); }
+  function cancelReply(id) { replyOpen[id] = false; renderAll(); }
+  function submitReply(id) {
+    const text = (replyDraft[id] || '').trim(); if (!text) return;
+    REVIEWS = REVIEWS.map(r => r.id === id ? { ...r, reply: { text, date: 'Just now' } } : r);
+    replyOpen[id] = false; replyDraft[id] = ''; renderAll();
+  }
+
+  function reviewCardHtml(r) {
+    const sorted = REVIEWS;
+    return `<div class="p-5">
+      <div class="flex items-start gap-3 mb-3">
+        <img src="https://images.unsplash.com/${r.avatar}?w=80&h=80&fit=crop&auto=format" class="w-10 h-10 rounded-full object-cover bg-slate-100 flex-shrink-0" />
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap"><p class="font-bold text-sm">${r.reviewer}</p>${r.isCurrentUser ? '<span class="pill text-primary bg-blue-50 border border-blue-100">You</span>' : ''}</div>
+          <div class="flex items-center gap-2 mt-0.5"><div class="flex gap-0.5">${starsHtml(r.rating, 'w-3 h-3')}</div><span class="text-xs text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>${r.date}</span></div>
+        </div>
+        ${r.isCurrentUser && !isOwner() ? `<div class="flex items-center gap-1 flex-shrink-0">
+          <button onclick="openEditReview()" class="w-8 h-8 rounded-lg hover:bg-blue-50 flex items-center justify-center text-slate-400 hover:text-primary"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+          <button onclick="deleteMyReview()" class="w-8 h-8 rounded-lg hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+        </div>` : ''}
+      </div>
+      <p class="text-sm text-slate-600 leading-relaxed mb-3">${r.text}</p>
+      ${!isOwner() ? `<button onclick="toggleHelpful(${r.id})" ${r.isCurrentUser ? 'disabled' : ''} class="flex items-center gap-1.5 text-xs font-semibold rounded-lg px-3 py-1.5 border ${r.helpfulByMe ? 'bg-primary/5 text-primary border-primary/20' : r.isCurrentUser ? 'text-slate-300 border-slate-100' : 'text-slate-500 border-slate-200 hover:border-primary hover:text-primary'}"><i data-lucide="thumbs-up" class="w-3.5 h-3.5 ${r.helpfulByMe ? 'fill-primary' : ''}"></i>Helpful (${r.helpful})</button>` : ''}
+      ${r.reply ? `<div class="mt-3 ml-6 bg-slate-50 border border-slate-100 rounded-xl p-4 relative">
+        <div class="absolute -left-3 top-5"><i data-lucide="corner-down-right" class="w-4 h-4 text-slate-300"></i></div>
+        <div class="flex items-center gap-2.5 mb-2">
+          <div class="w-8 h-8 rounded-full placeholder-img flex-shrink-0"><i data-lucide="user" class="w-3.5 h-3.5"></i></div>
+          <div class="flex items-center gap-2"><p class="text-xs font-bold text-slate-800">${PLACE.ownerName}</p><span class="pill text-amber-700 bg-amber-50 border border-amber-100">Owner</span><span class="text-xs text-slate-400">${r.reply.date}</span></div>
+        </div>
+        <p class="text-sm text-slate-600 leading-relaxed">${r.reply.text}</p>
+      </div>` : ''}
+      ${isOwner() && !r.reply ? `<div class="mt-3 ml-6">
+        ${replyOpen[r.id] ? `<div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <div class="flex items-center gap-2 mb-3"><span class="text-xs font-bold text-slate-700">Replying as ${PLACE.ownerName}</span><span class="pill text-amber-700 bg-amber-50 border border-amber-100">Owner</span></div>
+          <textarea class="field bg-white" rows="3" placeholder="Write a public reply…" oninput="replyDraft[${r.id}]=this.value">${replyDraft[r.id] || ''}</textarea>
+          <div class="flex items-center justify-between mt-3">
+            <button onclick="cancelReply(${r.id})" class="text-sm text-slate-500 font-semibold hover:text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-100">Cancel</button>
+            <button onclick="submitReply(${r.id})" class="flex items-center gap-1.5 bg-primary text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-700"><i data-lucide="send" class="w-3.5 h-3.5"></i>Post Reply</button>
+          </div>
+        </div>` : `<button onclick="openReply(${r.id})" class="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/20 bg-primary/5 hover:bg-primary/10 px-3 py-1.5 rounded-lg"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>Reply to this review</button>`}
+      </div>` : ''}
+    </div>`;
+  }
+
+  function sortedReviews() {
+    const mine = REVIEWS.filter(r => r.isCurrentUser);
+    const others = REVIEWS.filter(r => !r.isCurrentUser).sort((a, b) => sortBy === 'helpful' ? b.helpful - a.helpful : new Date(b.date) - new Date(a.date));
+    return [...mine, ...others];
+  }
+  function setSort(s) { sortBy = s; renderAll(); }
+  function sortTabsHtml() {
+    return ['recent', 'helpful'].map(s => `<button onclick="setSort('${s}')" class="px-3 py-1.5 rounded-md text-xs font-semibold ${sortBy === s ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}">${s === 'recent' ? 'Most Recent' : 'Most Helpful'}</button>`).join('');
+  }
+  function similarHtml() {
+    return SIMILAR.map(b => `<div class="flex items-center gap-3">
+      <img src="https://images.unsplash.com/${b.image}?w=80&h=80&fit=crop&auto=format" class="w-12 h-12 rounded-xl object-cover bg-slate-100 flex-shrink-0" />
+      <div class="flex-1 min-w-0"><p class="text-xs font-bold truncate">${b.name}</p><div class="flex items-center gap-1 mt-0.5"><i data-lucide="star" class="w-3 h-3 text-accent fill-accent"></i><span class="text-xs text-slate-500">${b.rating}</span></div></div>
+    </div>`).join('');
+  }
+  function toggleHours(scope) { hoursOpen[scope] = !hoursOpen[scope]; renderAll(); }
+
+  function renderVariantA() {
+    document.getElementById('a-viewer-toggle').innerHTML = viewerToggleHtml();
+    document.getElementById('a-owner-banner').innerHTML = ownerBannerHtml();
+    document.getElementById('a-attributes').innerHTML = attributesHtml();
+    document.getElementById('a-cta-column').innerHTML = ctaColumnHtml();
+    document.getElementById('a-rating-overview').innerHTML = ratingOverviewHtml();
+    document.getElementById('a-write-form').innerHTML = writeFormHtml();
+    document.getElementById('a-reviews-heading').textContent = `${REVIEWS.length} Reviews`;
+    document.getElementById('a-sort-tabs').innerHTML = sortTabsHtml();
+    document.getElementById('a-review-list').innerHTML = sortedReviews().map(reviewCardHtml).join('');
+    document.getElementById('a-similar').innerHTML = similarHtml();
+    document.getElementById('a-hours-week').classList.toggle('hidden', !hoursOpen.a);
+    document.getElementById('a-hours-week').innerHTML = PLACE.hoursWeek.map(h => `<div class="flex gap-4 text-xs text-slate-600"><span class="w-24 font-semibold">${h.day}</span><span>${h.hours}</span></div>`).join('');
+    document.getElementById('a-hours-chevron').style.transform = hoursOpen.a ? 'rotate(180deg)' : '';
+  }
+
+  function renderVariantB() {
+    document.getElementById('b-viewer-toggle').innerHTML = viewerToggleHtml().replace(/bg-white text-slate-900/g, 'bg-white text-slate-900 shadow-sm').replace(/text-slate-500 hover:text-slate-800/g, 'text-slate-500');
+    document.getElementById('b-owner-banner').innerHTML = ownerBannerHtml();
+    document.getElementById('b-composer-pinned').innerHTML = isOwner()
+      ? `<div class="flex items-center gap-3 text-sm text-slate-500"><i data-lucide="message-circle" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>Reply to reviews below to engage with your community.</div>`
+      : myReview() && !showWriteForm
+        ? `<div class="flex items-center justify-between"><div class="flex items-center gap-2 text-xs text-emerald-600 font-semibold"><i data-lucide="check" class="w-3.5 h-3.5"></i>You've reviewed this place</div><button onclick="openEditReview()" class="text-xs font-bold text-primary">Edit your review</button></div>`
+        : writeFormHtml() || `<button onclick="openWriteForm()" class="w-full text-left text-sm text-slate-400 border border-dashed border-slate-200 rounded-xl px-4 py-3 hover:border-primary hover:text-primary">Share your experience at The Artisan Coffee Co...</button>`;
+    document.getElementById('b-reviews-heading').textContent = `${REVIEWS.length} Reviews`;
+    document.getElementById('b-sort-tabs').innerHTML = sortTabsHtml();
+    document.getElementById('b-review-list').innerHTML = sortedReviews().map(reviewCardHtml).join('');
+  }
+
+  let cTab = 'overview';
+  function setCTab(t) { cTab = t; renderVariantC(); lucide.createIcons(); }
+  function renderVariantC() {
+    document.getElementById('c-viewer-toggle').innerHTML = viewerToggleHtml();
+    document.getElementById('c-cta').innerHTML = ctaColumnHtml();
+    document.getElementById('c-attributes').innerHTML = attributesHtml();
+    document.getElementById('c-hours-week').innerHTML = PLACE.hoursWeek.map(h => `<div class="flex gap-4"><span class="w-24 font-semibold">${h.day}</span><span>${h.hours}</span></div>`).join('');
+    document.getElementById('c-similar').innerHTML = similarHtml();
+    document.getElementById('c-rating-overview').innerHTML = ratingOverviewHtml();
+    document.getElementById('c-write-form').innerHTML = writeFormHtml();
+    document.getElementById('c-sort-tabs').innerHTML = sortTabsHtml();
+    document.getElementById('c-review-list').innerHTML = sortedReviews().map(reviewCardHtml).join('');
+    document.getElementById('c-tab-overview').className = `tab-btn ${cTab === 'overview' ? 'active' : ''}`;
+    document.getElementById('c-tab-reviews').className = `tab-btn ${cTab === 'reviews' ? 'active' : ''}`;
+    document.getElementById('c-tab-reviews').textContent = `Reviews (${REVIEWS.length})`;
+    document.getElementById('c-panel-overview').classList.toggle('hidden', cTab !== 'overview');
+    document.getElementById('c-panel-reviews').classList.toggle('hidden', cTab !== 'reviews');
+  }
+
+  function renderAll() {
+    renderVariantA();
+    renderVariantB();
+    renderVariantC();
+    lucide.createIcons();
+  }
+  renderAll();
+
+  // --- shell chrome behavior (verbatim from the approved ticket-04 prototype; nav is inert here, no active screen) ---
+  function toggleSidebarCollapse() { document.getElementById('shell-sidebar').classList.toggle('collapsed'); }
+  function openMobileNav() {
+    document.getElementById('shell-sidebar').classList.remove('-translate-x-full');
+    document.getElementById('shell-overlay').classList.remove('hidden');
+  }
+  function closeMobileNav() {
+    document.getElementById('shell-sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('shell-overlay')?.classList.add('hidden');
+  }
+  function toggleDropdown(id) {
+    document.querySelectorAll('.dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+    document.getElementById(id).classList.toggle('open');
+  }
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('button') || !e.target.closest('button').onclick?.toString().includes('toggleDropdown')) {
+      if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+    }
+  });
+
+  // --- Place detail layout variant switcher ---
+  const variants = [
+    { key: 'A', name: 'Faithful port' },
+    { key: 'B', name: 'Pinned composer' },
+    { key: 'C', name: 'Tabbed Overview/Reviews' },
+  ];
+  function currentIndex() {
+    const v = new URLSearchParams(location.search).get('variant') || 'A';
+    const i = variants.findIndex(x => x.key === v);
+    return i === -1 ? 0 : i;
+  }
+  function renderSwitcher() {
+    const i = currentIndex();
+    document.querySelectorAll('[data-pd-variant]').forEach(el => el.classList.toggle('active', el.dataset.pdVariant === variants[i].key));
+    document.getElementById('variant-label').textContent = `${variants[i].key} — ${variants[i].name}`;
+    lucide.createIcons();
+  }
+  function go(delta) {
+    const i = (currentIndex() + delta + variants.length) % variants.length;
+    const params = new URLSearchParams(location.search);
+    params.set('variant', variants[i].key);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    renderSwitcher();
+  }
+  document.getElementById('prev-btn').addEventListener('click', () => go(-1));
+  document.getElementById('next-btn').addEventListener('click', () => go(1));
+  document.addEventListener('keydown', (e) => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+  renderSwitcher();
+  setCTab('overview');
+</script>
+
+</body>
+</html>
