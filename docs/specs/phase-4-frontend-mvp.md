@@ -50,7 +50,7 @@ Business Dashboard, Media) is later phases, see Non-goals.
 Every one of these was discovered while designing a Phase 4 screen against the real
 Figma design, reconciled against what the backend actually exposes today. Full shape
 for each is in [03-architecture.md](../03-architecture.md)'s "Planned: ..." sections,
-linked below. **Status updated as items land** — 6 of 7 are built as of 2026-08-13.
+linked below. **Status updated as items land** — all 7 are built as of 2026-08-13.
 
 | Addition | Needed for | Status | Detail |
 |---|---|---|---|
@@ -58,8 +58,8 @@ linked below. **Status updated as items land** — 6 of 7 are built as of 2026-0
 | `Category.coverImageUrl: String` (seed-managed, no new mutation) | Categories screen's cards matching Figma | ✅ Built, unseeded | [03-architecture.md § Category cover image](../03-architecture.md#planned-category-cover-image--live-business-countavg-rating) |
 | `Category.businessCount: Int` / `avgRating: Float` (live-computed, not materialized) | Categories screen's cards + category-detail banner | ✅ Built | same section as above |
 | `platformStats` query (`totalPlaces`/`totalReviews`, live `COUNT`s) | Categories screen's platform-wide stats row | ✅ Built | [03-architecture.md § platform-wide stats](../03-architecture.md#also-needed-platform-wide-stats-totalplacestotalreviews) |
-| `ReviewReply.createdAt: String` | Place Detail's reply timestamps | ✅ Built | [03-architecture.md § Place Detail follow-ups](../03-architecture.md#planned-place-detail-follow-ups-reviewreplycreatedat-review-sort-rating-breakdown) |
-| `placeReviews(..., sort: ReviewSortEnum)` (`RECENT`/`HELPFUL`) | Place Detail's review sort tabs | Not built | same section as above |
+| `ReviewReply.createdAt: String` | Place Detail's reply timestamps | ✅ Built | [03-architecture.md § Place Detail follow-ups](../03-architecture.md#place-detail-follow-ups-reviewreplycreatedat-review-sort-rating-breakdown) |
+| `placeReviews(..., sort: ReviewSortEnum)` (`RECENT`/`HELPFUL`) | Place Detail's review sort tabs | ✅ Built | same section as above |
 | `Place.ratingBreakdown: [RatingBreakdownEntry]` (live-computed, `GROUP BY rating`) | Place Detail's rating-overview bar chart | ✅ Built | same section as above |
 
 **`Category.coverImageUrl` note**: the field exists and resolves, but no real URLs

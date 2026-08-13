@@ -6,8 +6,20 @@ import { Database } from '../config';
 import { throwError } from '../helpers/errorHelper';
 import { assertOwnership } from '../utils/auth';
 import { CursorBasedPagination, SortEnum } from '../packages/cursors/service';
+import { ReviewSortEnum } from '../enums/reviewSortEnum';
 
 const NEWEST_FIRST = { order: 'createdAt', sort: SortEnum.Desc };
+
+// Column-based sorts: each just names a real, stored column to order by -
+// same shape as PlaceService.COLUMN_SORTS. HELPFUL orders on helpfulCount,
+// materialized on Review by ReviewVoteService.toggle specifically so this can
+// be a plain ORDER BY through the existing keyset-pagination shape, rather
+// than a live-computed aggregate (see docs/03-architecture.md's Place Detail
+// follow-ups section for why).
+const REVIEW_SORTS: Record<ReviewSortEnum, { order: string; sort: SortEnum }> = {
+  [ReviewSortEnum.RECENT]: NEWEST_FIRST,
+  [ReviewSortEnum.HELPFUL]: { order: 'helpfulCount', sort: SortEnum.Desc },
+};
 
 export class ReviewService {
   private repository: ReviewRepository;
@@ -123,21 +135,27 @@ export class ReviewService {
     });
   }
 
-  // Newest-first only for this phase (see docs/specs/phase-2-reviews.md's cursor
-  // pagination section) - first/after are the only caller-controlled params;
-  // order/sort are fixed so the cursor's encoded sortValue always means the
-  // same thing. Additional sort orders would each need their own cursor
-  // encoding, deferred until a future phase actually needs one.
-  async listByPlace(placeId: number, { first, after }: { first?: number; after?: string }) {
+  // RECENT (default) or HELPFUL - first/after/sort are the only
+  // caller-controlled params; each sort's order/direction is fixed so a given
+  // cursor's encoded sortValue always means the same thing across a single
+  // paginated walk (switching sort mid-walk isn't supported, same as
+  // PlaceService.listPlaces).
+  async listByPlace(
+    placeId: number,
+    { first, after, sort }: { first?: number; after?: string; sort?: ReviewSortEnum }
+  ) {
     const place = await this.placeService.getPlaceById(placeId);
     if (!place) {
       throwError(`Place with ID ${placeId} not found`, "NOT_FOUND", 404);
     }
 
+    const { order, sort: sortDirection } = REVIEW_SORTS[sort ?? ReviewSortEnum.RECENT];
+
     const cursorQuery = this.pagination.validateParameters({
       cursor: after,
       limit: first,
-      ...NEWEST_FIRST,
+      order,
+      sort: sortDirection,
     });
     const rows = await this.repository.paginate({ placeId }, cursorQuery);
     const { cursor: pageInfo, data } = this.pagination.paginate(rows, cursorQuery);
@@ -158,6 +176,13 @@ export class ReviewService {
   // other's repository directly.
   async countAll(): Promise<number> {
     return this.repository.count({});
+  }
+
+  // Pure write - ReviewVoteService (which owns the vote data) computes the
+  // count and calls this inside its own transaction, same shape as
+  // PlaceService.updateRatingStats.
+  async updateHelpfulCount(reviewId: number, helpfulCount: number, transaction?: Transaction) {
+    return this.repository.updateOne({ id: reviewId, input: { helpfulCount } }, { transaction });
   }
 
   async listByReviewer(reviewerId: string, { first, after }: { first?: number; after?: string }) {

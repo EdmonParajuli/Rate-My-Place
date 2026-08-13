@@ -368,13 +368,11 @@ per-category, so it doesn't fit inside `Category`.
   ("Cannot query field ... on type Query"). Worth remembering for any future
   new domain typedefs/resolver pair.
 
-## Planned: Place Detail follow-ups (`ReviewReply.createdAt`, review sort, rating breakdown)
+## Place Detail follow-ups (`ReviewReply.createdAt`, review sort, rating breakdown)
 
 **New scope, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
 (ticket `06-place-detail-review.md`) against a real, complete Figma design for it.
-Three small, independent additions. **`ReviewReply.createdAt` and rating
-breakdown are now built** (2026-08-13); review sort is still planned, not yet
-implemented.
+Three small, independent additions. **All three are now built** (2026-08-13).
 
 - ~~**`ReviewReply.createdAt: DateTime`**~~ **Done**, typed `String` not
   `DateTime` — this schema has no `DateTime` scalar anywhere (checked); every
@@ -389,11 +387,42 @@ implemented.
   existing behavior too, not a defect introduced here. A real frontend will
   need to `new Date(Number(createdAt))` to format it, same as it already has to
   for sessions.
-- **`placeReviews(placeId, first, after, sort: ReviewSortEnum)`** — currently
-  has no sort argument at all. A new `ReviewSortEnum` (`RECENT`/`HELPFUL`)
-  mirrors the existing `PlaceSortEnum` pattern on `listPlaces` — `RECENT` orders
-  by `created_at DESC`, `HELPFUL` by the existing `helpfulCount`. Same
-  cursor-pagination shape, just a new ordering.
+- ~~**`placeReviews(placeId, first, after, sort: ReviewSortEnum)`**~~ **Done.** A
+  new `ReviewSortEnum` (`RECENT`/`HELPFUL`) mirrors `PlaceService.COLUMN_SORTS`'s
+  pattern on `listPlaces` — `ReviewService.REVIEW_SORTS` maps each enum value to
+  a real, stored column: `RECENT` → `created_at DESC` (unchanged default),
+  `HELPFUL` → `helpful_count DESC`. Same keyset cursor-pagination shape as
+  before, just a caller-selectable ordering.
+  - **Real discrepancy found and resolved**: this section originally assumed
+    `helpfulCount` was already a real column ("`HELPFUL` by the existing
+    `helpfulCount`") — it wasn't. `Review.helpfulCount` was a pure per-request
+    live `COUNT` over `providers_review_votes`
+    (`ReviewVoteService.getHelpfulCount`, called only from a `Review.helpfulCount`
+    GraphQL field resolver), the same "always live, never a column" treatment
+    as `Category.businessCount`/`avgRating`. That doesn't compose with keyset
+    pagination's plain `WHERE`/`ORDER BY` on a real column — sorting on a
+    computed aggregate hits the same problem `paginateByDistance` solved with a
+    raw-SQL subquery for `NEAREST`.
+  - **Resolved by materializing `helpful_count`** on `providers_reviews`
+    (migration `20260813140000-add-helpful-count-to-reviews.js`, `INTEGER NOT
+    NULL DEFAULT 0`) instead of going the raw-SQL-subquery route. This follows
+    the *other* existing precedent — `Place.averageRating`/`reviewCount` are
+    real, stored columns specifically because `listPlaces` needs to sort/filter
+    on them, fully recomputed (never incrementally adjusted) on every write.
+    `ReviewVoteService.toggle` now wraps the vote create/delete, the recount
+    (`ReviewVoteRepository.countForReview`), and writing that count onto the
+    `Review` row (`ReviewService.updateHelpfulCount`, a pure-write passthrough
+    matching `PlaceService.updateRatingStats`'s shape) in one transaction, so
+    the stored count can never drift from the actual vote rows. The old
+    `Review.helpfulCount` field resolver and `ReviewVoteService.getHelpfulCount`
+    were removed — no longer needed (and would've been redundant/wasteful) now
+    that the field is a real column resolving via GraphQL's default field
+    resolution off the model instance, same as `ReviewReply.createdAt`.
+  - **Verified live**: RECENT (default) and explicit `sort: RECENT` both
+    unchanged; `sort: HELPFUL` correctly reorders by vote count after casting
+    votes from multiple accounts; keyset pagination continuity confirmed across
+    a two-page walk under `HELPFUL` (no overlap/gap); the un-vote path
+    correctly decrements the stored count.
 - ~~**Rating breakdown**~~ **Done.** A per-place count of reviews at each star
   value (5★→1★), for a bar-chart-style breakdown on the detail page. Same
   "live, not materialized" treatment as `Place.averageRating` itself and as
@@ -413,9 +442,6 @@ implemented.
   typed `placeId: number | string` throughout (repository, service), matching
   the existing `PlaceHourService.getForPlace`/`isOpenNow` convention for the
   same situation.
-
-Review sort is not yet built — recorded here so the shape is decided before
-implementation starts, same as everything else in this section.
 
 ## GraphQL schema design principles going forward
 

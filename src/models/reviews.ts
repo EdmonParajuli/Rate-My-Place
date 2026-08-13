@@ -43,6 +43,12 @@ const Review = sequelize.define<ReviewModelInterface>(
                 max: 5,
                 isInt: true
             }
+        },
+        helpfulCount: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            field: "helpful_count"
         }
     },
     {

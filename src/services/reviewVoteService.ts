@@ -1,5 +1,7 @@
+import { Transaction } from 'sequelize';
 import { ReviewVoteRepository } from '../repositories/reviewVoteRepository';
 import { ReviewService } from './reviewService';
+import { Database } from '../config';
 import { throwError } from '../helpers/errorHelper';
 
 export class ReviewVoteService {
@@ -11,6 +13,18 @@ export class ReviewVoteService {
     this.reviewService = new ReviewService();
   }
 
+  private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
+    const transaction = await Database.sequelize.transaction();
+    try {
+      const result = await fn(transaction);
+      await transaction.commit();
+      return result;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  }
+
   async toggle(reviewId: number, userId: string): Promise<{ helpfulCount: number; helpfulByMe: boolean }> {
     const review = await this.reviewService.getReviewById(reviewId);
     if (!review) {
@@ -19,21 +33,25 @@ export class ReviewVoteService {
 
     const existingVote = await this.repository.findOne({ where: { reviewId, userId } });
 
-    let helpfulByMe: boolean;
-    if (existingVote) {
-      await this.repository.deleteMany({ where: { reviewId, userId } });
-      helpfulByMe = false;
-    } else {
-      await this.repository.create({ reviewId, userId });
-      helpfulByMe = true;
-    }
+    // The vote write, the recount, and writing that count onto the Review row
+    // (Review.helpfulCount - materialized so placeReviews's HELPFUL sort can
+    // order on it, see docs/03-architecture.md) all happen in one transaction
+    // so the stored count can never drift from the actual vote rows.
+    return this.withTransaction(async (transaction) => {
+      let helpfulByMe: boolean;
+      if (existingVote) {
+        await this.repository.deleteMany({ where: { reviewId, userId }, transaction });
+        helpfulByMe = false;
+      } else {
+        await this.repository.create({ reviewId, userId }, { transaction });
+        helpfulByMe = true;
+      }
 
-    const helpfulCount = await this.repository.count({ where: { reviewId } });
-    return { helpfulCount, helpfulByMe };
-  }
+      const helpfulCount = await this.repository.countForReview(reviewId, transaction);
+      await this.reviewService.updateHelpfulCount(reviewId, helpfulCount, transaction);
 
-  async getHelpfulCount(reviewId: number | string): Promise<number> {
-    return this.repository.count({ where: { reviewId } });
+      return { helpfulCount, helpfulByMe };
+    });
   }
 
   async hasVoted(reviewId: number | string, userId?: string): Promise<boolean> {
