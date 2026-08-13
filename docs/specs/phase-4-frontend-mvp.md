@@ -45,22 +45,28 @@ Business Dashboard, Media) is later phases, see Non-goals.
 | Place Detail cover/logo photos | **Generic placeholder**, not a real per-place image — full photo support is Phase 8 Media, real infrastructure, not a one-column addition. |
 | Place Detail visitor/owner toggle | **Prototype-only demo device.** In the real system, viewer mode is *always* derived automatically (`currentUser.id === place.owner.id`) — never a user-facing switch. |
 
-## New backend scope surfaced during this phase (not yet built)
+## New backend scope surfaced during this phase
 
 Every one of these was discovered while designing a Phase 4 screen against the real
-Figma design, reconciled against what the backend actually exposes today. None are
-built — full shape for each is in [03-architecture.md](../03-architecture.md)'s
-"Planned: ..." sections, linked below.
+Figma design, reconciled against what the backend actually exposes today. Full shape
+for each is in [03-architecture.md](../03-architecture.md)'s "Planned: ..." sections,
+linked below. **Status updated as items land** — 2 of 7 are built as of 2026-08-13.
 
-| Addition | Needed for | Detail |
-|---|---|---|
-| `signUpBusiness` mutation (atomic `User` + `Place` creation, one transaction) | Auth screens' business-signup wizard | [03-architecture.md § signUpBusiness](../03-architecture.md#planned-signupbusiness-atomic-account--place-creation) |
-| `Category.coverImageUrl: String` (seed-managed, no new mutation) | Categories screen's cards matching Figma | [03-architecture.md § Category cover image](../03-architecture.md#planned-category-cover-image--live-business-countavg-rating) |
-| `Category.businessCount: Int` / `avgRating: Float` (live-computed, not materialized) | Categories screen's cards + category-detail banner | same section as above |
-| `platformStats` query (`totalPlaces`/`totalReviews`, live `COUNT`s) | Categories screen's platform-wide stats row | [03-architecture.md § platform-wide stats](../03-architecture.md#also-needed-platform-wide-stats-totalplacestotalreviews) |
-| `ReviewReply.createdAt: DateTime` | Place Detail's reply timestamps | [03-architecture.md § Place Detail follow-ups](../03-architecture.md#planned-place-detail-follow-ups-reviewreplycreatedat-review-sort-rating-breakdown) |
-| `placeReviews(..., sort: ReviewSortEnum)` (`RECENT`/`HELPFUL`) | Place Detail's review sort tabs | same section as above |
-| `Place.ratingBreakdown: [RatingBreakdownEntry]` (live-computed, `GROUP BY rating`) | Place Detail's rating-overview bar chart | same section as above |
+| Addition | Needed for | Status | Detail |
+|---|---|---|---|
+| `signUpBusiness` mutation (atomic `User` + `Place` creation, one transaction) | Auth screens' business-signup wizard | Not built | [03-architecture.md § signUpBusiness](../03-architecture.md#planned-signupbusiness-atomic-account--place-creation) |
+| `Category.coverImageUrl: String` (seed-managed, no new mutation) | Categories screen's cards matching Figma | ✅ Built, unseeded | [03-architecture.md § Category cover image](../03-architecture.md#planned-category-cover-image--live-business-countavg-rating) |
+| `Category.businessCount: Int` / `avgRating: Float` (live-computed, not materialized) | Categories screen's cards + category-detail banner | Not built | same section as above |
+| `platformStats` query (`totalPlaces`/`totalReviews`, live `COUNT`s) | Categories screen's platform-wide stats row | Not built | [03-architecture.md § platform-wide stats](../03-architecture.md#also-needed-platform-wide-stats-totalplacestotalreviews) |
+| `ReviewReply.createdAt: String` | Place Detail's reply timestamps | ✅ Built | [03-architecture.md § Place Detail follow-ups](../03-architecture.md#planned-place-detail-follow-ups-reviewreplycreatedat-review-sort-rating-breakdown) |
+| `placeReviews(..., sort: ReviewSortEnum)` (`RECENT`/`HELPFUL`) | Place Detail's review sort tabs | Not built | same section as above |
+| `Place.ratingBreakdown: [RatingBreakdownEntry]` (live-computed, `GROUP BY rating`) | Place Detail's rating-overview bar chart | Not built | same section as above |
+
+**`Category.coverImageUrl` note**: the field exists and resolves, but no real URLs
+are seeded yet (content decision, separate from the schema addition). Also surfaced
+while implementing it: the current seed data only has 5 categories, not the 10 the
+Phase 4 frontend design assumes — a real gap to resolve before the Categories screen
+can be wired to real data. See [03-architecture.md](../03-architecture.md) for detail.
 
 **Sequencing implication**: none of these block the *design* work (already done —
 every prototype uses illustrative mock data for these fields), but each blocks

@@ -226,12 +226,23 @@ now.
 the same ticket to ship category cards without these fields, once matching the
 Figma design exactly (cover photo + "N businesses · X★ avg" per card) turned out
 to be what was actually wanted, not just a visual reference to loosely adapt.
+**`coverImageUrl` is now built** (2026-08-13); `businessCount`/`avgRating` below
+are still planned, not yet implemented.
 
-- **`coverImageUrl: String`** — new nullable column on `providers_category` (plain
-  migration, matches every other new-column pattern in this doc) + matching
-  GraphQL field. Categories are migration/seed-managed today ("no mutations" per
-  `CLAUDE.md`) and stay that way — this is 10 seed rows getting a new column
-  value, not a new mutation.
+- ~~**`coverImageUrl: String`**~~ **Done.** New nullable `cover_image_url` column
+  on `providers_category` (migration `20260813120000-add-cover-image-url-to-category.js`)
+  + matching GraphQL field, resolved via default field resolution off the model
+  instance (no field resolver needed). Categories are migration/seed-managed
+  ("no mutations" per `CLAUDE.md`) and stay that way — no mutation was added.
+  **Not yet seeded**: the field exists and resolves (verified `null` for all 5
+  existing categories via a live query) but no actual URLs have been set —
+  populating real per-category images is a content decision, not part of this
+  addition. Also worth noting while touching this table: the current seed data
+  only has 5 categories (Restaurant, Cafe, Bar, Hotel, Gym), not the 10 the
+  Phase 4 frontend design was built against (Restaurants, Cafés, Hotels,
+  Shopping, Healthcare, Education, Fitness, Beauty & Wellness, Entertainment,
+  Professional Services) — a real gap to resolve before the Categories screen
+  is wired to real data, not addressed by this change.
 - **`businessCount: Int` / `avgRating: Float`** — computed **live at query time**,
   not materialized/cached columns. This matches the *existing* precedent already
   set by `Place.averageRating`/`reviewCount`, which `CLAUDE.md` documents as
@@ -285,12 +296,22 @@ per-category, so it doesn't fit inside `Category`.
 
 **New scope, surfaced 2026-08-13** while designing Phase 4's Place Detail screen
 (ticket `06-place-detail-review.md`) against a real, complete Figma design for it.
-Three small, independent additions:
+Three small, independent additions. **`ReviewReply.createdAt` is now built**
+(2026-08-13); the other two are still planned, not yet implemented.
 
-- **`ReviewReply.createdAt: DateTime`** — the underlying row already has
-  `created_at` (every table does, per this doc's soft-delete/timestamp
-  convention) but `reviewReplyTypedefs.ts`'s `ReviewReply` type doesn't expose
-  it. Trivial: add the field, no migration needed.
+- ~~**`ReviewReply.createdAt: DateTime`**~~ **Done**, typed `String` not
+  `DateTime` — this schema has no `DateTime` scalar anywhere (checked); every
+  existing date field (`Session.createdAt`/`lastUsedAt`) is plain `String`, so
+  `ReviewReply.createdAt` matches that convention instead of introducing a new
+  one. The underlying row already had `created_at` (`ModelTimestampExtend`,
+  `timestamps: true` + `underscored: true` on the model) — no migration needed,
+  no field resolver needed either, resolves via GraphQL's default field
+  resolution off the model instance exactly like `Session.createdAt` does.
+  Verified live: renders as a raw epoch-millisecond string (e.g.
+  `"1786588033234"`), not an ISO date string — confirmed this is `Session`'s
+  existing behavior too, not a defect introduced here. A real frontend will
+  need to `new Date(Number(createdAt))` to format it, same as it already has to
+  for sessions.
 - **`placeReviews(placeId, first, after, sort: ReviewSortEnum)`** — currently
   has no sort argument at all. A new `ReviewSortEnum` (`RECENT`/`HELPFUL`)
   mirrors the existing `PlaceSortEnum` pattern on `listPlaces` — `RECENT` orders

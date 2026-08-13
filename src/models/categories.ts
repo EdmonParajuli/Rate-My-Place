@@ -24,6 +24,11 @@ const Category = sequelize.define<CategoryModelInterface>(
         icon: {
             type: Sequelize.TEXT,
             allowNull: true
+        },
+        coverImageUrl: {
+            type: Sequelize.TEXT,
+            allowNull: true,
+            field: "cover_image_url"
         }
     },
     {

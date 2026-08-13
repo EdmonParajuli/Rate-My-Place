@@ -5,6 +5,7 @@ export interface InputCategoryInterface {
     label: string;
     description: string;
     icon?: string;
+    coverImageUrl?: string;
 }
 
 export interface CategoryInterface extends ModelTimestampExtend, InputCategoryInterface {
