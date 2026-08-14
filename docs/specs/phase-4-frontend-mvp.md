@@ -94,7 +94,7 @@ Full detail: [research/design-tokens.md](../../.scratch/phase-4-frontend-mvp/res
 Ticket: [01-design-tokens.md](../../.scratch/phase-4-frontend-mvp/tickets/01-design-tokens.md).
 Prototype: `prototype/design-tokens-reference` (commit `fac9edb`).
 
-### 1. Marketing / landing page (logged-out)
+### 1. Marketing / landing page (logged-out) ✅ Built (2026-08-14)
 
 **Chosen: Variant B.** Dark-gradient hero (`slate-900`→`blue-950`→`slate-900` +
 radial blooms) with the stats strip embedded directly in it (5M+ Active Users /
@@ -110,6 +110,39 @@ don't query anything themselves.
 
 Ticket: [02-marketing-landing-page.md](../../.scratch/phase-4-frontend-mvp/tickets/02-marketing-landing-page.md).
 Prototype: `prototype/marketing-landing-page` (commit `1d65535`).
+
+**Real implementation** (`frontend/src/routes/marketing/`): `HomePage.tsx`
+(hero + dual-path chooser + condensed features + testimonials + CTA banner) +
+`MarketingNav.tsx` + `MarketingFooter.tsx` + `TrendingPlacesStrip.tsx`.
+
+- **"Trending near you" is real data, not mock cards**: `listPlaces(sort:
+  TRENDING, first: 8)`, the same query/sort Discover's "Trending" section
+  uses, rendered as small horizontal-scroll cards with the established
+  category-tinted placeholder (`CATEGORY_STYLES`) in place of a photo. Cards
+  link to `/app/places/:id`; an unauthenticated click naturally redirects
+  through `PrivateRoute` to `/login` — exactly the intended behavior for a
+  logged-out landing page, no special-casing needed.
+- **The hero search bar has no live query/autocomplete** (matches the
+  ticket's own scope), but submitting it isn't a dead end either — it
+  navigates to `/app`, which `PrivateRoute` sends to `/login` when logged
+  out or straight into Discover when already authenticated.
+- **Dual-path chooser and "Get Started"/"Create your free account" CTAs
+  needed a real destination**, not just a link to a generic Sign In tab —
+  added `?tab=signup` (and `?type=regular|business`) query-param support to
+  `LoginPage`/`SignUpForm` (`frontend/src/routes/auth/`) so these CTAs land
+  directly on the Sign Up tab with the right account-type card pre-selected,
+  rather than dumping the visitor on Sign In and making them find Sign Up
+  themselves.
+- **Testimonial copy deduplicated**: the exact same three testimonials
+  (author/quote/avatar) were hardcoded independently in both this screen's
+  prototype and the Auth screens' `TestimonialCarousel` prototype. Extracted
+  to a shared `frontend/src/lib/testimonials.ts` so the two screens can't
+  silently drift into showing different quotes for the same three people.
+
+Verified live: `/`, `/login?tab=signup`, and `/login?tab=signup&type=business`
+all resolve (HTTP 200, no dev-server errors); `listPlaces(sort: TRENDING,
+first: 8)` confirmed against the real backend to return the exact fields the
+strip renders.
 
 ### 2. Auth screens (signup / login) ✅ Built (2026-08-13)
 
@@ -444,10 +477,11 @@ actions.
 7. **My Reviews screen** ✅ **Done** (2026-08-14) — no new backend scope; the
    "Drafts" tab is entirely frontend (`localStorage`), safe to build any time
    after the shell exists.
-8. **Marketing landing page** — logged-out, doesn't depend on or block anything
-   else; sequenced last only because it's the least critical-path for the core
-   authenticated loop, not because of any technical dependency. Reasonable to
-   pull earlier if a public-facing entry point matters sooner (e.g. for a demo).
+8. **Marketing landing page** ✅ **Done** (2026-08-14) — logged-out, doesn't
+   depend on or block anything else; built last since it's the least
+   critical-path for the core authenticated loop, not because of any
+   technical dependency. Its "Trending near you" strip reuses `listPlaces`
+   already exposed for Discover — no new backend scope.
 
 ## Non-goals for this phase
 

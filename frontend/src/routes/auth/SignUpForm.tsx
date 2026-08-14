@@ -23,10 +23,10 @@ type UserTypeChoice = "REGULAR" | "BUSINESS"
 // submitted together via signUpBusiness - not two chained calls - so a
 // BUSINESS-type user is never left without a place if they drop off between
 // steps. See docs/03-architecture.md's signUpBusiness section.
-export function SignUpForm() {
+export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoice }) {
   const { signUp, signUpBusiness } = useAuth()
   const navigate = useNavigate()
-  const [userType, setUserType] = useState<UserTypeChoice>("REGULAR")
+  const [userType, setUserType] = useState<UserTypeChoice>(initialUserType ?? "REGULAR")
   const [step, setStep] = useState<1 | 2>(1)
   const [accountValues, setAccountValues] = useState<SignUpAccountValues | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
