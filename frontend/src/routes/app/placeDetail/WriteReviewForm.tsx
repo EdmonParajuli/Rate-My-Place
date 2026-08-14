@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Star, Send } from "lucide-react"
+import { Star, Send, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 const RATING_LABEL: Record<number, string> = { 1: "Poor", 2: "Fair", 3: "Good", 4: "Great", 5: "Excellent" }
@@ -12,6 +12,7 @@ export function WriteReviewForm({
   submitting,
   onCancel,
   onSubmit,
+  onSaveDraft,
 }: {
   placeName: string | null | undefined
   initialRating?: number
@@ -20,6 +21,11 @@ export function WriteReviewForm({
   submitting: boolean
   onCancel: () => void
   onSubmit: (rating: number, text: string) => void
+  // Not offered while editing a published review - drafts are only for a
+  // review that hasn't been submitted yet (docs/specs/phase-4-frontend-mvp.md
+  // §7's My Reviews resolution: a real but client-side-only, this-device-only
+  // feature, never sent to the API).
+  onSaveDraft?: (rating: number, text: string) => void
 }) {
   const [rating, setRating] = useState(initialRating ?? 0)
   const [text, setText] = useState(initialText ?? "")
@@ -55,10 +61,18 @@ export function WriteReviewForm({
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="button" disabled={!rating || !text.trim() || submitting} onClick={() => onSubmit(rating, text)}>
-          <Send className="h-4 w-4" />
-          {submitting ? "Saving..." : isEditing ? "Save Changes" : "Submit Review"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {onSaveDraft && (
+            <Button type="button" variant="outline" disabled={!rating || !text.trim()} onClick={() => onSaveDraft(rating, text)}>
+              <FileText className="h-4 w-4" />
+              Save as Draft
+            </Button>
+          )}
+          <Button type="button" disabled={!rating || !text.trim() || submitting} onClick={() => onSubmit(rating, text)}>
+            <Send className="h-4 w-4" />
+            {submitting ? "Saving..." : isEditing ? "Save Changes" : "Submit Review"}
+          </Button>
+        </div>
       </div>
     </div>
   )

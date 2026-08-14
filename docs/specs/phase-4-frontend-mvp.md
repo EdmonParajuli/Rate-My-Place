@@ -361,7 +361,7 @@ account + place created for the purpose: `getPlaceById` (including
 `createReviewReply` (as the place's real owner) - all confirmed correct with
 real data before wiring into the UI.
 
-### 7. My Reviews screen
+### 7. My Reviews screen ✅ Built (2026-08-14)
 
 **Chosen: Variant B.** Resolves this ticket's own open question (no draft concept
 exists in the backend): the Published/Drafts tabs from Figma are kept, but Drafts
@@ -376,6 +376,35 @@ client-only action (copy link / native share sheet) — no API involved.
 
 Ticket: [08-my-reviews-screen.md](../../.scratch/phase-4-frontend-mvp/tickets/08-my-reviews-screen.md).
 Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
+
+**Real implementation** (`frontend/src/routes/app/myReviews/`): `MyReviewsPage.tsx`
+(stats row, most-helpful banner, Published/Drafts tab state, empty states) +
+`StatsRow.tsx` + `MostHelpfulBanner.tsx` + `ReviewListItem.tsx` (inline
+star+textarea edit, share via `navigator.share`/clipboard fallback, delete) +
+`DraftCard.tsx`.
+
+- **No backend aggregate exists for the stats row or "most helpful"** — both are
+  a plain client-side reduction over the full `myReviews(first: 50)` list (no
+  `totalCount` on `PageInfo` either), matching the ticket's own scope note.
+- **Drafts needed a real creation entry point** the ticket's own prototype never
+  specified (its demo only showed a pre-seeded draft's display/delete, no way to
+  create one) — added a "Save as Draft" button to Place Detail's
+  `WriteReviewForm` (only shown when writing a new review, not editing an
+  existing one), writing to the same `frontend/src/lib/drafts.ts` localStorage
+  module (`saveDraft`/`updateDraft`/`deleteDraft`/`getDrafts`) that this screen's
+  Drafts tab reads from — a real end-to-end flow, not a display-only dead end.
+- **Share** uses `navigator.share` when available, falling back to
+  `navigator.clipboard.writeText` with a 2-second "copied" checkmark state —
+  client-only, no API involved, matching the ticket's scope.
+
+Verified live end-to-end against the real backend with a fresh regular-user +
+business + place created for the purpose: `createReview`, `myReviews` (confirmed
+shape matches the query exactly, including `place.category.label`),
+`updateReview`, `deleteReview` (confirmed the review disappears from a
+follow-up `myReviews` call) — all confirmed correct with real data before
+wiring into the UI. Drafts CRUD is `localStorage`-only by design, exercised via
+the Place Detail "Save as Draft" entry point and this screen's Continue/Delete
+actions.
 
 ## Suggested build sequencing
 
@@ -412,8 +441,9 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    this suggested order wasn't a hard dependency) — needed
    `Category.coverImageUrl`/`businessCount`/`avgRating` + the new
    `platformStats` query, both already built in an earlier pass.
-7. **My Reviews screen** — no new backend scope; the "Drafts" tab is entirely
-   frontend (`localStorage`), safe to build any time after the shell exists.
+7. **My Reviews screen** ✅ **Done** (2026-08-14) — no new backend scope; the
+   "Drafts" tab is entirely frontend (`localStorage`), safe to build any time
+   after the shell exists.
 8. **Marketing landing page** — logged-out, doesn't depend on or block anything
    else; sequenced last only because it's the least critical-path for the core
    authenticated loop, not because of any technical dependency. Reasonable to

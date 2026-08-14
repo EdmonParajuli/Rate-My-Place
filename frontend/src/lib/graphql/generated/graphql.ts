@@ -599,6 +599,14 @@ export type CategoryQueryVariables = Exact<{
 
 export type CategoryQuery = { __typename?: 'Query', category?: { __typename?: 'CategoryResponse', data?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null } | null };
 
+export type MyReviewsQueryVariables = Exact<{
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, category?: { __typename?: 'Category', label?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+
 export type GetPlaceByIdQueryVariables = Exact<{
   id: Scalars['Int']['input'];
 }>;
@@ -991,6 +999,68 @@ export type CategoryQueryHookResult = ReturnType<typeof useCategoryQuery>;
 export type CategoryLazyQueryHookResult = ReturnType<typeof useCategoryLazyQuery>;
 export type CategorySuspenseQueryHookResult = ReturnType<typeof useCategorySuspenseQuery>;
 export type CategoryQueryResult = ApolloReactCommon.QueryResult<CategoryQuery, CategoryQueryVariables>;
+export const MyReviewsDocument = gql`
+    query MyReviews($first: Int, $after: String) {
+  myReviews(first: $first, after: $after) {
+    data {
+      id
+      review
+      rating
+      createdAt
+      helpfulCount
+      place {
+        id
+        label
+        category {
+          label
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+
+/**
+ * __useMyReviewsQuery__
+ *
+ * To run a query within a React component, call `useMyReviewsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMyReviewsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMyReviewsQuery({
+ *   variables: {
+ *      first: // value for 'first'
+ *      after: // value for 'after'
+ *   },
+ * });
+ */
+export function useMyReviewsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<MyReviewsQuery, MyReviewsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<MyReviewsQuery, MyReviewsQueryVariables>(MyReviewsDocument, options as any);
+      }
+export function useMyReviewsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MyReviewsQuery, MyReviewsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<MyReviewsQuery, MyReviewsQueryVariables>(MyReviewsDocument, options as any);
+        }
+// @ts-ignore
+export function useMyReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<MyReviewsQuery, MyReviewsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyReviewsQuery, MyReviewsQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useMyReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyReviewsQuery, MyReviewsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyReviewsQuery | undefined, MyReviewsQueryVariables>;
+export function useMyReviewsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyReviewsQuery, MyReviewsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<MyReviewsQuery, MyReviewsQueryVariables>(MyReviewsDocument, options as any);
+        }
+export type MyReviewsQueryHookResult = ReturnType<typeof useMyReviewsQuery>;
+export type MyReviewsLazyQueryHookResult = ReturnType<typeof useMyReviewsLazyQuery>;
+export type MyReviewsSuspenseQueryHookResult = ReturnType<typeof useMyReviewsSuspenseQuery>;
+export type MyReviewsQueryResult = ApolloReactCommon.QueryResult<MyReviewsQuery, MyReviewsQueryVariables>;
 export const GetPlaceByIdDocument = gql`
     query GetPlaceById($id: Int!) {
   getPlaceById(id: $id) {

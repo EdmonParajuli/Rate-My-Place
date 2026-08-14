@@ -29,6 +29,7 @@ import {
   useListPlacesQuery,
   type ReviewSortEnum,
 } from "@/lib/graphql/generated/graphql"
+import { saveDraft } from "@/lib/drafts"
 import { RatingOverview } from "./RatingOverview"
 import { WriteReviewForm } from "./WriteReviewForm"
 import { ReviewCard } from "./ReviewCard"
@@ -105,6 +106,11 @@ export function PlaceDetailPage() {
     setWriteFormOpen(false)
     setEditingReviewId(null)
     setReviewError(null)
+  }
+
+  const handleSaveDraft = (rating: number, text: string) => {
+    saveDraft({ placeId: id, placeName: place?.label ?? "this place", rating, text })
+    setWriteFormOpen(false)
   }
 
   const handleSubmitReview = async (rating: number, text: string) => {
@@ -298,6 +304,7 @@ export function PlaceDetailPage() {
                 submitting={submittingReview}
                 onCancel={cancelWriteForm}
                 onSubmit={handleSubmitReview}
+                onSaveDraft={editingReview ? undefined : handleSaveDraft}
               />
               {reviewError && <p className="text-xs text-destructive">{reviewError}</p>}
             </>
