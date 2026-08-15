@@ -6,5 +6,6 @@ export * from "./reviewResolver";
 export * from "./reviewReplyResolver";
 export * from "./reviewVoteResolver";
 export * from "./savedPlaceResolver";
+export * from "./badgeResolver";
 export * from "./platformStatsResolver";
 export * from "./businessDashboardResolver";

@@ -32,6 +32,30 @@ export type AuthMeResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type Badge = {
+  __typename?: 'Badge';
+  description?: Maybe<Scalars['String']['output']>;
+  earned?: Maybe<Scalars['Boolean']['output']>;
+  earnedAt?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['Int']['output']>;
+  key?: Maybe<BadgeKeyEnum>;
+  label?: Maybe<Scalars['String']['output']>;
+};
+
+export type BadgeKeyEnum =
+  | 'ELITE_REVIEWER'
+  | 'EXPLORER'
+  | 'FIRST_REVIEW'
+  | 'HELPFUL_REVIEWER'
+  | 'PROLIFIC_REVIEWER';
+
+export type BadgeListResponse = {
+  __typename?: 'BadgeListResponse';
+  data?: Maybe<Array<Maybe<Badge>>>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
 export type BusinessDashboardResponse = {
   __typename?: 'BusinessDashboardResponse';
   data?: Maybe<BusinessDashboardStats>;
@@ -443,6 +467,7 @@ export type Query = {
   category?: Maybe<CategoryResponse>;
   getPlaceById?: Maybe<PlaceResponse>;
   listPlaces?: Maybe<PlaceListResponse>;
+  myBadges?: Maybe<BadgeListResponse>;
   myReviews?: Maybe<ReviewListResponse>;
   placeReviews?: Maybe<ReviewListResponse>;
   platformStats?: Maybe<PlatformStatsResponse>;
@@ -689,6 +714,11 @@ export type SignOutMutationVariables = Exact<{
 
 
 export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?: 'Message', message?: string | null } | null };
+
+export type MyBadgesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyBadgesQuery = { __typename?: 'Query', myBadges?: { __typename?: 'BadgeListResponse', data?: Array<{ __typename?: 'Badge', id?: number | null, key?: BadgeKeyEnum | null, label?: string | null, description?: string | null, icon?: string | null, earned?: boolean | null, earnedAt?: string | null } | null> | null } | null };
 
 export type UpdatePlaceMutationVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -1051,6 +1081,57 @@ export function useSignOutMutation(baseOptions?: ApolloReactHooks.MutationHookOp
       }
 export type SignOutMutationHookResult = ReturnType<typeof useSignOutMutation>;
 export type SignOutMutationResult = ApolloReactCommon.MutationResult<SignOutMutation>;
+export const MyBadgesDocument = gql`
+    query MyBadges {
+  myBadges {
+    data {
+      id
+      key
+      label
+      description
+      icon
+      earned
+      earnedAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useMyBadgesQuery__
+ *
+ * To run a query within a React component, call `useMyBadgesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMyBadgesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMyBadgesQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useMyBadgesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<MyBadgesQuery, MyBadgesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<MyBadgesQuery, MyBadgesQueryVariables>(MyBadgesDocument, options as any);
+      }
+export function useMyBadgesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MyBadgesQuery, MyBadgesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<MyBadgesQuery, MyBadgesQueryVariables>(MyBadgesDocument, options as any);
+        }
+// @ts-ignore
+export function useMyBadgesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<MyBadgesQuery, MyBadgesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyBadgesQuery, MyBadgesQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useMyBadgesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyBadgesQuery, MyBadgesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyBadgesQuery | undefined, MyBadgesQueryVariables>;
+export function useMyBadgesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyBadgesQuery, MyBadgesQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<MyBadgesQuery, MyBadgesQueryVariables>(MyBadgesDocument, options as any);
+        }
+export type MyBadgesQueryHookResult = ReturnType<typeof useMyBadgesQuery>;
+export type MyBadgesLazyQueryHookResult = ReturnType<typeof useMyBadgesLazyQuery>;
+export type MyBadgesSuspenseQueryHookResult = ReturnType<typeof useMyBadgesSuspenseQuery>;
+export type MyBadgesQueryResult = ApolloReactCommon.QueryResult<MyBadgesQuery, MyBadgesQueryVariables>;
 export const UpdatePlaceDocument = gql`
     mutation UpdatePlace($placeId: Int!, $input: InputPlace) {
   updatePlace(placeId: $placeId, input: $input) {

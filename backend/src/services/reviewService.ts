@@ -197,6 +197,10 @@ export class ReviewService {
     return this.repository.updateOne({ id: reviewId, input: { helpfulCount } }, { transaction });
   }
 
+  async getReviewerStats(reviewerId: string) {
+    return this.repository.getReviewerStats(reviewerId);
+  }
+
   async listByReviewer(reviewerId: string, { first, after }: { first?: number; after?: string }) {
     const cursorQuery = this.pagination.validateParameters({
       cursor: after,

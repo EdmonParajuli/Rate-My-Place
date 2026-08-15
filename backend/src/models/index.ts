@@ -8,6 +8,8 @@ import ReviewReply from "./reviewReplies";
 import ReviewVote from "./reviewVotes";
 import PlaceHour from "./placeHours";
 import SavedPlace from "./savedPlaces";
+import Badge from "./badges";
+import UserBadge from "./userBadges";
 
 const Model = {
     User,
@@ -19,7 +21,9 @@ const Model = {
     ReviewReply,
     ReviewVote,
     PlaceHour,
-    SavedPlace
+    SavedPlace,
+    Badge,
+    UserBadge
 }
 
 export default Model;

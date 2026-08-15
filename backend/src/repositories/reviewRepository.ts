@@ -51,6 +51,35 @@ export class ReviewRepository extends BaseRepository<InputReviewInterface, Revie
     return [5, 4, 3, 2, 1].map((stars) => ({ stars, count: counts.get(stars) ?? 0 }));
   }
 
+  // Backs BadgeService's criteria checks - one aggregate query per stat,
+  // same style as getRatingStats above (this.model.aggregate with an explicit
+  // dataType so Postgres's bigint-as-string COUNT/SUM results come back as
+  // real numbers). No transaction needed - badge evaluation is a plain read.
+  async getReviewerStats(reviewerId: string): Promise<{ reviewCount: number; helpfulVotesReceived: number; distinctPlacesReviewed: number }> {
+    const reviewCount: number = await this.model.count({ where: { reviewerId } });
+
+    if (reviewCount === 0) {
+      return { reviewCount: 0, helpfulVotesReceived: 0, distinctPlacesReviewed: 0 };
+    }
+
+    const helpfulVotesReceived = await this.model.aggregate('helpfulCount', 'sum', {
+      where: { reviewerId },
+      dataType: Sequelize.DataTypes.INTEGER,
+    });
+
+    const distinctPlacesReviewed = await this.model.aggregate('placeId', 'count', {
+      where: { reviewerId },
+      distinct: true,
+      dataType: Sequelize.DataTypes.INTEGER,
+    });
+
+    return {
+      reviewCount,
+      helpfulVotesReceived: Number(helpfulVotesReceived) || 0,
+      distinctPlacesReviewed: Number(distinctPlacesReviewed) || 0,
+    };
+  }
+
   // Keyset (cursor) pagination built directly on Sequelize's own where/Op -
   // parameterized automatically, unlike the vendored CursorPaginate/QueryBuilder
   // helper in src/packages/cursors, which builds raw SQL by string-interpolating

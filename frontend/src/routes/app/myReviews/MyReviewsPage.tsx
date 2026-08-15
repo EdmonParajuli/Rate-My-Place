@@ -4,9 +4,11 @@ import {
   useMyReviewsQuery,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
+  useMyBadgesQuery,
 } from "@/lib/graphql/generated/graphql"
 import { deleteDraft, getDrafts, updateDraft, type ReviewDraft } from "@/lib/drafts"
 import { StatsRow } from "./StatsRow"
+import { BadgeStrip } from "./BadgeStrip"
 import { MostHelpfulBanner } from "./MostHelpfulBanner"
 import { ReviewListItem } from "./ReviewListItem"
 import { DraftCard } from "./DraftCard"
@@ -21,8 +23,11 @@ export function MyReviewsPage() {
   const [drafts, setDrafts] = useState<ReviewDraft[]>(() => getDrafts())
 
   const { data, loading, refetch } = useMyReviewsQuery({ variables: { first: 50 } })
+  const { data: badgesData } = useMyBadgesQuery()
   const [updateReview] = useUpdateReviewMutation()
   const [deleteReview] = useDeleteReviewMutation()
+
+  const badges = (badgesData?.myBadges?.data ?? []).filter((b): b is NonNullable<typeof b> => b !== null)
 
   const reviews = (data?.myReviews?.data ?? []).filter((r): r is MyReview => r !== null)
 
@@ -67,6 +72,8 @@ export function MyReviewsPage() {
       <div className="mt-5">
         <StatsRow totalReviews={totalReviews} helpfulVotes={helpfulVotes} businesses={businesses} />
       </div>
+
+      <BadgeStrip badges={badges} />
 
       {mostHelpful && (
         <div className="mt-4">
