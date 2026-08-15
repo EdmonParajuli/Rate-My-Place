@@ -9,6 +9,7 @@ import { CategoriesPage } from "./app/categories/CategoriesPage"
 import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
 import { MyReviewsPage } from "./app/myReviews/MyReviewsPage"
 import { PlaceDetailPage } from "./app/placeDetail/PlaceDetailPage"
+import { BusinessDashboardPage } from "./app/dashboard/BusinessDashboardPage"
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
           { path: "categories/:categoryId", element: <CategoryDetailPage /> },
           { path: "my-reviews", element: <MyReviewsPage /> },
           { path: "places/:placeId", element: <PlaceDetailPage /> },
+          { path: "dashboard", element: <BusinessDashboardPage /> },
         ],
       },
     ],

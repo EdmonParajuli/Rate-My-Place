@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { ReviewReplyRepository } from '../repositories/reviewReplyRepository';
 import { ReviewService } from './reviewService';
 import PlaceService from './placeService';
@@ -82,5 +83,19 @@ export class ReviewReplyService {
 
   async getByReviewId(reviewId: number | string) {
     return this.repository.findOne({ where: { reviewId } });
+  }
+
+  // Thin passthrough - BusinessDashboardService uses this to compute response
+  // rate (repliedReviews / totalReviews) against the review ids it already
+  // fetched, rather than a join (ReviewReply has no placeId column of its
+  // own - only reviewId).
+  async getForReviews(reviewIds: number[]): Promise<{ reviewId: number; createdAt: Date }[]> {
+    if (reviewIds.length === 0) {
+      return [];
+    }
+    return this.repository.findAll({
+      where: { reviewId: { [Op.in]: reviewIds } },
+      attributes: ['reviewId', 'createdAt'],
+    }) as unknown as Promise<{ reviewId: number; createdAt: Date }[]>;
   }
 }

@@ -1,0 +1,30 @@
+query BusinessDashboard {
+  businessDashboard {
+    data {
+      placeId
+      placeName
+      reputationScore
+      reputationScoreTrend
+      averageRating
+      averageRatingTrend
+      reviewCount
+      reviewCountTrend
+      responseRate
+      responseRateTrend
+      ratingTrend {
+        month
+        averageRating
+      }
+      reviewVolume {
+        month
+        reviewCount
+      }
+      sentiment {
+        positivePercent
+        neutralPercent
+        negativePercent
+      }
+      insights
+    }
+  }
+}

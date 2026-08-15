@@ -82,6 +82,14 @@ export default class PlaceService {
     return this.repository.findByPk(id);
   }
 
+  // Thin passthrough - BusinessDashboardService derives "the caller's place"
+  // from context.user.id rather than a caller-supplied placeId. A business
+  // account owns exactly one place today (created atomically by
+  // signUpBusiness), so findOne is sufficient - no multi-place support yet.
+  async getByOwnerId(ownerId: string) {
+    return this.repository.findOne({ where: { ownerId } });
+  }
+
   // transaction is optional - BusinessOnboardingService.signUpBusiness passes one
   // so the Place write commits atomically with the owning User's creation;
   // createPlace's normal caller (placeResolver.ts) omits it, same as

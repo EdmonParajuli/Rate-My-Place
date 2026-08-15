@@ -93,7 +93,7 @@ model this implies.
 | Price range ($/$$/$$$) | Field on Places | ❌ not modeled |
 | Verified badge | `isVerified` on Places | ✅ column exists |
 | Search + filter + sort on Discover | Query/index strategy on Places | ❌ not started (only `getPlaceById` exists) |
-| Business KPI dashboard (reputation score, response rate, sentiment) | Aggregation queries/materialized views | ❌ not started |
+| Business KPI dashboard (reputation score, response rate, sentiment) | Aggregation queries/materialized views | ✅ built (live-computed, not materialized) |
 | Active sessions with revoke, 2FA | Refresh-token/session persistence, 2FA secret | ❌ not started (current refresh tokens aren't persisted or revocable) |
 | Blocked users, data export, delete account | Privacy/compliance endpoints | ❌ not started |
 

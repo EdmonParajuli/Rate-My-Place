@@ -494,16 +494,68 @@ screen against the live API (not new scope):
 Both verified live via direct `listPlaces` queries before being wired into
 the frontend.
 
+## Built: Business Dashboard aggregation (Phase 6, 2026-08-15)
+
+Full design in [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md).
+One new query, `businessDashboard: BusinessDashboardResponse` — no args, derives the
+caller's place from `context.user.id` (`requireOwner`), same "no caller-supplied id"
+choice `myReviews` already made. **No new tables/migrations** — everything derives
+from `providers_reviews` + `providers_reviews_replies`, already fully populated.
+
+- **Orchestration-only service, no repository of its own** — `BusinessDashboardService`
+  composes `PlaceService`/`ReviewService`/`ReviewReplyService` (each gained one thin
+  passthrough method: `getByOwnerId`, `getForDashboard`, `getForReviews`), same shape
+  as `PlatformStatsService`.
+- **Two lightweight queries, everything else computed in memory** — fetches
+  `{id, rating, createdAt}` for every review on the place and `{reviewId, createdAt}`
+  for every reply, then a pure module (`businessDashboardMath.ts`, zero I/O) derives
+  the reputation score, monthly rating/volume buckets (12 months, zero/null-filled —
+  same gap-filling precedent as `ReviewRepository.getRatingBreakdown`), sentiment
+  breakdown, response rate, and all four KPI trend deltas. Chosen over N separate SQL
+  aggregate queries for simplicity given MVP review volume — same "start simple" call
+  as My Reviews' client-side stats.
+- **Reputation score**: weighted composite (55% rating, 20% volume via a log-scaled
+  confidence curve, 15% response rate, 10% recency) — the spec has the full formula
+  and rationale. Trend deltas (all four KPIs) work by re-running the same pure
+  aggregation function against the dataset filtered to "as of the end of last month"
+  and diffing against the live result — one function, two calls, no historical
+  snapshots stored.
+- **Sentiment breakdown is a rating-bucket heuristic** (4-5★ positive / 3★ neutral /
+  1-2★ negative), not real NLP — the Figma Make source's "analysed via NLP" copy was
+  explicitly not carried over, no such dependency exists in this project.
+- **Review management reuses Phase 4 Place Detail's `ReviewCard` component and its
+  existing `placeReviews`/`createReviewReply` operations verbatim** — no new review
+  UI or mutations were built. The dashboard's "Needs Response"/"All Reviews" tabs
+  filter the same `placeReviews(sort: RECENT)` result client-side.
+- **Frontend nav**: reverses Phase 4's "identical shell for both user types"
+  decision — `BUSINESS` accounts get their own nav (just Dashboard) instead of the
+  reviewer nav (Discover/Categories/My Reviews) with Dashboard appended, since those
+  are reviewer-persona features with no tie to managing a business listing
+  (`frontend/src/routes/app/AppLayout.tsx`). A `BUSINESS` account hitting a
+  reviewer-only path directly gets redirected to `/app/dashboard`; `/app/places/:id`
+  stays reachable since the Dashboard's "View Listing" link depends on it.
+
+Verified live: `businessDashboard` exercised directly via GraphQL as a fresh
+zero-review BUSINESS account (confirmed 12 zero/null-filled months, zero-state
+insight copy) and again after adding reviews/a reply (confirmed the reputation-score
+arithmetic, sentiment percentages, and response-rate math by hand); `requireOwner`
+gating confirmed to 403 a REGULAR account and 401 an unauthenticated request. Full
+screen click-tested in-browser as a BUSINESS account, including the reply flow
+(KPI/response-rate/reputation-score numbers and the "Needs Response" count all
+updated live after posting a reply) and confirmed the Dashboard nav item is absent
+for a REGULAR account.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`
   from each, composed in `schema/index.ts` — already the pattern, just keep doing it
   for `category`, `review`, `saved`, `notification`, etc.
-- **Every field a screen needs should resolve through GraphQL, not bespoke REST.** The
-  Figma dashboards (KPI cards, charts, sentiment breakdown) are read-heavy aggregation
-  queries — model them as GraphQL queries with dedicated response types
-  (`BusinessDashboardResponse`) backed by service-layer aggregation, not by having the
-  frontend stitch together three separate queries.
+- **Every field a screen needs should resolve through GraphQL, not bespoke REST.**
+  Read-heavy aggregation screens (KPI cards, charts, sentiment breakdown) get modeled
+  as one GraphQL query with a dedicated response type backed by service-layer
+  aggregation, not by having the frontend stitch together several separate queries —
+  `businessDashboard`/`BusinessDashboardResponse` (Phase 6, see above) is the
+  built example this principle was written against.
 - **Use the `PageInfoInterface`/`edges` shape that already exists** in
   `SuccessResponse` for any list endpoint (Discover feed, notifications, reviews) —
   it's already half-built, don't invent a second pagination convention.

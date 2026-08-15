@@ -69,7 +69,7 @@ export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoi
         categoryId: values.categoryId,
         priceRange: values.priceRange,
       })
-      navigate("/app")
+      navigate("/app/dashboard")
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Sign up failed")
     }
