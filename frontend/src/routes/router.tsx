@@ -10,6 +10,11 @@ import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
 import { MyReviewsPage } from "./app/myReviews/MyReviewsPage"
 import { PlaceDetailPage } from "./app/placeDetail/PlaceDetailPage"
 import { BusinessDashboardPage } from "./app/dashboard/BusinessDashboardPage"
+import { MyListingPage } from "./app/myListing/MyListingPage"
+import { BusinessReviewsPage } from "./app/reviews/BusinessReviewsPage"
+import { AnalyticsPage } from "./app/analytics/AnalyticsPage"
+import { PromotionsPage } from "./app/promotions/PromotionsPage"
+import { SettingsPage } from "./app/settings/SettingsPage"
 
 export const router = createBrowserRouter([
   {
@@ -32,6 +37,11 @@ export const router = createBrowserRouter([
           { path: "my-reviews", element: <MyReviewsPage /> },
           { path: "places/:placeId", element: <PlaceDetailPage /> },
           { path: "dashboard", element: <BusinessDashboardPage /> },
+          { path: "my-listing", element: <MyListingPage /> },
+          { path: "reviews", element: <BusinessReviewsPage /> },
+          { path: "analytics", element: <AnalyticsPage /> },
+          { path: "promotions", element: <PromotionsPage /> },
+          { path: "settings", element: <SettingsPage /> },
         ],
       },
     ],

@@ -1,0 +1,17 @@
+mutation UpdatePlace($placeId: Int!, $input: InputPlace) {
+  updatePlace(placeId: $placeId, input: $input) {
+    message
+  }
+}
+
+mutation SetPlaceHours($placeId: Int!, $hours: [InputPlaceHour!]!) {
+  setPlaceHours(placeId: $placeId, hours: $hours) {
+    message
+  }
+}
+
+mutation ChangePassword($input: InputChangePassword!) {
+  changePassword(input: $input) {
+    message
+  }
+}
