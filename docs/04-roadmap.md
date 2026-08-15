@@ -69,23 +69,22 @@ real traffic.
 - [x] `price_range` column + `PLACE_HOURS` table, "open now" computed from hours + server timezone
 - [x] Basic geolocation/"nearby" — decided: lat-lng + Haversine (Tier 0, see [07-geo-and-location-strategy.md](./07-geo-and-location-strategy.md))
 
-## Phase 4 — Frontend MVP
+## Phase 4 — Frontend MVP — Done
 
-**Status: ✅ Design decided, not yet built.** Every screen was designed via
-`/wayfinder` + `/prototype` (map and 8 tickets in
+Every screen was designed via `/wayfinder` + `/prototype` (map and 8 tickets in
 `.scratch/phase-4-frontend-mvp/`, all closed 2026-08-11 → 2026-08-13) — see
 [specs/phase-4-frontend-mvp.md](./specs/phase-4-frontend-mvp.md) for the full
-spec: chosen variant per screen, exact GraphQL operations, new backend scope
-surfaced along the way, and suggested build sequencing. The checkboxes below are
-kept as the roadmap's own tracking, updated as the real `frontend/` build
-actually lands — check the spec for what "done" means per item.
+spec: chosen variant per screen, exact GraphQL operations, and new backend scope
+surfaced along the way. All items below (plus the Marketing landing page, not its
+own checkbox here) built and merged 2026-08-13 → 2026-08-15 — check the spec for
+what "done" means per item.
 
 Stand up the frontend against Phases 1–3's API. See
 [05-frontend-plan.md](./05-frontend-plan.md) for the stack decision.
 
-- [ ] Project scaffold + design tokens matching the Figma dark-gradient aesthetic
-- [ ] Auth flows: signup, login, authenticated shell (sidebar nav matching Figma)
-  - [ ] **New scope, surfaced 2026-08-12 while planning the Auth screens**:
+- [x] Project scaffold + design tokens matching the Figma dark-gradient aesthetic
+- [x] Auth flows: signup, login, authenticated shell (sidebar nav matching Figma)
+  - [x] **New scope, surfaced 2026-08-12 while planning the Auth screens**:
         business-owner signup continues into a "create your place" step right after
         choosing the Business account type, rather than leaving new business
         accounts with no listing yet. Requires a new `signUpBusiness` mutation that
@@ -93,23 +92,22 @@ Stand up the frontend against Phases 1–3's API. See
         [03-architecture.md](./03-architecture.md) for the backend shape and
         [05-frontend-plan.md](./05-frontend-plan.md) for the frontend wizard
         behavior. Flagged separately rather than folded into the line above since
-        it wasn't part of the original Phase 4 ticket set; may slip to a later
-        phase if it doesn't fit this phase's timeline.
-- [ ] Discover screen (search, filters, sort, card grid)
-  - [ ] **New scope, surfaced 2026-08-12 while prototyping this screen**: a real
+        it wasn't part of the original Phase 4 ticket set.
+- [x] Discover screen (search, filters, sort, card grid)
+  - [x] **New scope, surfaced 2026-08-12 while prototyping this screen**: a real
         map view — a "See in map" button next to the results list switches to a
         map+list split, with a "Back to list" button to return. Ships with
         **Leaflet + OpenStreetMap** (see [05-frontend-plan.md](./05-frontend-plan.md))
         — no new backend work, `listPlaces` already returns real lat/lng per place.
-- [ ] Place detail + write/edit a review
-- [ ] Categories screen
-  - [ ] **New scope, surfaced 2026-08-12, reverses an earlier decision on this
+- [x] Place detail + write/edit a review
+- [x] Categories screen
+  - [x] **New scope, surfaced 2026-08-12, reverses an earlier decision on this
         same ticket**: category cards match Figma exactly — cover photo +
         "N businesses · X★ avg" — instead of shipping without them. Needs a new
         `coverImageUrl` field on `Category` plus live-computed `businessCount`/
         `avgRating` (not materialized). See
         [03-architecture.md](./03-architecture.md) for the backend shape.
-- [ ] My Reviews screen
+- [x] My Reviews screen
 
 ## Phase 5 — Personalization
 
@@ -118,15 +116,20 @@ Stand up the frontend against Phases 1–3's API. See
 - [ ] Profile screen (stats, activity chart, badge grid)
 - [ ] `BADGES`/`USER_BADGES` — start with 3-5 real criteria, not the full grid from the design
 
-## Phase 6 — Business dashboard — Done
+## Phase 6 — Business console — Done
 
-Implemented and manually verified end to end (auth-gated `businessDashboard` query
-exercised directly via GraphQL, then the full screen click-tested as a BUSINESS
-account, including the reply flow) — see
-[specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md) for the
-full design: the reputation-score formula, the sentiment heuristic, and the
-reconciliation against the real authenticated shell (the Figma Make output invented
-its own sidebar/branding; the real screen reuses the existing shell instead).
+Implemented and manually verified end to end (auth-gated queries/mutations exercised
+directly via GraphQL, then every screen click-tested as a BUSINESS account) in two
+parts:
+
+- [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md) — the
+  Dashboard home screen: the reputation-score formula, the sentiment heuristic, and the
+  reconciliation against the real authenticated shell (the Figma Make output invented
+  its own sidebar/branding; the real screen reuses the existing shell instead).
+- [specs/phase-6-business-console.md](./specs/phase-6-business-console.md) — the five
+  remaining console pages (My Listing, Reviews, Analytics, Promotions, Settings), and
+  how each one was reconciled against real backend capability vs. shipped as an
+  explicitly-labeled illustrative preview.
 
 - [x] Aggregation queries: reputation score formula (weighted composite — rating,
       volume, response rate, recency; see the spec above for the resolved formula and
@@ -136,8 +139,26 @@ its own sidebar/branding; the real screen reuses the existing shell instead).
       and Phase 4 Place Detail's `ReviewCard` component directly, no new UI built
 - [x] Business dashboard frontend screen (KPI cards + charts), gated to BUSINESS
       accounts as a new "Dashboard" nav item
+- [x] My Listing screen — edit form + live preview, backed by the existing `updatePlace`/
+      `setPlaceHours` mutations (no new backend)
+- [x] Reviews screen — full review management (stats strip, sort/filter, pagination),
+      reuses `placeReviews`/`createReviewReply`/`ReviewCard`
+- [x] Analytics screen — date-range trend charts + rating distribution (all reuse
+      existing dashboard/place data); keyword mentions and competitor benchmark ship as
+      explicitly-labeled static "Pro" previews, no real backend behind them
+- [x] Promotions screen — client-side-only preview (localStorage, scoped per place); no
+      promotions/offers concept exists in the product yet, so this never touches the API
+- [x] Settings screen (business-console-scoped) — read-only profile (no `updateUser`
+      mutation exists yet) + a fully real `changePassword` flow; notification toggles
+      are a static, clearly-labeled preview (`NOTIFICATIONS` is still Phase 5, unbuilt)
 
 ## Phase 7 — Settings & account lifecycle
+
+Phase 6's business-console Settings page (see above) shipped a narrower, BUSINESS-only
+slice of this early — read-only profile display + a real password-change flow. The
+items below are still open: no `updateUser` mutation exists (name/email are still
+un-editable for either account type), and this phase is account-type-agnostic (a
+REGULAR account has no Settings screen at all yet).
 
 - [ ] Account fields edit, preferences (dark mode, language/timezone — note dark mode
       needs to exist as a real frontend theme, not just a design mockup)

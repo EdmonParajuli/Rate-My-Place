@@ -1,9 +1,12 @@
 # Phase 6 Spec: Business Dashboard
 
-**Status: 📝 Plan — not yet implemented.** This is the implementation plan for
-Phase 6, reconciling the Figma Make output against the real codebase, the same
-role [phase-4-frontend-mvp.md](./phase-4-frontend-mvp.md) played for the previous
-phase. Written for review before any code changes land.
+**Status: ✅ Built.** This was the implementation plan for the Dashboard home screen,
+reconciling the Figma Make output against the real codebase, the same role
+[phase-4-frontend-mvp.md](./phase-4-frontend-mvp.md) played for the previous phase.
+Implemented as planned below and verified live (see
+[03-architecture.md](../03-architecture.md)'s "Built: Business Dashboard aggregation"
+section). The five other console nav destinations this page's shell links to were
+built next — see [phase-6-business-console.md](./phase-6-business-console.md).
 
 ## Context
 
