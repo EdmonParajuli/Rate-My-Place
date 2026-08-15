@@ -1,7 +1,10 @@
 import { Building2, MessageSquare, ThumbsUp } from "lucide-react"
 
-// 3 cards, not the real Figma source's 4 - "Contribution Level: Elite" is
-// dropped (Phase 5 badges concept, no backend support exists). All 3 are
+// 3 cards, not the real Figma source's 4 - "Contribution Level: Elite" stays
+// dropped as its own stat card (that was a single always-visible tier label,
+// not what got built). The underlying idea now exists as one of 5 real,
+// earnable badges (ELITE_REVIEWER) rendered in BadgeStrip below this
+// component - see docs/specs/phase-5-badges.md. All 3 cards here are
 // computed client-side from the full myReviews list - no totalCount on
 // PageInfo, no backend aggregate (docs/specs/phase-4-frontend-mvp.md §7).
 export function StatsRow({ totalReviews, helpfulVotes, businesses }: { totalReviews: number; helpfulVotes: number; businesses: number }) {

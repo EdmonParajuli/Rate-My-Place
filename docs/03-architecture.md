@@ -640,6 +640,41 @@ the Reviewed-tab click-through. Fixed as a follow-up in the same style
 `providers_reviews_replies` already used — see `02-current-state.md`'s fixed-issues
 list and `20260815170000-make-reviews-unique-index-partial.js`.
 
+## Built: Badges (Phase 5, 2026-08-15)
+
+Full design in [specs/phase-5-badges.md](./specs/phase-5-badges.md). Two tables —
+`providers_badges` (a small, migration-seeded catalog, `paranoid: true`) and
+`providers_user_badges` (earned records, `paranoid: false` — nothing is ever
+un-earned, so nothing needs soft-delete). 5 badges shipped
+(`FIRST_REVIEW`/`PROLIFIC_REVIEWER`/`HELPFUL_REVIEWER`/`EXPLORER`/`ELITE_REVIEWER`),
+matching the roadmap's "start with 3-5 real criteria" instruction.
+
+- **Criteria are a small hardcoded map in `badgeService.ts`, not a DB-configurable
+  rules engine** — same "start simple" precedent `businessDashboardMath.ts`'s
+  reputation-score formula already set. `providers_badges` has no `criteria` column
+  to parse; it's purely the display catalog.
+- **Check-on-read, not mutation-hooked** — `BadgeService.getForUser(userId)` (called
+  from the `myBadges` query) pulls the user's current stats via one new
+  `ReviewRepository.getReviewerStats` aggregate query (review count, helpful votes
+  received, distinct places reviewed — the same 3 numbers `StatsRow.tsx` already
+  computes client-side for My Reviews), evaluates all 5 criteria, and inserts a
+  `UserBadge` row for anything newly true. No hooks were added to
+  `createReview`/`deleteReview`/`toggleHelpfulVote` — a badge becomes visible the next
+  time `myBadges` runs, not the instant the triggering write happens.
+- **Badges are permanent once earned** — confirmed directly with the user. A
+  `UserBadge` row is only ever inserted, never removed, even if the underlying stats
+  later drop back below threshold (e.g. every triggering review gets deleted).
+  Verified live: drove a test account to all 5 badges, deleted every one of its
+  reviews, re-queried `myBadges` — all 5 stayed earned.
+- **Frontend surface for this ticket is My Reviews, not Profile** — Profile doesn't
+  exist yet (next ticket). `BadgeStrip.tsx` renders a compact 5-pill earned/locked row
+  directly under `StatsRow` on the My Reviews page, in the slot the Figma "Contribution
+  Level: Elite" stat card was already deliberately dropped from. `Badge.icon` is a
+  lucide-react icon-name string, resolved via a `lib/badgeIcons.ts` lookup — same
+  seed-string-to-component pattern `lib/categoryIcons.ts` already established for
+  `Category.icon`. `Badge.earnedAt` is a `String` epoch-millisecond field like every
+  other date on this schema, rendered with the existing `formatDate.ts` helper.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

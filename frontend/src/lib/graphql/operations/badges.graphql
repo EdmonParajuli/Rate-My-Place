@@ -1,0 +1,13 @@
+query MyBadges {
+  myBadges {
+    data {
+      id
+      key
+      label
+      description
+      icon
+      earned
+      earnedAt
+    }
+  }
+}
