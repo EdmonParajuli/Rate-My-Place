@@ -545,6 +545,57 @@ screen click-tested in-browser as a BUSINESS account, including the reply flow
 updated live after posting a reply) and confirmed the Dashboard nav item is absent
 for a REGULAR account.
 
+## Built: Business console pages (Phase 6, 2026-08-15)
+
+Full design in [specs/phase-6-business-console.md](./specs/phase-6-business-console.md).
+The five remaining nav destinations the Business Dashboard shell already linked to
+(`frontend/src/routes/app/AppLayout.tsx`'s `BUSINESS_NAV_ITEMS`, all placeholder
+"under construction" screens until now): My Listing, Reviews, Analytics, Promotions,
+Settings. **Zero backend changes** — every mutation/query these five pages needed
+already existed from Phase 2/Phase 4/Phase 6's Dashboard work; this was a pure
+frontend build, reconciled per-page against real capability:
+
+- **My Listing** (`frontend/src/routes/app/myListing/`) — fully real. Edit form +
+  live preview card, backed by the existing `updatePlace`/`setPlaceHours` mutations
+  and `getPlaceById`/`categories` queries. Hours use native `<input type="time">`
+  (simpler than the Figma mock's custom 30-minute-increment dropdown, same "HH:mm"
+  wire format `setPlaceHours` already expects). No photo/logo uploader — no media
+  infrastructure exists yet (Phase 8) — the preview shows an explicit "Photo uploads
+  coming soon" placeholder instead.
+- **Reviews** (`frontend/src/routes/app/reviews/`) — fully real. A fuller version of
+  the Dashboard's review list: stats strip (total/average/awaiting-reply), sort
+  (reuses the real `ReviewSortEnum.HELPFUL`/`RECENT`, not a client-side rating sort
+  like the Figma mock), filter, client-side pagination. Same `ReviewCard`/
+  `placeReviews`/`createReviewReply` reuse as the Dashboard.
+- **Analytics** (`frontend/src/routes/app/analytics/`) — mostly real, explicitly
+  split. The rating-trend/review-volume charts and date-range selector reuse the
+  Dashboard's existing 12-month `businessDashboard` arrays (sliced client-side to
+  3/6/12 months — no new backend needed since the data was already computed monthly);
+  the rating-distribution chart reuses `Place.ratingBreakdown`. Keyword mentions and
+  competitor benchmark have **no backend at all** (no NLP, no cross-business
+  comparison query) — shipped as static, explicitly blurred "Sample data · Pro"
+  panels with an "Unlock with Pro" overlay, same honesty precedent as the Dashboard's
+  upsell banner, not presented as real data.
+- **Promotions** (`frontend/src/routes/app/promotions/`) — **not real at all**, by
+  design. No promotions/offers/monetization concept exists anywhere in this product.
+  `frontend/src/lib/promotionsStore.ts` persists to `localStorage` only, scoped per
+  `placeId`, same client-side-only precedent as `frontend/src/lib/drafts.ts` — never
+  touches the API. The page carries an explicit banner saying so.
+- **Settings** (`frontend/src/routes/app/settings/`) — split down the middle. Change
+  Password is a fully real `changePassword` flow (passes the stored refresh token so
+  the current session survives the mutation's revoke-all-other-sessions side effect).
+  Name/email are **read-only** — no `updateUser`/`updateProfile` mutation exists on
+  the backend at all, so the Figma mock's editable profile form was deliberately
+  scoped down rather than built as a lying UI that silently no-ops on save. Notification
+  toggles are a static, explicitly-labeled preview (`NOTIFICATIONS` is still Phase 5,
+  unbuilt).
+
+Verified live end to end as a fresh BUSINESS account seeded with real reviews: edited
+and saved a listing (name/category/hours), replied to a review and watched "Needs
+Response" drop, confirmed Analytics' rating distribution matched the seeded reviews,
+created and deleted a Promotions entry, changed the password and confirmed the
+session survived a hard reload afterward.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

@@ -69,6 +69,11 @@ they describe the full product surface:
   Response Rate), a rating-trend area chart + monthly-volume bar chart, review
   management (respond/replied states), sentiment breakdown (progress bars), contextual
   insight cards, and a paid-plan upsell.
+- **Business console (My Listing, Reviews, Analytics, Promotions, Settings)** — built
+  in Phase 6 alongside the dashboard; see
+  [specs/phase-6-business-console.md](./specs/phase-6-business-console.md) for which
+  parts are real vs. explicitly-labeled illustrative previews (Promotions and parts of
+  Analytics/Settings have no backend concept behind them yet).
 
 ## Feature inventory → backend entities
 

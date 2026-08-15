@@ -1,6 +1,20 @@
 import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { Star, Search, Grid3x3, MessageSquare, LayoutDashboard, MoreHorizontal, LogOut, Menu, X } from "lucide-react"
+import {
+  Star,
+  Search,
+  Grid3x3,
+  MessageSquare,
+  LayoutDashboard,
+  Store,
+  BarChart2,
+  Megaphone,
+  Settings,
+  MoreHorizontal,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { UserAvatar } from "@/components/UserAvatar"
 
@@ -12,8 +26,9 @@ import { UserAvatar } from "@/components/UserAvatar"
 // product, not a dual-role account, and Discover/Categories/My Reviews are
 // reviewer-persona features with no tie to managing a business listing - so
 // BUSINESS accounts get their own nav instead of the reviewer nav with
-// Dashboard appended. See docs/specs/phase-6-business-console-figma-prompt.md
-// for the fuller business-console direction this is the first step of.
+// Dashboard appended. The full 6-item console
+// (docs/specs/phase-6-business-console-figma-prompt.md) now exists: Dashboard,
+// My Listing, Reviews, Analytics, Promotions, Settings.
 // Desktop collapse-to-icon-rail toggle with hover tooltips, mobile hamburger
 // + slide-over (the real Figma source had zero mobile handling), a working
 // Log out (the source had none).
@@ -23,7 +38,14 @@ const REVIEWER_NAV_ITEMS = [
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
 ]
 
-const BUSINESS_NAV_ITEMS = [{ to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: false }]
+const BUSINESS_NAV_ITEMS = [
+  { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: false },
+  { to: "/app/my-listing", label: "My Listing", icon: Store, end: false },
+  { to: "/app/reviews", label: "Reviews", icon: MessageSquare, end: false },
+  { to: "/app/analytics", label: "Analytics", icon: BarChart2, end: false },
+  { to: "/app/promotions", label: "Promotions", icon: Megaphone, end: false },
+  { to: "/app/settings", label: "Settings", icon: Settings, end: false },
+]
 
 // Paths only reachable from the reviewer nav above - a BUSINESS account
 // landing on one directly (a stale bookmark, browser back/forward) gets
@@ -38,6 +60,11 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app/categories": { title: "Categories", subtitle: "Browse places by type" },
   "/app/my-reviews": { title: "My Reviews", subtitle: "All your published reviews" },
   "/app/dashboard": { title: "Business Dashboard", subtitle: "Your listing's reputation and reviews" },
+  "/app/my-listing": { title: "My Listing", subtitle: "Edit how your business appears to visitors" },
+  "/app/reviews": { title: "Reviews", subtitle: "Manage and respond to customer feedback" },
+  "/app/analytics": { title: "Analytics", subtitle: "Reputation trends and review insights" },
+  "/app/promotions": { title: "Promotions", subtitle: "Create offers and boost your listing visibility" },
+  "/app/settings": { title: "Settings", subtitle: "Manage your account and notification preferences" },
 }
 
 function userTypeLabel(userType: string | null): string {

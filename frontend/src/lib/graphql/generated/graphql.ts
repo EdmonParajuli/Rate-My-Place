@@ -631,6 +631,29 @@ export type SignOutMutationVariables = Exact<{
 
 export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?: 'Message', message?: string | null } | null };
 
+export type UpdatePlaceMutationVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+  input?: InputMaybe<InputPlace>;
+}>;
+
+
+export type UpdatePlaceMutation = { __typename?: 'Mutation', updatePlace?: { __typename?: 'PlaceResponse', message?: string | null } | null };
+
+export type SetPlaceHoursMutationVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+  hours: Array<InputPlaceHour> | InputPlaceHour;
+}>;
+
+
+export type SetPlaceHoursMutation = { __typename?: 'Mutation', setPlaceHours?: { __typename?: 'PlaceHoursResponse', message?: string | null } | null };
+
+export type ChangePasswordMutationVariables = Exact<{
+  input: InputChangePassword;
+}>;
+
+
+export type ChangePasswordMutation = { __typename?: 'Mutation', changePassword?: { __typename?: 'Message', message?: string | null } | null };
+
 export type BusinessDashboardQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -947,6 +970,101 @@ export function useSignOutMutation(baseOptions?: ApolloReactHooks.MutationHookOp
       }
 export type SignOutMutationHookResult = ReturnType<typeof useSignOutMutation>;
 export type SignOutMutationResult = ApolloReactCommon.MutationResult<SignOutMutation>;
+export const UpdatePlaceDocument = gql`
+    mutation UpdatePlace($placeId: Int!, $input: InputPlace) {
+  updatePlace(placeId: $placeId, input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useUpdatePlaceMutation__
+ *
+ * To run a mutation, you first call `useUpdatePlaceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdatePlaceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updatePlaceMutation, { data, loading, error }] = useUpdatePlaceMutation({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdatePlaceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdatePlaceMutation, UpdatePlaceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdatePlaceMutation, UpdatePlaceMutationVariables>(UpdatePlaceDocument, options);
+      }
+export type UpdatePlaceMutationHookResult = ReturnType<typeof useUpdatePlaceMutation>;
+export type UpdatePlaceMutationResult = ApolloReactCommon.MutationResult<UpdatePlaceMutation>;
+export const SetPlaceHoursDocument = gql`
+    mutation SetPlaceHours($placeId: Int!, $hours: [InputPlaceHour!]!) {
+  setPlaceHours(placeId: $placeId, hours: $hours) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useSetPlaceHoursMutation__
+ *
+ * To run a mutation, you first call `useSetPlaceHoursMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetPlaceHoursMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setPlaceHoursMutation, { data, loading, error }] = useSetPlaceHoursMutation({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *      hours: // value for 'hours'
+ *   },
+ * });
+ */
+export function useSetPlaceHoursMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SetPlaceHoursMutation, SetPlaceHoursMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SetPlaceHoursMutation, SetPlaceHoursMutationVariables>(SetPlaceHoursDocument, options);
+      }
+export type SetPlaceHoursMutationHookResult = ReturnType<typeof useSetPlaceHoursMutation>;
+export type SetPlaceHoursMutationResult = ApolloReactCommon.MutationResult<SetPlaceHoursMutation>;
+export const ChangePasswordDocument = gql`
+    mutation ChangePassword($input: InputChangePassword!) {
+  changePassword(input: $input) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useChangePasswordMutation__
+ *
+ * To run a mutation, you first call `useChangePasswordMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useChangePasswordMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [changePasswordMutation, { data, loading, error }] = useChangePasswordMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useChangePasswordMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ChangePasswordMutation, ChangePasswordMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ChangePasswordMutation, ChangePasswordMutationVariables>(ChangePasswordDocument, options);
+      }
+export type ChangePasswordMutationHookResult = ReturnType<typeof useChangePasswordMutation>;
+export type ChangePasswordMutationResult = ApolloReactCommon.MutationResult<ChangePasswordMutation>;
 export const BusinessDashboardDocument = gql`
     query BusinessDashboard {
   businessDashboard {
