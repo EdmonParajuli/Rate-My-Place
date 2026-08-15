@@ -7,6 +7,7 @@ import Review from "./reviews";
 import ReviewReply from "./reviewReplies";
 import ReviewVote from "./reviewVotes";
 import PlaceHour from "./placeHours";
+import SavedPlace from "./savedPlaces";
 
 const Model = {
     User,
@@ -17,7 +18,8 @@ const Model = {
     Review,
     ReviewReply,
     ReviewVote,
-    PlaceHour
+    PlaceHour,
+    SavedPlace
 }
 
 export default Model;

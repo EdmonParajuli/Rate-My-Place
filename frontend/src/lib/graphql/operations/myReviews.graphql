@@ -9,8 +9,16 @@ query MyReviews($first: Int, $after: String) {
       place {
         id
         label
+        address
+        priceRange
+        averageRating
+        reviewCount
+        isVerified
+        openNow
+        trendingScore
         category {
           label
+          icon
         }
       }
     }

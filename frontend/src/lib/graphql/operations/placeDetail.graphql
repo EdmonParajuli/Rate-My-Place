@@ -12,6 +12,8 @@ query GetPlaceById($id: Int!) {
       reviewCount
       isVerified
       openNow
+      savedByMe
+      savedListType
       category {
         id
         label

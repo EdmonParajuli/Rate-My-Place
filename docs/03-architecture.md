@@ -596,6 +596,49 @@ Response" drop, confirmed Analytics' rating distribution matched the seeded revi
 created and deleted a Promotions entry, changed the password and confirmed the
 session survived a hard reload afterward.
 
+## Built: Saved Places (Phase 5, 2026-08-15)
+
+Full design in [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md). New
+vertical slice, closely following `ReviewVote`'s existing shape
+(`backend/src/{models,repositories,services,graphql/{typeDefs,resolvers}}/reviewVote*`)
+— a pure toggle join table (`providers_saved_places`, `paranoid: false`, unique index
+on `(user_id, place_id)`), since un-saving is a hard-delete, not a soft one.
+
+- **One list type per save, not independent flags** — `SavedListTypeEnum` (`SAVED` /
+  `WANT_TO_VISIT` / `FAVORITE`) is a single enum column, same shape
+  `Place.priceRange`/`PriceRangeEnum` already uses. A saved place is always in
+  exactly one of these three buckets; re-categorizing (`setSavedPlaceListType`)
+  moves it, it never duplicates.
+- **"Reviewed" is not a 4th list type and never touches `providers_saved_places` at
+  all** — it's the *existing* `myReviews` query, reused. Submitting a review makes a
+  place appear under Saved → Reviewed immediately with no save action; deleting the
+  review removes it immediately; nothing needs to stay in sync because nothing is
+  stored for it. This was a deliberate revision mid-implementation (the original plan
+  had Reviewed as a computed intersection of saved-and-reviewed places) — the
+  auto-derived version is both simpler (zero new backend for that tab) and matches
+  the intended product behavior better (you shouldn't have to save a place you
+  already reviewed just to see it in one place).
+- **`Place.savedByMe`/`savedListType` field resolvers** mirror
+  `Review.helpfulByMe`/`ReviewVoteService.hasVoted` exactly — same
+  `(parent, args, context) => ...` shape, `false`/`null` for an unauthenticated
+  caller.
+- **Frontend**: a `SaveHeartButton` (`frontend/src/components/SaveHeartButton.tsx`,
+  shared like `UserAvatar.tsx`) holds its own local toggle state seeded from the
+  mutation's flat response (`{savedByMe, listType}`) — no refetch, no cache surgery,
+  same "toggle mutation drives local state directly" shape `ReviewCard`'s helpful-vote
+  button already uses. The Saved screen's cards reuse Discover's `PlaceCard`
+  component directly (structurally compatible place-shaped objects across
+  `ListPlaces`/`SavedPlaces`/`MyReviews` — every field GraphQL codegen emits is
+  optional, so a query selecting a subset of fields is still assignable) with a thin
+  meta-row wrapper (`SavedPlaceCard.tsx`) for the badge/date/remove/re-categorize
+  affordances layered on top.
+
+**Found while verifying**: a real, pre-existing bug in the `providers_reviews` unique
+index (not filtered to non-deleted rows, so deleting a review blocks ever writing a
+new one for that same place) — see `02-current-state.md`'s "Still open" list. Not
+fixed here; unrelated to Saved Places, just tripped over during the Reviewed-tab
+click-through.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

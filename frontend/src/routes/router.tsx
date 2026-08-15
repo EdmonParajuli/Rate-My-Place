@@ -8,6 +8,7 @@ import { DiscoverPage } from "./app/discover/DiscoverPage"
 import { CategoriesPage } from "./app/categories/CategoriesPage"
 import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
 import { MyReviewsPage } from "./app/myReviews/MyReviewsPage"
+import { SavedPage } from "./app/saved/SavedPage"
 import { PlaceDetailPage } from "./app/placeDetail/PlaceDetailPage"
 import { BusinessDashboardPage } from "./app/dashboard/BusinessDashboardPage"
 import { MyListingPage } from "./app/myListing/MyListingPage"
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DiscoverPage /> },
           { path: "categories", element: <CategoriesPage /> },
           { path: "categories/:categoryId", element: <CategoryDetailPage /> },
+          { path: "saved", element: <SavedPage /> },
           { path: "my-reviews", element: <MyReviewsPage /> },
           { path: "places/:placeId", element: <PlaceDetailPage /> },
           { path: "dashboard", element: <BusinessDashboardPage /> },

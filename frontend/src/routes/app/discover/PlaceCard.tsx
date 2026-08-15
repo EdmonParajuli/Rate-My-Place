@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import { BadgeCheck, Flame, MapPin, Star } from "lucide-react"
+import { SaveHeartButton } from "@/components/SaveHeartButton"
 import { CATEGORY_STYLES } from "@/lib/categoryStyles"
 import type { DiscoverPriceRange } from "./filterTypes"
 import type { DiscoverPlace } from "./types"
@@ -26,6 +27,11 @@ export function PlaceCard({ place, compact = false }: { place: DiscoverPlace; co
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative bg-slate-100" style={{ height: compact ? 120 : 160 }}>
         <PlaceImagePlaceholder categoryLabel={place.category?.label} />
+        {place.id !== null && place.id !== undefined && (
+          <div className="absolute top-2.5 right-2.5">
+            <SaveHeartButton placeId={place.id} initialSaved={place.savedByMe} size="sm" />
+          </div>
+        )}
         {place.isVerified ? (
           <div className="absolute top-2.5 left-2.5 flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-[10px] font-bold text-white">
             <BadgeCheck className="h-3 w-3" />

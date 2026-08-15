@@ -214,10 +214,12 @@ export type Mutation = {
   refreshAccessToken?: Maybe<RefreshTokenResponse>;
   revokeSession?: Maybe<Message>;
   setPlaceHours?: Maybe<PlaceHoursResponse>;
+  setSavedPlaceListType?: Maybe<SavedPlaceResponse>;
   signOut?: Maybe<Message>;
   signUp?: Maybe<SignUpResponse>;
   signUpBusiness?: Maybe<SignUpBusinessResponse>;
   toggleHelpfulVote?: Maybe<ToggleHelpfulVoteResponse>;
+  toggleSavePlace?: Maybe<ToggleSavePlaceResponse>;
   updatePlace?: Maybe<PlaceResponse>;
   updateReview?: Maybe<ReviewResponse>;
   updateReviewReply?: Maybe<ReviewReplyResponse>;
@@ -292,6 +294,12 @@ export type MutationSetPlaceHoursArgs = {
 };
 
 
+export type MutationSetSavedPlaceListTypeArgs = {
+  listType: SavedListTypeEnum;
+  placeId: Scalars['Int']['input'];
+};
+
+
 export type MutationSignOutArgs = {
   input?: InputMaybe<InputRefreshToken>;
 };
@@ -309,6 +317,11 @@ export type MutationSignUpBusinessArgs = {
 
 export type MutationToggleHelpfulVoteArgs = {
   reviewId: Scalars['Int']['input'];
+};
+
+
+export type MutationToggleSavePlaceArgs = {
+  placeId: Scalars['Int']['input'];
 };
 
 
@@ -356,6 +369,8 @@ export type Place = {
   priceRange?: Maybe<PriceRangeEnum>;
   ratingBreakdown?: Maybe<Array<Maybe<RatingBreakdownEntry>>>;
   reviewCount?: Maybe<Scalars['Int']['output']>;
+  savedByMe?: Maybe<Scalars['Boolean']['output']>;
+  savedListType?: Maybe<SavedListTypeEnum>;
   trendingScore?: Maybe<Scalars['Float']['output']>;
   website?: Maybe<Scalars['String']['output']>;
 };
@@ -431,6 +446,7 @@ export type Query = {
   myReviews?: Maybe<ReviewListResponse>;
   placeReviews?: Maybe<ReviewListResponse>;
   platformStats?: Maybe<PlatformStatsResponse>;
+  savedPlaces?: Maybe<SavedPlaceListResponse>;
 };
 
 
@@ -464,6 +480,11 @@ export type QueryPlaceReviewsArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
   placeId: Scalars['Int']['input'];
   sort?: InputMaybe<ReviewSortEnum>;
+};
+
+
+export type QuerySavedPlacesArgs = {
+  filter?: InputMaybe<SavedPlaceFilterEnum>;
 };
 
 export type RatingBreakdownEntry = {
@@ -525,6 +546,37 @@ export type ReviewSortEnum =
   | 'HELPFUL'
   | 'RECENT';
 
+export type SavedListTypeEnum =
+  | 'FAVORITE'
+  | 'SAVED'
+  | 'WANT_TO_VISIT';
+
+export type SavedPlace = {
+  __typename?: 'SavedPlace';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['Int']['output']>;
+  listType?: Maybe<SavedListTypeEnum>;
+  place?: Maybe<Place>;
+  placeId?: Maybe<Scalars['Int']['output']>;
+};
+
+export type SavedPlaceFilterEnum =
+  | 'ALL'
+  | 'FAVORITE'
+  | 'WANT_TO_VISIT';
+
+export type SavedPlaceListResponse = {
+  __typename?: 'SavedPlaceListResponse';
+  data?: Maybe<Array<Maybe<SavedPlace>>>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
+export type SavedPlaceResponse = {
+  __typename?: 'SavedPlaceResponse';
+  data?: Maybe<SavedPlace>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
 export type SentimentBreakdown = {
   __typename?: 'SentimentBreakdown';
   negativePercent?: Maybe<Scalars['Float']['output']>;
@@ -565,6 +617,13 @@ export type ToggleHelpfulVoteResponse = {
   helpfulByMe?: Maybe<Scalars['Boolean']['output']>;
   helpfulCount?: Maybe<Scalars['Int']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+};
+
+export type ToggleSavePlaceResponse = {
+  __typename?: 'ToggleSavePlaceResponse';
+  listType?: Maybe<SavedListTypeEnum>;
+  message?: Maybe<Scalars['String']['output']>;
+  savedByMe?: Maybe<Scalars['Boolean']['output']>;
 };
 
 export type User = {
@@ -677,14 +736,14 @@ export type MyReviewsQueryVariables = Exact<{
 }>;
 
 
-export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, category?: { __typename?: 'Category', label?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', label?: string | null, icon?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
 
 export type GetPlaceByIdQueryVariables = Exact<{
   id: Scalars['Int']['input'];
 }>;
 
 
-export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
+export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
 
 export type PlaceReviewsQueryVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -743,12 +802,34 @@ export type ListPlacesQueryVariables = Exact<{
 }>;
 
 
-export type ListPlacesQuery = { __typename?: 'Query', listPlaces?: { __typename?: 'PlaceListResponse', message?: string | null, data?: Array<{ __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, trendingScore?: number | null, latitude?: number | null, longitude?: number | null, distance?: number | null, openNow?: boolean | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } | null } | null };
+export type ListPlacesQuery = { __typename?: 'Query', listPlaces?: { __typename?: 'PlaceListResponse', message?: string | null, data?: Array<{ __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, trendingScore?: number | null, latitude?: number | null, longitude?: number | null, distance?: number | null, openNow?: boolean | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } | null } | null };
 
 export type PlatformStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type PlatformStatsQuery = { __typename?: 'Query', platformStats?: { __typename?: 'PlatformStatsResponse', data?: { __typename?: 'PlatformStats', totalPlaces?: number | null, totalReviews?: number | null } | null } | null };
+
+export type SavedPlacesQueryVariables = Exact<{
+  filter?: InputMaybe<SavedPlaceFilterEnum>;
+}>;
+
+
+export type SavedPlacesQuery = { __typename?: 'Query', savedPlaces?: { __typename?: 'SavedPlaceListResponse', data?: Array<{ __typename?: 'SavedPlace', id?: number | null, placeId?: number | null, listType?: SavedListTypeEnum | null, createdAt?: string | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null } | null> | null } | null };
+
+export type ToggleSavePlaceMutationVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+}>;
+
+
+export type ToggleSavePlaceMutation = { __typename?: 'Mutation', toggleSavePlace?: { __typename?: 'ToggleSavePlaceResponse', message?: string | null, savedByMe?: boolean | null, listType?: SavedListTypeEnum | null } | null };
+
+export type SetSavedPlaceListTypeMutationVariables = Exact<{
+  placeId: Scalars['Int']['input'];
+  listType: SavedListTypeEnum;
+}>;
+
+
+export type SetSavedPlaceListTypeMutation = { __typename?: 'Mutation', setSavedPlaceListType?: { __typename?: 'SavedPlaceResponse', message?: string | null, data?: { __typename?: 'SavedPlace', id?: number | null, placeId?: number | null, listType?: SavedListTypeEnum | null, createdAt?: string | null } | null } | null };
 
 export type RefreshAccessTokenMutationVariables = Exact<{
   input: InputRefreshAccessToken;
@@ -1246,8 +1327,16 @@ export const MyReviewsDocument = gql`
       place {
         id
         label
+        address
+        priceRange
+        averageRating
+        reviewCount
+        isVerified
+        openNow
+        trendingScore
         category {
           label
+          icon
         }
       }
     }
@@ -1311,6 +1400,8 @@ export const GetPlaceByIdDocument = gql`
       reviewCount
       isVerified
       openNow
+      savedByMe
+      savedListType
       category {
         id
         label
@@ -1623,6 +1714,8 @@ export const ListPlacesDocument = gql`
       longitude
       distance
       openNow
+      savedByMe
+      savedListType
       category {
         id
         label
@@ -1725,6 +1818,142 @@ export type PlatformStatsQueryHookResult = ReturnType<typeof usePlatformStatsQue
 export type PlatformStatsLazyQueryHookResult = ReturnType<typeof usePlatformStatsLazyQuery>;
 export type PlatformStatsSuspenseQueryHookResult = ReturnType<typeof usePlatformStatsSuspenseQuery>;
 export type PlatformStatsQueryResult = ApolloReactCommon.QueryResult<PlatformStatsQuery, PlatformStatsQueryVariables>;
+export const SavedPlacesDocument = gql`
+    query SavedPlaces($filter: SavedPlaceFilterEnum) {
+  savedPlaces(filter: $filter) {
+    data {
+      id
+      placeId
+      listType
+      createdAt
+      place {
+        id
+        label
+        address
+        priceRange
+        averageRating
+        reviewCount
+        isVerified
+        openNow
+        trendingScore
+        category {
+          id
+          label
+          icon
+        }
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useSavedPlacesQuery__
+ *
+ * To run a query within a React component, call `useSavedPlacesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useSavedPlacesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useSavedPlacesQuery({
+ *   variables: {
+ *      filter: // value for 'filter'
+ *   },
+ * });
+ */
+export function useSavedPlacesQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<SavedPlacesQuery, SavedPlacesQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<SavedPlacesQuery, SavedPlacesQueryVariables>(SavedPlacesDocument, options as any);
+      }
+export function useSavedPlacesLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<SavedPlacesQuery, SavedPlacesQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<SavedPlacesQuery, SavedPlacesQueryVariables>(SavedPlacesDocument, options as any);
+        }
+// @ts-ignore
+export function useSavedPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<SavedPlacesQuery, SavedPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<SavedPlacesQuery, SavedPlacesQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useSavedPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SavedPlacesQuery, SavedPlacesQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<SavedPlacesQuery | undefined, SavedPlacesQueryVariables>;
+export function useSavedPlacesSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<SavedPlacesQuery, SavedPlacesQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<SavedPlacesQuery, SavedPlacesQueryVariables>(SavedPlacesDocument, options as any);
+        }
+export type SavedPlacesQueryHookResult = ReturnType<typeof useSavedPlacesQuery>;
+export type SavedPlacesLazyQueryHookResult = ReturnType<typeof useSavedPlacesLazyQuery>;
+export type SavedPlacesSuspenseQueryHookResult = ReturnType<typeof useSavedPlacesSuspenseQuery>;
+export type SavedPlacesQueryResult = ApolloReactCommon.QueryResult<SavedPlacesQuery, SavedPlacesQueryVariables>;
+export const ToggleSavePlaceDocument = gql`
+    mutation ToggleSavePlace($placeId: Int!) {
+  toggleSavePlace(placeId: $placeId) {
+    message
+    savedByMe
+    listType
+  }
+}
+    `;
+
+/**
+ * __useToggleSavePlaceMutation__
+ *
+ * To run a mutation, you first call `useToggleSavePlaceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useToggleSavePlaceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [toggleSavePlaceMutation, { data, loading, error }] = useToggleSavePlaceMutation({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *   },
+ * });
+ */
+export function useToggleSavePlaceMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<ToggleSavePlaceMutation, ToggleSavePlaceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<ToggleSavePlaceMutation, ToggleSavePlaceMutationVariables>(ToggleSavePlaceDocument, options);
+      }
+export type ToggleSavePlaceMutationHookResult = ReturnType<typeof useToggleSavePlaceMutation>;
+export type ToggleSavePlaceMutationResult = ApolloReactCommon.MutationResult<ToggleSavePlaceMutation>;
+export const SetSavedPlaceListTypeDocument = gql`
+    mutation SetSavedPlaceListType($placeId: Int!, $listType: SavedListTypeEnum!) {
+  setSavedPlaceListType(placeId: $placeId, listType: $listType) {
+    message
+    data {
+      id
+      placeId
+      listType
+      createdAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useSetSavedPlaceListTypeMutation__
+ *
+ * To run a mutation, you first call `useSetSavedPlaceListTypeMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useSetSavedPlaceListTypeMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [setSavedPlaceListTypeMutation, { data, loading, error }] = useSetSavedPlaceListTypeMutation({
+ *   variables: {
+ *      placeId: // value for 'placeId'
+ *      listType: // value for 'listType'
+ *   },
+ * });
+ */
+export function useSetSavedPlaceListTypeMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<SetSavedPlaceListTypeMutation, SetSavedPlaceListTypeMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<SetSavedPlaceListTypeMutation, SetSavedPlaceListTypeMutationVariables>(SetSavedPlaceListTypeDocument, options);
+      }
+export type SetSavedPlaceListTypeMutationHookResult = ReturnType<typeof useSetSavedPlaceListTypeMutation>;
+export type SetSavedPlaceListTypeMutationResult = ApolloReactCommon.MutationResult<SetSavedPlaceListTypeMutation>;
 export const RefreshAccessTokenDocument = gql`
     mutation RefreshAccessToken($input: InputRefreshAccessToken!) {
   refreshAccessToken(input: $input) {

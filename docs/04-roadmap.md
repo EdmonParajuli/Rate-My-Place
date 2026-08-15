@@ -111,7 +111,14 @@ Stand up the frontend against Phases 1–3's API. See
 
 ## Phase 5 — Personalization
 
-- [ ] `SAVED_PLACES` table + resolver + Saved screen (four tabs)
+Four largely independent features, being built one at a time rather than planned all
+at once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md) for
+the first.
+
+- [x] `SAVED_PLACES` table + resolver + Saved screen (four tabs) — see the spec above
+      for the list-type taxonomy decision (SAVED/WANT_TO_VISIT/FAVORITE, single type
+      per save) and why "Reviewed" is a live-derived view over `myReviews`, never a
+      stored category.
 - [ ] `NOTIFICATIONS` table + resolver + Notifications screen; decide the triggering events (new reply to your review, business responds, etc.)
 - [ ] Profile screen (stats, activity chart, badge grid)
 - [ ] `BADGES`/`USER_BADGES` — start with 3-5 real criteria, not the full grid from the design
