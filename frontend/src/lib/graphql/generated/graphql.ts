@@ -32,6 +32,30 @@ export type AuthMeResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type BusinessDashboardResponse = {
+  __typename?: 'BusinessDashboardResponse';
+  data?: Maybe<BusinessDashboardStats>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
+export type BusinessDashboardStats = {
+  __typename?: 'BusinessDashboardStats';
+  averageRating?: Maybe<Scalars['Float']['output']>;
+  averageRatingTrend?: Maybe<Scalars['Float']['output']>;
+  insights?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  placeId?: Maybe<Scalars['Int']['output']>;
+  placeName?: Maybe<Scalars['String']['output']>;
+  ratingTrend?: Maybe<Array<Maybe<MonthlyRatingPoint>>>;
+  reputationScore?: Maybe<Scalars['Int']['output']>;
+  reputationScoreTrend?: Maybe<Scalars['Int']['output']>;
+  responseRate?: Maybe<Scalars['Float']['output']>;
+  responseRateTrend?: Maybe<Scalars['Float']['output']>;
+  reviewCount?: Maybe<Scalars['Int']['output']>;
+  reviewCountTrend?: Maybe<Scalars['Int']['output']>;
+  reviewVolume?: Maybe<Array<Maybe<MonthlyVolumePoint>>>;
+  sentiment?: Maybe<SentimentBreakdown>;
+};
+
 export type Category = {
   __typename?: 'Category';
   avgRating?: Maybe<Scalars['Float']['output']>;
@@ -161,6 +185,18 @@ export type LoginToken = {
 export type Message = {
   __typename?: 'Message';
   message?: Maybe<Scalars['String']['output']>;
+};
+
+export type MonthlyRatingPoint = {
+  __typename?: 'MonthlyRatingPoint';
+  averageRating?: Maybe<Scalars['Float']['output']>;
+  month?: Maybe<Scalars['String']['output']>;
+};
+
+export type MonthlyVolumePoint = {
+  __typename?: 'MonthlyVolumePoint';
+  month?: Maybe<Scalars['String']['output']>;
+  reviewCount?: Maybe<Scalars['Int']['output']>;
 };
 
 export type Mutation = {
@@ -387,6 +423,7 @@ export type Query = {
   _service: _Service;
   activeSessions?: Maybe<ActiveSessionsResponse>;
   authMeUser?: Maybe<AuthMeUserResponse>;
+  businessDashboard?: Maybe<BusinessDashboardResponse>;
   categories?: Maybe<CategoryListResponse>;
   category?: Maybe<CategoryResponse>;
   getPlaceById?: Maybe<PlaceResponse>;
@@ -488,6 +525,13 @@ export type ReviewSortEnum =
   | 'HELPFUL'
   | 'RECENT';
 
+export type SentimentBreakdown = {
+  __typename?: 'SentimentBreakdown';
+  negativePercent?: Maybe<Scalars['Float']['output']>;
+  neutralPercent?: Maybe<Scalars['Float']['output']>;
+  positivePercent?: Maybe<Scalars['Float']['output']>;
+};
+
 export type Session = {
   __typename?: 'Session';
   createdAt?: Maybe<Scalars['String']['output']>;
@@ -586,6 +630,11 @@ export type SignOutMutationVariables = Exact<{
 
 
 export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?: 'Message', message?: string | null } | null };
+
+export type BusinessDashboardQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type BusinessDashboardQuery = { __typename?: 'Query', businessDashboard?: { __typename?: 'BusinessDashboardResponse', data?: { __typename?: 'BusinessDashboardStats', placeId?: number | null, placeName?: string | null, reputationScore?: number | null, reputationScoreTrend?: number | null, averageRating?: number | null, averageRatingTrend?: number | null, reviewCount?: number | null, reviewCountTrend?: number | null, responseRate?: number | null, responseRateTrend?: number | null, insights?: Array<string | null> | null, ratingTrend?: Array<{ __typename?: 'MonthlyRatingPoint', month?: string | null, averageRating?: number | null } | null> | null, reviewVolume?: Array<{ __typename?: 'MonthlyVolumePoint', month?: string | null, reviewCount?: number | null } | null> | null, sentiment?: { __typename?: 'SentimentBreakdown', positivePercent?: number | null, neutralPercent?: number | null, negativePercent?: number | null } | null } | null } | null };
 
 export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -898,6 +947,74 @@ export function useSignOutMutation(baseOptions?: ApolloReactHooks.MutationHookOp
       }
 export type SignOutMutationHookResult = ReturnType<typeof useSignOutMutation>;
 export type SignOutMutationResult = ApolloReactCommon.MutationResult<SignOutMutation>;
+export const BusinessDashboardDocument = gql`
+    query BusinessDashboard {
+  businessDashboard {
+    data {
+      placeId
+      placeName
+      reputationScore
+      reputationScoreTrend
+      averageRating
+      averageRatingTrend
+      reviewCount
+      reviewCountTrend
+      responseRate
+      responseRateTrend
+      ratingTrend {
+        month
+        averageRating
+      }
+      reviewVolume {
+        month
+        reviewCount
+      }
+      sentiment {
+        positivePercent
+        neutralPercent
+        negativePercent
+      }
+      insights
+    }
+  }
+}
+    `;
+
+/**
+ * __useBusinessDashboardQuery__
+ *
+ * To run a query within a React component, call `useBusinessDashboardQuery` and pass it any options that fit your needs.
+ * When your component renders, `useBusinessDashboardQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useBusinessDashboardQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useBusinessDashboardQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<BusinessDashboardQuery, BusinessDashboardQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<BusinessDashboardQuery, BusinessDashboardQueryVariables>(BusinessDashboardDocument, options as any);
+      }
+export function useBusinessDashboardLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<BusinessDashboardQuery, BusinessDashboardQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<BusinessDashboardQuery, BusinessDashboardQueryVariables>(BusinessDashboardDocument, options as any);
+        }
+// @ts-ignore
+export function useBusinessDashboardSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<BusinessDashboardQuery, BusinessDashboardQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<BusinessDashboardQuery, BusinessDashboardQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useBusinessDashboardSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<BusinessDashboardQuery, BusinessDashboardQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<BusinessDashboardQuery | undefined, BusinessDashboardQueryVariables>;
+export function useBusinessDashboardSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<BusinessDashboardQuery, BusinessDashboardQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<BusinessDashboardQuery, BusinessDashboardQueryVariables>(BusinessDashboardDocument, options as any);
+        }
+export type BusinessDashboardQueryHookResult = ReturnType<typeof useBusinessDashboardQuery>;
+export type BusinessDashboardLazyQueryHookResult = ReturnType<typeof useBusinessDashboardLazyQuery>;
+export type BusinessDashboardSuspenseQueryHookResult = ReturnType<typeof useBusinessDashboardSuspenseQuery>;
+export type BusinessDashboardQueryResult = ApolloReactCommon.QueryResult<BusinessDashboardQuery, BusinessDashboardQueryVariables>;
 export const CategoriesDocument = gql`
     query Categories {
   categories {

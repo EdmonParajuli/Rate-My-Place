@@ -8,3 +8,4 @@ export * from "./reviewReplyTypedefs";
 export * from "./reviewVoteTypedefs";
 export * from "./commonTypedefs";
 export * from "./platformStatsTypedefs";
+export * from "./businessDashboardTypedefs";

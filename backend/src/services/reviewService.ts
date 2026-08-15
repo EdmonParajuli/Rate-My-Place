@@ -178,6 +178,18 @@ export class ReviewService {
     return this.repository.count({});
   }
 
+  // Thin passthrough - BusinessDashboardService aggregates these lightweight
+  // rows in memory (monthly buckets, sentiment, recency, reputation score)
+  // rather than issuing a separate SQL aggregate query per metric. Fine at
+  // MVP review volume, same "start simple" call as My Reviews' client-side
+  // stats.
+  async getForDashboard(placeId: number | string): Promise<{ id: number; rating: number; createdAt: Date }[]> {
+    return this.repository.findAll({
+      where: { placeId },
+      attributes: ['id', 'rating', 'createdAt'],
+    }) as unknown as Promise<{ id: number; rating: number; createdAt: Date }[]>;
+  }
+
   // Pure write - ReviewVoteService (which owns the vote data) computes the
   // count and calls this inside its own transaction, same shape as
   // PlaceService.updateRatingStats.

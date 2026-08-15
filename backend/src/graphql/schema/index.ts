@@ -1,6 +1,6 @@
 import { buildSubgraphSchema } from '@apollo/subgraph';
-import { authResolvers, placeResolver, sessionResolver, categoryResolver, reviewResolver, reviewReplyResolver, reviewVoteResolver, platformStatsResolver } from '../resolvers';
-import { authTypedefs, placeDefs, sessionTypedefs, categoryTypedefs, reviewTypedefs, reviewReplyTypedefs, reviewVoteTypedefs, commonTypedefs, platformStatsTypedefs } from '../typeDefs';
+import { authResolvers, placeResolver, sessionResolver, categoryResolver, reviewResolver, reviewReplyResolver, reviewVoteResolver, platformStatsResolver, businessDashboardResolver } from '../resolvers';
+import { authTypedefs, placeDefs, sessionTypedefs, categoryTypedefs, reviewTypedefs, reviewReplyTypedefs, reviewVoteTypedefs, commonTypedefs, platformStatsTypedefs, businessDashboardTypedefs } from '../typeDefs';
 export const schema = buildSubgraphSchema([
     {typeDefs: authTypedefs, resolvers: authResolvers},
     {typeDefs: placeDefs, resolvers: placeResolver},
@@ -10,5 +10,6 @@ export const schema = buildSubgraphSchema([
     {typeDefs: reviewReplyTypedefs, resolvers: reviewReplyResolver},
     {typeDefs: reviewVoteTypedefs, resolvers: reviewVoteResolver},
     {typeDefs: commonTypedefs, resolvers: {}},
-    {typeDefs: platformStatsTypedefs, resolvers: platformStatsResolver}
+    {typeDefs: platformStatsTypedefs, resolvers: platformStatsResolver},
+    {typeDefs: businessDashboardTypedefs, resolvers: businessDashboardResolver}
 ])

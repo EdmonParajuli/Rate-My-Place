@@ -118,13 +118,24 @@ Stand up the frontend against Phases 1–3's API. See
 - [ ] Profile screen (stats, activity chart, badge grid)
 - [ ] `BADGES`/`USER_BADGES` — start with 3-5 real criteria, not the full grid from the design
 
-## Phase 6 — Business dashboard
+## Phase 6 — Business dashboard — Done
 
-- [ ] Aggregation queries: reputation score formula (define it explicitly — this is a
-      product decision, not just an engineering one), avg rating trend, review volume
-      by month, response rate, sentiment breakdown
-- [ ] Review management UI (respond/replied states) — reuses `ReviewReply` from Phase 2
-- [ ] Business dashboard frontend screen (KPI cards + charts)
+Implemented and manually verified end to end (auth-gated `businessDashboard` query
+exercised directly via GraphQL, then the full screen click-tested as a BUSINESS
+account, including the reply flow) — see
+[specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md) for the
+full design: the reputation-score formula, the sentiment heuristic, and the
+reconciliation against the real authenticated shell (the Figma Make output invented
+its own sidebar/branding; the real screen reuses the existing shell instead).
+
+- [x] Aggregation queries: reputation score formula (weighted composite — rating,
+      volume, response rate, recency; see the spec above for the resolved formula and
+      weights), avg rating trend, review volume by month, response rate, sentiment
+      breakdown (rating-bucket heuristic, not real NLP)
+- [x] Review management UI (respond/replied states) — reuses `ReviewReply` from Phase 2
+      and Phase 4 Place Detail's `ReviewCard` component directly, no new UI built
+- [x] Business dashboard frontend screen (KPI cards + charts), gated to BUSINESS
+      accounts as a new "Dashboard" nav item
 
 ## Phase 7 — Settings & account lifecycle
 
@@ -184,9 +195,9 @@ decided by accident:
 2. **Geo/"nearby"**: real geospatial queries (PostGIS) vs. a simpler bounding-box/city
    field for the MVP. The Figma design shows a city picker ("Brooklyn, NY"), which
    suggests city-level filtering may be enough for launch.
-3. **Reputation score formula**: what actually goes into it (rating, volume, recency,
-   response rate)? This is a product/business decision that the dashboard's
-   credibility depends on.
+3. ~~**Reputation score formula**: what actually goes into it (rating, volume,
+   recency, response rate)?~~ **Resolved in Phase 6** — weighted composite of all
+   four, see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md).
 4. **Data export & delete-account scope**: full GDPR-style compliance, or a lighter
    "reasonable effort" version for an MVP? Affects the data model (need to track what
    must be exportable) and how soft-delete/anonymization interact.
