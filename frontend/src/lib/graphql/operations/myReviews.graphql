@@ -1,0 +1,22 @@
+query MyReviews($first: Int, $after: String) {
+  myReviews(first: $first, after: $after) {
+    data {
+      id
+      review
+      rating
+      createdAt
+      helpfulCount
+      place {
+        id
+        label
+        category {
+          label
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

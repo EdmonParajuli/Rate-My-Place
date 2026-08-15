@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { Star, Search, Grid3x3, MessageSquare, MoreHorizontal, LogOut, Menu, X } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
+import { UserAvatar } from "@/components/UserAvatar"
 
 // Variant A from prototype/authenticated-shell (docs/specs/phase-4-frontend-mvp.md
 // §3) - w-60 sidebar holding only the 3 Phase-4 nav items
@@ -23,23 +24,6 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
 
 function userTypeLabel(userType: string | null): string {
   return userType === "BUSINESS" ? "Business owner" : "Reviewer"
-}
-
-function UserAvatar({ name, profilePicture, className }: { name: string; profilePicture: string | null; className: string }) {
-  if (profilePicture) {
-    return <img src={profilePicture} alt="" className={`${className} object-cover`} />
-  }
-  const initials = name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
-  return (
-    <span className={`${className} flex items-center justify-center bg-primary font-bold text-primary-foreground`}>
-      {initials || "?"}
-    </span>
-  )
 }
 
 export function AppLayout() {
@@ -98,7 +82,7 @@ export function AppLayout() {
           >
             Rate My Place
           </span>
-          <button className="ml-auto text-slate-400 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Close menu">
+          <button className="ml-auto cursor-pointer text-slate-400 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Close menu">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -134,7 +118,7 @@ export function AppLayout() {
           <button
             type="button"
             onClick={() => setDropdownOpen((v) => !v)}
-            className={`group relative flex w-full items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-slate-50 ${
+            className={`group relative flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2 py-2 hover:bg-slate-50 ${
               collapsed ? "md:justify-center md:px-0" : ""
             }`}
           >
@@ -159,7 +143,7 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-destructive hover:bg-red-50"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-destructive hover:bg-red-50"
               >
                 <LogOut className="h-4 w-4" />
                 Log out
@@ -172,11 +156,11 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-border bg-white/95 px-4 py-3.5 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <button className="text-slate-500 md:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+            <button className="cursor-pointer text-slate-500 md:hidden" onClick={() => setMobileOpen(true)} aria-label="Open menu">
               <Menu className="h-5 w-5" />
             </button>
             <button
-              className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 md:flex"
+              className="hidden h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 md:flex"
               onClick={() => setCollapsed((v) => !v)}
               title="Toggle sidebar"
             >

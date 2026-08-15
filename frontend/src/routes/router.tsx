@@ -7,8 +7,8 @@ import { AppLayout } from "./app/AppLayout"
 import { DiscoverPage } from "./app/discover/DiscoverPage"
 import { CategoriesPage } from "./app/categories/CategoriesPage"
 import { CategoryDetailPage } from "./app/categories/CategoryDetailPage"
-import { MyReviewsPage } from "./app/MyReviewsPage"
-import { PlaceDetailPage } from "./app/PlaceDetailPage"
+import { MyReviewsPage } from "./app/myReviews/MyReviewsPage"
+import { PlaceDetailPage } from "./app/placeDetail/PlaceDetailPage"
 
 export const router = createBrowserRouter([
   {

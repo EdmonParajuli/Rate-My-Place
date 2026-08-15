@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Star } from "lucide-react"
 import { TestimonialCarousel } from "./TestimonialCarousel"
 import { SignInForm } from "./SignInForm"
@@ -9,8 +10,14 @@ type Tab = "signin" | "signup"
 // Variant A from prototype/auth-screens (docs/specs/phase-4-frontend-mvp.md
 // §2) - split-screen, dark hero-gradient left panel with a rotating
 // testimonial carousel, Sign In/Sign Up tabs on the right.
+//
+// `?tab=signup` and `?type=regular|business` let the marketing landing
+// page's CTAs (dual-path chooser, "Get Started") land here pre-set instead
+// of always defaulting to Sign In.
 export function LoginPage() {
-  const [tab, setTab] = useState<Tab>("signin")
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<Tab>(searchParams.get("tab") === "signup" ? "signup" : "signin")
+  const initialUserType = searchParams.get("type") === "business" ? "BUSINESS" : searchParams.get("type") === "regular" ? "REGULAR" : undefined
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
@@ -41,7 +48,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setTab("signin")}
-              className={`flex-1 rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 cursor-pointer rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
                 tab === "signin" ? "bg-white text-foreground shadow-sm" : "text-slate-500"
               }`}
             >
@@ -50,7 +57,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setTab("signup")}
-              className={`flex-1 rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 cursor-pointer rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
                 tab === "signup" ? "bg-white text-foreground shadow-sm" : "text-slate-500"
               }`}
             >
@@ -58,7 +65,7 @@ export function LoginPage() {
             </button>
           </div>
 
-          {tab === "signin" ? <SignInForm /> : <SignUpForm />}
+          {tab === "signin" ? <SignInForm /> : <SignUpForm initialUserType={initialUserType} />}
         </div>
       </div>
     </div>

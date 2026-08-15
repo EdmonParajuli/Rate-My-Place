@@ -94,7 +94,7 @@ Full detail: [research/design-tokens.md](../../.scratch/phase-4-frontend-mvp/res
 Ticket: [01-design-tokens.md](../../.scratch/phase-4-frontend-mvp/tickets/01-design-tokens.md).
 Prototype: `prototype/design-tokens-reference` (commit `fac9edb`).
 
-### 1. Marketing / landing page (logged-out)
+### 1. Marketing / landing page (logged-out) ✅ Built (2026-08-14)
 
 **Chosen: Variant B.** Dark-gradient hero (`slate-900`→`blue-950`→`slate-900` +
 radial blooms) with the stats strip embedded directly in it (5M+ Active Users /
@@ -110,6 +110,39 @@ don't query anything themselves.
 
 Ticket: [02-marketing-landing-page.md](../../.scratch/phase-4-frontend-mvp/tickets/02-marketing-landing-page.md).
 Prototype: `prototype/marketing-landing-page` (commit `1d65535`).
+
+**Real implementation** (`frontend/src/routes/marketing/`): `HomePage.tsx`
+(hero + dual-path chooser + condensed features + testimonials + CTA banner) +
+`MarketingNav.tsx` + `MarketingFooter.tsx` + `TrendingPlacesStrip.tsx`.
+
+- **"Trending near you" is real data, not mock cards**: `listPlaces(sort:
+  TRENDING, first: 8)`, the same query/sort Discover's "Trending" section
+  uses, rendered as small horizontal-scroll cards with the established
+  category-tinted placeholder (`CATEGORY_STYLES`) in place of a photo. Cards
+  link to `/app/places/:id`; an unauthenticated click naturally redirects
+  through `PrivateRoute` to `/login` — exactly the intended behavior for a
+  logged-out landing page, no special-casing needed.
+- **The hero search bar has no live query/autocomplete** (matches the
+  ticket's own scope), but submitting it isn't a dead end either — it
+  navigates to `/app`, which `PrivateRoute` sends to `/login` when logged
+  out or straight into Discover when already authenticated.
+- **Dual-path chooser and "Get Started"/"Create your free account" CTAs
+  needed a real destination**, not just a link to a generic Sign In tab —
+  added `?tab=signup` (and `?type=regular|business`) query-param support to
+  `LoginPage`/`SignUpForm` (`frontend/src/routes/auth/`) so these CTAs land
+  directly on the Sign Up tab with the right account-type card pre-selected,
+  rather than dumping the visitor on Sign In and making them find Sign Up
+  themselves.
+- **Testimonial copy deduplicated**: the exact same three testimonials
+  (author/quote/avatar) were hardcoded independently in both this screen's
+  prototype and the Auth screens' `TestimonialCarousel` prototype. Extracted
+  to a shared `frontend/src/lib/testimonials.ts` so the two screens can't
+  silently drift into showing different quotes for the same three people.
+
+Verified live: `/`, `/login?tab=signup`, and `/login?tab=signup&type=business`
+all resolve (HTTP 200, no dev-server errors); `listPlaces(sort: TRENDING,
+first: 8)` confirmed against the real backend to return the exact fields the
+strip renders.
 
 ### 2. Auth screens (signup / login) ✅ Built (2026-08-13)
 
@@ -306,7 +339,7 @@ the real `businessCount`/`avgRating`/`icon` per category), and both
 `listPlaces(filter: {categoryId}, sort: ...)` queries the detail sub-screen
 needs - all confirmed correct with real data before wiring into the UI.
 
-### 6. Place detail + write/edit review
+### 6. Place detail + write/edit review ✅ Built (2026-08-13)
 
 **Chosen: Variant A.** A real, complete `PlaceDetailScreen` turned up in the Figma
 source mid-effort (didn't exist when this ticket was first checked). Faithful
@@ -328,7 +361,40 @@ GraphQL: `getPlaceById`, `placeReviews(placeId, first, after, sort)` (gaining a
 Ticket: [06-place-detail-review.md](../../.scratch/phase-4-frontend-mvp/tickets/06-place-detail-review.md).
 Prototype: `prototype/place-detail-review` (commit `0e7746c`).
 
-### 7. My Reviews screen
+**Real implementation** (`frontend/src/routes/app/placeDetail/`): `PlaceDetailPage.tsx`
+(header, hours accordion, CTA column, sidebar) + `RatingOverview.tsx` +
+`WriteReviewForm.tsx` (shared for create/edit) + `ReviewCard.tsx` (helpful vote,
+edit/delete, nested reply display, inline owner-reply composer).
+
+- **Viewer/owner mode is derived, never a toggle**: `isOwner = user?.id ===
+  place.owner?.id`, exactly the critical correction this ticket flagged - no
+  toggle UI shipped.
+- **Another real, trivial gap found and fixed**: `Review` had no `createdAt`
+  field exposed in GraphQL at all (only `ReviewReply.createdAt` had been added
+  in an earlier pass) - review dates couldn't be shown even though `RECENT`
+  sort already worked server-side. Added, same "default field resolution off
+  the model instance" pattern as everywhere else this convention applies.
+- **`UserAvatar` extracted to `frontend/src/components/`** - the
+  initials-fallback avatar (no photo upload flow exists) was inline in
+  `AppLayout.tsx`; needed again here (reviewer avatars, owner info sidebar,
+  reply attribution), so it's now a shared component. `AppLayout.tsx` updated
+  to use it too, rather than carrying two copies.
+- **"Manage Listing"/"Report listing"** — matches the ticket's own scope
+  decisions: the former renders per the design but isn't wired to a real
+  destination (Business Dashboard is Phase 6, doesn't exist yet, not even as a
+  stub); the latter is omitted entirely (no moderation pipeline exists
+  anywhere in this project, so not even a client-only stand-in makes sense).
+- **"Similar Places Nearby"** uses `listPlaces(filter: {categoryId})`,
+  filtering out the current place and capping at 3, exactly as scoped.
+
+Verified live end-to-end against the real backend with a fresh business
+account + place created for the purpose: `getPlaceById` (including
+`ratingBreakdown`/`hours`/`owner`), `placeReviews` with real `createdAt`,
+`createReview`/`updateReview`/`deleteReview`, `toggleHelpfulVote`, and
+`createReviewReply` (as the place's real owner) - all confirmed correct with
+real data before wiring into the UI.
+
+### 7. My Reviews screen ✅ Built (2026-08-14)
 
 **Chosen: Variant B.** Resolves this ticket's own open question (no draft concept
 exists in the backend): the Published/Drafts tabs from Figma are kept, but Drafts
@@ -343,6 +409,35 @@ client-only action (copy link / native share sheet) — no API involved.
 
 Ticket: [08-my-reviews-screen.md](../../.scratch/phase-4-frontend-mvp/tickets/08-my-reviews-screen.md).
 Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
+
+**Real implementation** (`frontend/src/routes/app/myReviews/`): `MyReviewsPage.tsx`
+(stats row, most-helpful banner, Published/Drafts tab state, empty states) +
+`StatsRow.tsx` + `MostHelpfulBanner.tsx` + `ReviewListItem.tsx` (inline
+star+textarea edit, share via `navigator.share`/clipboard fallback, delete) +
+`DraftCard.tsx`.
+
+- **No backend aggregate exists for the stats row or "most helpful"** — both are
+  a plain client-side reduction over the full `myReviews(first: 50)` list (no
+  `totalCount` on `PageInfo` either), matching the ticket's own scope note.
+- **Drafts needed a real creation entry point** the ticket's own prototype never
+  specified (its demo only showed a pre-seeded draft's display/delete, no way to
+  create one) — added a "Save as Draft" button to Place Detail's
+  `WriteReviewForm` (only shown when writing a new review, not editing an
+  existing one), writing to the same `frontend/src/lib/drafts.ts` localStorage
+  module (`saveDraft`/`updateDraft`/`deleteDraft`/`getDrafts`) that this screen's
+  Drafts tab reads from — a real end-to-end flow, not a display-only dead end.
+- **Share** uses `navigator.share` when available, falling back to
+  `navigator.clipboard.writeText` with a 2-second "copied" checkmark state —
+  client-only, no API involved, matching the ticket's scope.
+
+Verified live end-to-end against the real backend with a fresh regular-user +
+business + place created for the purpose: `createReview`, `myReviews` (confirmed
+shape matches the query exactly, including `place.category.label`),
+`updateReview`, `deleteReview` (confirmed the review disappears from a
+follow-up `myReviews` call) — all confirmed correct with real data before
+wiring into the UI. Drafts CRUD is `localStorage`-only by design, exercised via
+the Place Detail "Save as Draft" entry point and this screen's Continue/Delete
+actions.
 
 ## Suggested build sequencing
 
@@ -370,20 +465,23 @@ Prototype: `prototype/my-reviews-screen` (commit `b9f319b`).
    real API - see the screen section above for the full list of prototype-vs-
    real-API reconciliations (single-select filters, real geolocation for
    "Nearby," no fake photos/location pill).
-5. **Place Detail** — reachable from Discover, closes the core "find → review"
-   loop. Needs `ReviewReply.createdAt` + `placeReviews`'s new `sort` arg +
-   `Place.ratingBreakdown` (backend, independent small additions — can land
-   before or in parallel with the screen's own frontend work).
+5. **Place Detail** ✅ **Done** (2026-08-13) — reachable from Discover, closes
+   the core "find → review" loop. `ReviewReply.createdAt`/`placeReviews`'s
+   `sort` arg/`Place.ratingBreakdown` were already built in an earlier pass;
+   `Review.createdAt` (a real gap only discovered while building this screen)
+   got added too.
 6. **Categories screen** ✅ **Done** (2026-08-13, built before Place Detail -
    this suggested order wasn't a hard dependency) — needed
    `Category.coverImageUrl`/`businessCount`/`avgRating` + the new
    `platformStats` query, both already built in an earlier pass.
-7. **My Reviews screen** — no new backend scope; the "Drafts" tab is entirely
-   frontend (`localStorage`), safe to build any time after the shell exists.
-8. **Marketing landing page** — logged-out, doesn't depend on or block anything
-   else; sequenced last only because it's the least critical-path for the core
-   authenticated loop, not because of any technical dependency. Reasonable to
-   pull earlier if a public-facing entry point matters sooner (e.g. for a demo).
+7. **My Reviews screen** ✅ **Done** (2026-08-14) — no new backend scope; the
+   "Drafts" tab is entirely frontend (`localStorage`), safe to build any time
+   after the shell exists.
+8. **Marketing landing page** ✅ **Done** (2026-08-14) — logged-out, doesn't
+   depend on or block anything else; built last since it's the least
+   critical-path for the core authenticated loop, not because of any
+   technical dependency. Its "Trending near you" strip reuses `listPlaces`
+   already exposed for Discover — no new backend scope.
 
 ## Non-goals for this phase
 

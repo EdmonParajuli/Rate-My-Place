@@ -23,10 +23,10 @@ type UserTypeChoice = "REGULAR" | "BUSINESS"
 // submitted together via signUpBusiness - not two chained calls - so a
 // BUSINESS-type user is never left without a place if they drop off between
 // steps. See docs/03-architecture.md's signUpBusiness section.
-export function SignUpForm() {
+export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoice }) {
   const { signUp, signUpBusiness } = useAuth()
   const navigate = useNavigate()
-  const [userType, setUserType] = useState<UserTypeChoice>("REGULAR")
+  const [userType, setUserType] = useState<UserTypeChoice>(initialUserType ?? "REGULAR")
   const [step, setStep] = useState<1 | 2>(1)
   const [accountValues, setAccountValues] = useState<SignUpAccountValues | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -81,7 +81,7 @@ export function SignUpForm() {
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
+          className="mb-4 flex cursor-pointer items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
         >
           ← Back
         </button>
@@ -275,7 +275,7 @@ function TypeCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-[14px] border-2 p-3.5 text-left transition-all hover:-translate-y-0.5 ${
+      className={`relative cursor-pointer rounded-[14px] border-2 p-3.5 text-left transition-all hover:-translate-y-0.5 ${
         active ? activeClasses : "border-slate-200 bg-white hover:border-slate-300"
       }`}
     >

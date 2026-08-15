@@ -89,7 +89,7 @@ export function MapView({
           <button
             type="button"
             onClick={onBackToList}
-            className="absolute top-4 right-4 z-[1000] flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-lg transition-all hover:text-primary hover:shadow-xl"
+            className="absolute top-4 right-4 z-[1000] flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-lg transition-all hover:text-primary hover:shadow-xl"
           >
             <List className="h-4 w-4" /> Back to list
           </button>
