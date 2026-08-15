@@ -16,6 +16,7 @@ import { BusinessReviewsPage } from "./app/reviews/BusinessReviewsPage"
 import { AnalyticsPage } from "./app/analytics/AnalyticsPage"
 import { PromotionsPage } from "./app/promotions/PromotionsPage"
 import { SettingsPage } from "./app/settings/SettingsPage"
+import { NotificationsPage } from "./app/notifications/NotificationsPage"
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
           { path: "analytics", element: <AnalyticsPage /> },
           { path: "promotions", element: <PromotionsPage /> },
           { path: "settings", element: <SettingsPage /> },
+          { path: "notifications", element: <NotificationsPage /> },
         ],
       },
     ],

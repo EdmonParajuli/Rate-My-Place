@@ -11,6 +11,7 @@ import {
   BarChart2,
   Megaphone,
   Settings,
+  Bell,
   MoreHorizontal,
   LogOut,
   Menu,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { UserAvatar } from "@/components/UserAvatar"
+import { useUnreadNotificationCountQuery } from "@/lib/graphql/generated/graphql"
 
 // Variant A from prototype/authenticated-shell (docs/specs/phase-4-frontend-mvp.md
 // §3) - w-60 sidebar. Originally identical for REGULAR and BUSINESS users (a
@@ -38,6 +40,7 @@ const REVIEWER_NAV_ITEMS = [
   { to: "/app/categories", label: "Categories", icon: Grid3x3, end: false },
   { to: "/app/saved", label: "Saved", icon: Heart, end: false },
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
+  { to: "/app/notifications", label: "Notifications", icon: Bell, end: false },
 ]
 
 const BUSINESS_NAV_ITEMS = [
@@ -47,6 +50,7 @@ const BUSINESS_NAV_ITEMS = [
   { to: "/app/analytics", label: "Analytics", icon: BarChart2, end: false },
   { to: "/app/promotions", label: "Promotions", icon: Megaphone, end: false },
   { to: "/app/settings", label: "Settings", icon: Settings, end: false },
+  { to: "/app/notifications", label: "Notifications", icon: Bell, end: false },
 ]
 
 // Paths only reachable from the reviewer nav above - a BUSINESS account
@@ -68,6 +72,7 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app/analytics": { title: "Analytics", subtitle: "Reputation trends and review insights" },
   "/app/promotions": { title: "Promotions", subtitle: "Create offers and boost your listing visibility" },
   "/app/settings": { title: "Settings", subtitle: "Manage your account and notification preferences" },
+  "/app/notifications": { title: "Notifications", subtitle: "Replies, new reviews, and badges you've earned" },
 }
 
 function userTypeLabel(userType: string | null): string {
@@ -84,6 +89,12 @@ export function AppLayout() {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => setMobileOpen(false), [location.pathname])
+
+  // Single poll for the whole shell (not per-nav-item) - no websockets/
+  // subscriptions exist in this codebase, so a 30s poll is the "start
+  // simple" approximation of live unread-count updates.
+  const { data: unreadData } = useUnreadNotificationCountQuery({ pollInterval: 30000 })
+  const unreadCount = unreadData?.unreadNotificationCount ?? 0
 
   const isBusiness = user?.userType === "BUSINESS"
 
@@ -164,7 +175,16 @@ export function AppLayout() {
               }
             >
               <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-              <span className={collapsed ? "md:hidden" : ""}>{label}</span>
+              <span className={`flex-1 ${collapsed ? "md:hidden" : ""}`}>{label}</span>
+              {to === "/app/notifications" && unreadCount > 0 && (
+                <span
+                  className={`flex h-4.5 min-w-4.5 flex-shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white ${
+                    collapsed ? "md:absolute md:top-1 md:right-1" : ""
+                  }`}
+                >
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
               {collapsed && (
                 <span className="pointer-events-none absolute left-full z-50 ml-2 hidden -translate-y-1/2 rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100 md:top-1/2 md:group-hover:block">
                   {label}

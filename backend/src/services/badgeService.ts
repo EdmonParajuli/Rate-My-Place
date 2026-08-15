@@ -1,8 +1,10 @@
 import { BadgeRepository } from '../repositories/badgeRepository';
 import { UserBadgeRepository } from '../repositories/userBadgeRepository';
 import { ReviewService } from './reviewService';
+import { NotificationService } from './notificationService';
 import { BadgeInterface } from '../interfaces/badgeInterface';
 import { BadgeKeyEnum } from '../enums/badgeKeyEnum';
+import { NotificationTypeEnum } from '../enums/notificationTypeEnum';
 
 interface ReviewerStats {
   reviewCount: number;
@@ -26,11 +28,13 @@ export class BadgeService {
   private repository: BadgeRepository;
   private userBadgeRepository: UserBadgeRepository;
   private reviewService: ReviewService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.repository = new BadgeRepository();
     this.userBadgeRepository = new UserBadgeRepository();
     this.reviewService = new ReviewService();
+    this.notificationService = new NotificationService();
   }
 
   // Check-on-read, not hooked into createReview/deleteReview/toggleHelpfulVote -
@@ -57,6 +61,19 @@ export class BadgeService {
         newlyEarned.map((badge) => this.userBadgeRepository.create({ userId, badgeId: Number(badge.id), earnedAt }))
       );
       created.forEach((userBadge) => earnedByBadgeId.set(String(userBadge.badgeId), userBadge));
+
+      // Best-effort side effect, same reasoning as the review/reply hooks -
+      // never blocks or fails the badge award itself.
+      await Promise.all(
+        newlyEarned.map((badge) =>
+          this.notificationService.create({
+            userId,
+            type: NotificationTypeEnum.BADGE_EARNED,
+            message: `You earned the ${badge.label} badge!`,
+            placeId: null,
+          })
+        )
+      );
     }
 
     return catalog.map((badge) => {

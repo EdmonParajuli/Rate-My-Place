@@ -7,6 +7,8 @@ import { throwError } from '../helpers/errorHelper';
 import { assertOwnership } from '../utils/auth';
 import { CursorBasedPagination, SortEnum } from '../packages/cursors/service';
 import { ReviewSortEnum } from '../enums/reviewSortEnum';
+import { NotificationService } from './notificationService';
+import { NotificationTypeEnum } from '../enums/notificationTypeEnum';
 
 const NEWEST_FIRST = { order: 'createdAt', sort: SortEnum.Desc };
 
@@ -25,11 +27,13 @@ export class ReviewService {
   private repository: ReviewRepository;
   private placeService: PlaceService;
   private pagination: CursorBasedPagination;
+  private notificationService: NotificationService;
 
   constructor() {
     this.repository = new ReviewRepository();
     this.placeService = new PlaceService();
     this.pagination = new CursorBasedPagination();
+    this.notificationService = new NotificationService();
   }
 
   private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
@@ -76,8 +80,8 @@ export class ReviewService {
       );
     }
 
-    return this.withTransaction(async (transaction) => {
-      const created = await this.repository.create(
+    const created = await this.withTransaction(async (transaction) => {
+      const createdReview = await this.repository.create(
         { placeId, reviewerId, review, rating },
         { transaction }
       );
@@ -87,8 +91,21 @@ export class ReviewService {
       // correct by construction, cheap enough given the index on place_id.
       await this.recomputePlaceStats(placeId, transaction);
 
-      return created;
+      return createdReview;
     });
+
+    // Best-effort side effect, deliberately outside the transaction above -
+    // a notification failing to write should never roll back the review
+    // itself. place is already fetched (the self-review check needs it), no
+    // extra query.
+    await this.notificationService.create({
+      userId: place.ownerId,
+      type: NotificationTypeEnum.NEW_REVIEW,
+      message: `New review on ${place.label}`,
+      placeId: Number(place.id),
+    });
+
+    return created;
   }
 
   async updateReview({
