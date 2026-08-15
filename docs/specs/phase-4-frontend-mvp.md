@@ -31,7 +31,7 @@ Business Dashboard, Media) is later phases, see Non-goals.
 | My Reviews stats | Computed **client-side** from the full `myReviews` list (no `totalCount` on `PageInfo`, no backend aggregate) — fine at MVP review volume. |
 | "Elite" level / badges | Dropped entirely — Phase 5 badges concept, no backend support exists. |
 | Owner replies | **Included** in Phase 4 place detail, not deferred to Phase 6 — `createReviewReply` already exists, low incremental cost. |
-| Business owners' shell | **Identical** authenticated shell to regular users in Phase 4 — no dashboard placeholder to build and discard (Business Dashboard is Phase 6). |
+| Business owners' shell | **Identical** authenticated shell to regular users in Phase 4 — no dashboard placeholder to build and discard (Business Dashboard is Phase 6). **Reversed in Phase 6** once the Dashboard existed: business accounts get their own nav (Dashboard-first), not the reviewer nav with Dashboard appended — see [phase-6-business-dashboard.md](./phase-6-business-dashboard.md). |
 | Password reset UI | **Deferred to Phase 7** — Phase 4 auth is signup + login only, even though the backend already supports forgot/reset end-to-end. |
 | Discover's "Recommended" strip | **Dropped** — no recommendation engine exists. Trending + New Nearby (both real `listPlaces` sorts) ship instead. |
 | Marketing/landing page | **Included** in Phase 4 scope — a fully-designed Figma screen, and [05-frontend-plan.md](../05-frontend-plan.md)'s structure sketch already assumed a marketing route exists. |

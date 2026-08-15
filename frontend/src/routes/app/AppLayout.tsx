@@ -1,25 +1,43 @@
 import { useEffect, useRef, useState } from "react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { Star, Search, Grid3x3, MessageSquare, MoreHorizontal, LogOut, Menu, X } from "lucide-react"
+import { Star, Search, Grid3x3, MessageSquare, LayoutDashboard, MoreHorizontal, LogOut, Menu, X } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { UserAvatar } from "@/components/UserAvatar"
 
 // Variant A from prototype/authenticated-shell (docs/specs/phase-4-frontend-mvp.md
-// §3) - w-60 sidebar holding only the 3 Phase-4 nav items
-// (Saved/Notifications/Profile/Settings are fully absent, not locked),
-// identical for REGULAR and BUSINESS users. Desktop collapse-to-icon-rail
-// toggle with hover tooltips, mobile hamburger + slide-over (the real Figma
-// source had zero mobile handling), a working Log out (the source had none).
-const NAV_ITEMS = [
+// §3) - w-60 sidebar. Originally identical for REGULAR and BUSINESS users (a
+// Phase 4 stopgap: "no dashboard placeholder to build and discard" since
+// Business Dashboard didn't exist yet). Phase 6 revisits this now that it
+// does: REGULAR and BUSINESS are mutually-exclusive account types in this
+// product, not a dual-role account, and Discover/Categories/My Reviews are
+// reviewer-persona features with no tie to managing a business listing - so
+// BUSINESS accounts get their own nav instead of the reviewer nav with
+// Dashboard appended. See docs/specs/phase-6-business-console-figma-prompt.md
+// for the fuller business-console direction this is the first step of.
+// Desktop collapse-to-icon-rail toggle with hover tooltips, mobile hamburger
+// + slide-over (the real Figma source had zero mobile handling), a working
+// Log out (the source had none).
+const REVIEWER_NAV_ITEMS = [
   { to: "/app", label: "Discover", icon: Search, end: true },
   { to: "/app/categories", label: "Categories", icon: Grid3x3, end: false },
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
 ]
 
+const BUSINESS_NAV_ITEMS = [{ to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: false }]
+
+// Paths only reachable from the reviewer nav above - a BUSINESS account
+// landing on one directly (a stale bookmark, browser back/forward) gets
+// bounced to their own console rather than a page with no nav item
+// highlighted. /app/places/:id is deliberately NOT included here - the
+// Dashboard's "View Listing" link depends on BUSINESS accounts keeping
+// access to it.
+const REVIEWER_ONLY_PATH_PREFIXES = ["/app/categories", "/app/my-reviews"]
+
 const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app": { title: "Discover Places", subtitle: "Find and explore places near you" },
   "/app/categories": { title: "Categories", subtitle: "Browse places by type" },
   "/app/my-reviews": { title: "My Reviews", subtitle: "All your published reviews" },
+  "/app/dashboard": { title: "Business Dashboard", subtitle: "Your listing's reputation and reviews" },
 }
 
 function userTypeLabel(userType: string | null): string {
@@ -37,6 +55,17 @@ export function AppLayout() {
 
   useEffect(() => setMobileOpen(false), [location.pathname])
 
+  const isBusiness = user?.userType === "BUSINESS"
+
+  useEffect(() => {
+    if (!isBusiness) return
+    const onReviewerOnlyPath =
+      location.pathname === "/app" || REVIEWER_ONLY_PATH_PREFIXES.some((prefix) => location.pathname.startsWith(prefix))
+    if (onReviewerOnlyPath) {
+      navigate("/app/dashboard", { replace: true })
+    }
+  }, [isBusiness, location.pathname, navigate])
+
   useEffect(() => {
     if (!dropdownOpen) return
     const onClickOutside = (e: MouseEvent) => {
@@ -48,8 +77,9 @@ export function AppLayout() {
     return () => document.removeEventListener("click", onClickOutside)
   }, [dropdownOpen])
 
-  const meta = SCREEN_META[location.pathname] ?? SCREEN_META["/app"]
+  const meta = SCREEN_META[location.pathname] ?? (isBusiness ? SCREEN_META["/app/dashboard"] : SCREEN_META["/app"])
   const displayName = user?.fullName ?? "Account"
+  const navItems = isBusiness ? BUSINESS_NAV_ITEMS : REVIEWER_NAV_ITEMS
 
   const handleLogout = async () => {
     await logout()
@@ -88,7 +118,7 @@ export function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}

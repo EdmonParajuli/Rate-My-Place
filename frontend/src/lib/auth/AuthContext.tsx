@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   useLoginMutation,
   useSignUpMutation,
@@ -24,7 +24,10 @@ type AuthUser = {
 type AuthContextValue = {
   user: AuthUser | null
   initializing: boolean
-  login: (input: InputAuthLogin) => Promise<void>
+  // Returns the just-logged-in user (not void) so callers can branch the
+  // post-login redirect on userType without waiting on the next render for
+  // context's `user` state to catch up.
+  login: (input: InputAuthLogin) => Promise<AuthUser | null>
   signUp: (input: InputAuthSignUp) => Promise<void>
   signUpBusiness: (input: InputSignUpBusiness) => Promise<void>
   logout: () => Promise<void>
@@ -69,7 +72,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // doesn't force a re-login, per docs/05-frontend-plan.md's MVP auth
   // decision. No stored token, or a rejected one (expired/revoked), just
   // means starting logged out.
+  //
+  // hasStartedRefresh guards against React 18/19 StrictMode's dev-only
+  // double-invocation of mount effects: without it, two concurrent renewal
+  // requests fire with the *same* stored token (the first hasn't rotated it
+  // yet when the second starts) - the server treats the second as reusing an
+  // already-rotated/revoked token, and if that failing request resolves
+  // after the successful one, its clearSession() wins the race and silently
+  // logs a just-restored session back out. The ref is set synchronously, so
+  // it's already true by the time StrictMode's second invocation runs -
+  // Effects that must run their async work exactly once per real mount, even
+  // under StrictMode, need this pattern; a plain empty-deps array isn't
+  // enough on its own.
+  const hasStartedRefresh = useRef(false)
+
   useEffect(() => {
+    if (hasStartedRefresh.current) {
+      return
+    }
+    hasStartedRefresh.current = true
+
     const storedRefreshToken = getStoredRefreshToken()
     if (!storedRefreshToken) {
       setInitializing(false)
@@ -100,7 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: InputAuthLogin) => {
       const result = await loginMutation({ variables: { input } })
       const data = result.data?.login?.data
-      applySession(data?.token, data?.user as AuthUser | null | undefined)
+      const sessionUser = (data?.user as AuthUser | null | undefined) ?? null
+      applySession(data?.token, sessionUser)
+      return sessionUser
     },
     [loginMutation, applySession]
   )

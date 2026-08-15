@@ -22,8 +22,8 @@ export function SignInForm() {
   const onSubmit = async (values: SignInValues) => {
     setServerError(null)
     try {
-      await login(values)
-      navigate("/app")
+      const loggedInUser = await login(values)
+      navigate(loggedInUser?.userType === "BUSINESS" ? "/app/dashboard" : "/app")
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Sign in failed")
     }
