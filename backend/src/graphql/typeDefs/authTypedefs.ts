@@ -14,7 +14,12 @@ export const authTypedefs: DocumentNode = gql`
         phoneNumber: String
         fullName: String
         userType: UserTypeEnum
-        profilePicture: String 
+        profilePicture: String
+        # Epoch-millisecond String, same convention as every other date on this
+        # schema (Review.createdAt, Badge.earnedAt, ...) - resolves via default
+        # field resolution off the model instance returned by authMeUser/login/
+        # signUp, no resolver change needed.
+        createdAt: String
     }
 
     enum UserTypeEnum {

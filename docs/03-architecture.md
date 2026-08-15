@@ -713,6 +713,52 @@ table), index on `(user_id, read)`.
 - **Scope trim from the Figma source**: 6 filter tabs → 2 (All/Unread) — with only 3
   real event types, most of the original 6 would be empty categories.
 
+## Built: Profile (Phase 5, 2026-08-15)
+
+Full design in [specs/phase-5-profile.md](./specs/phase-5-profile.md). Last of Phase
+5's four features — closes out the phase. No new tables; one additive schema field
+(`User.createdAt`) plus a client-side-only screen assembled almost entirely from
+existing queries and components.
+
+- **`User.createdAt: String` added to `authTypedefs.ts`** for the header's "member
+  since" — resolves via GraphQL's default field resolution off the model instance
+  `authMeUser` already returns (`UserRepository().findByPk`), no resolver change
+  needed, same mechanism `Review.createdAt`/`ReviewReply.createdAt` already rely on.
+  `frontend/src/lib/graphql/operations/auth.graphql`'s `AuthMeUser` query picked up
+  the one extra field; nothing else changed about auth.
+- **Entirely read-only, entirely client-computed** — no new backend aggregate was
+  added for stats or the activity chart. Stats row reuses `myReviews/StatsRow.tsx`
+  as-is (same 3 numbers already computed client-side for My Reviews). The 6-month
+  activity chart reuses the business dashboard's `ReviewVolumeChart.tsx` component
+  directly (it's pure presentational — `{month, reviewCount}[]` in, bars out — no
+  business-specific coupling), fed by a new small client-side bucketing helper
+  (`profile/activityMonths.ts`) that zero-fills the last 6 calendar months from the
+  reviewer's own `myReviews` rows, mirroring `businessDashboardMath.ts`'s
+  `computeMonthlyBuckets` shape but computed in the browser rather than the server —
+  there's no reviewer-side equivalent of the dashboard's `reviewVolumeByMonth` query,
+  and this didn't need one.
+- **Badge grid is a new, bigger sibling of `BadgeStrip.tsx`, not a replacement** —
+  `BadgeGrid.tsx` reuses the same `myBadges` query and `lib/badgeIcons.ts` lookup, but
+  always shows each badge's description text (vs. `BadgeStrip`'s hover-tooltip) since
+  "what's left to earn" is the point of a dedicated grid. `BadgeStrip` stays on My
+  Reviews unchanged — the two surfaces intentionally coexist.
+- **Recent-reviews preview is a new lightweight card, not `ReviewListItem` reused** —
+  `ReviewListItem`'s inline edit/delete controls belong to My Reviews' management
+  surface; Profile's preview (top 3, `RecentReviewsPreview.tsx`) is read-only with a
+  "View all" link to `/app/my-reviews`, reusing `CATEGORY_STYLES` for the same
+  place-icon treatment.
+- **Cover banner is decorative, not data** — a static brand-gradient bar; no cover
+  photo concept exists in this product (Phase 8 Media is where any real photo upload
+  eventually lands). Not labeled as an "illustrative preview" the way Phase 6's
+  Promotions page was, since it isn't standing in for an unbuilt product feature —
+  it's just chrome.
+- **`REGULAR`-only, new `/app/profile` nav item on `REVIEWER_NAV_ITEMS`** — badges,
+  "businesses reviewed," and review activity are all reviewer-persona concepts with
+  no `BUSINESS`-account equivalent (that's what Business Dashboard is for), so Profile
+  follows the same persona split Phase 6 established: added to
+  `REVIEWER_ONLY_PATH_PREFIXES` so a `BUSINESS` account landing on `/app/profile`
+  directly gets bounced to `/app/dashboard` like every other reviewer-only route.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

@@ -31,7 +31,8 @@ across every feature.
 
 **Backend entities with a full vertical slice (model → repository → service →
 resolver → typeDefs):**
-- **Users** — signup, login, `authMeUser`, password hashing, JWT issuance,
+- **Users** — signup, login, `authMeUser` (now including `createdAt`, added for the
+  Profile screen's "member since"), password hashing, JWT issuance,
   `changePassword`/`forgotPassword`/`confirmForgotPassword`. Still no
   `updateUser`/`updateProfile` mutation — name/email are permanently fixed once an
   account is created (confirmed while building Phase 6's Settings page, which shows
@@ -77,7 +78,19 @@ resolver → typeDefs):**
 - **Place Detail** — full write/edit/reply review flow, helpful votes, rating
   breakdown, business hours.
 - **My Reviews** — Published/Drafts tabs (drafts are a deliberate client-side-only,
-  `localStorage` feature — no backend draft concept exists), real edit/delete.
+  `localStorage` feature — no backend draft concept exists), real edit/delete, a
+  compact 5-badge earned/locked strip (`BadgeStrip.tsx`).
+- **Saved** — four tabs (All Saved/Want to Visit/Reviewed/Favorites), save/heart
+  toggle from Place Detail and Discover cards.
+- **Notifications** — All/Unread tabs, mark-read/mark-all-read/delete, nav pill
+  polling every 30s on both reviewer and business shells.
+- **Profile** (`REGULAR` accounts only, new `/app/profile` nav item) — cover +
+  avatar + "member since", stats row and 6-month activity chart both computed
+  client-side from `myReviews` (no new backend aggregate, same "start simple"
+  precedent as My Reviews' `StatsRow`), full badge grid (`myBadges`, earned vs.
+  locked with descriptions), recent-reviews preview. Entirely read-only, same reason
+  as Settings' Account tab: no `updateUser` mutation exists yet. See
+  [specs/phase-5-profile.md](./specs/phase-5-profile.md).
 - **Business console** (`BUSINESS` accounts get their own nav, not the reviewer
   nav — see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md)) —
   Dashboard (KPI cards, trend charts, sentiment, review management), My Listing (edit
