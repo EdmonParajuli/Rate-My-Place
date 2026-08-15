@@ -66,7 +66,7 @@ export function HomePage() {
                 className="w-full bg-transparent text-sm text-slate-900 outline-none"
               />
             </div>
-            <button type="submit" className="rounded-xl bg-primary px-6 py-3 font-medium text-white hover:bg-blue-700">
+            <button type="submit" className="cursor-pointer rounded-xl bg-primary px-6 py-3 font-medium text-white hover:bg-blue-700">
               Search
             </button>
           </form>

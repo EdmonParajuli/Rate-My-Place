@@ -81,7 +81,7 @@ export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoi
         <button
           type="button"
           onClick={() => setStep(1)}
-          className="mb-4 flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
+          className="mb-4 flex cursor-pointer items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
         >
           ← Back
         </button>
@@ -275,7 +275,7 @@ function TypeCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative rounded-[14px] border-2 p-3.5 text-left transition-all hover:-translate-y-0.5 ${
+      className={`relative cursor-pointer rounded-[14px] border-2 p-3.5 text-left transition-all hover:-translate-y-0.5 ${
         active ? activeClasses : "border-slate-200 bg-white hover:border-slate-300"
       }`}
     >

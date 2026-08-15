@@ -66,13 +66,13 @@ export function ReviewListItem({
               </div>
             </div>
             <div className="flex flex-shrink-0 items-center gap-1">
-              <button onClick={onStartEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-blue-50 hover:text-primary">
+              <button onClick={onStartEdit} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-blue-50 hover:text-primary">
                 <Edit3 className="h-3.5 w-3.5" />
               </button>
-              <button onClick={handleShare} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600">
+              <button onClick={handleShare} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600">
                 {copied ? <CheckIcon className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500">
+              <button onClick={onDelete} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </div>
@@ -82,7 +82,7 @@ export function ReviewListItem({
             <div className="mt-3 border-t border-slate-100 pt-3">
               <div className="mb-2 flex gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" onClick={() => setEditRating(n)}>
+                  <button key={n} type="button" onClick={() => setEditRating(n)} className="cursor-pointer">
                     <Star className={`h-5 w-5 cursor-pointer ${n <= editRating ? "fill-accent text-accent" : "fill-slate-200 text-slate-200"}`} />
                   </button>
                 ))}
@@ -97,11 +97,11 @@ export function ReviewListItem({
                 <button
                   onClick={() => onSaveEdit(editRating, editText)}
                   disabled={!editRating || !editText.trim() || submitting}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700 disabled:opacity-50"
+                  className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {submitting ? "Saving..." : "Save changes"}
                 </button>
-                <button onClick={onCancelEdit} className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50">
+                <button onClick={onCancelEdit} className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50">
                   Cancel
                 </button>
               </div>

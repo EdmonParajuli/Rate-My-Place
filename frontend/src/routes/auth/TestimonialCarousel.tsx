@@ -61,7 +61,7 @@ export function TestimonialCarousel() {
           type="button"
           onClick={handleNext}
           aria-label="Next review"
-          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>

@@ -161,7 +161,7 @@ export function PlaceDetailPage() {
         <div className="absolute top-4 right-0 left-0 flex items-center justify-between px-6">
           <button
             onClick={() => navigate("/app")}
-            className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-black/60"
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/20 bg-black/40 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-black/60"
           >
             <ChevronLeft className="h-4 w-4" />
             Back
@@ -241,7 +241,7 @@ export function PlaceDetailPage() {
             </div>
             {sortedHours.length > 0 && (
               <div>
-                <button onClick={() => setHoursOpen((v) => !v)} className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-primary">
+                <button onClick={() => setHoursOpen((v) => !v)} className="flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-primary">
                   <Clock className="h-4 w-4 text-slate-400" />
                   Hours
                   <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform ${hoursOpen ? "rotate-180" : ""}`} />
@@ -318,7 +318,7 @@ export function PlaceDetailPage() {
                   <button
                     key={s.value}
                     onClick={() => setSort(s.value)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-semibold ${sort === s.value ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+                    className={`cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold ${sort === s.value ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                   >
                     {s.label}
                   </button>

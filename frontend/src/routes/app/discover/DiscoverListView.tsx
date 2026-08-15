@@ -73,7 +73,7 @@ export function DiscoverListView({
           <button
             type="button"
             onClick={onToggleFilterPanel}
-            className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20"
           >
             <SlidersHorizontal className="h-3.5 w-3.5" /> Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
           </button>
@@ -83,7 +83,7 @@ export function DiscoverListView({
                 key={s.value}
                 type="button"
                 onClick={() => onSortChange(s.value)}
-                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                   sort === s.value
                     ? "border-white bg-white text-primary"
                     : "border-white/20 bg-white/10 text-white/70 hover:bg-white/20"
@@ -116,7 +116,7 @@ export function DiscoverListView({
             <button
               type="button"
               onClick={onShowMap}
-              className="flex flex-shrink-0 items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+              className="flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary hover:text-primary"
             >
               <Map className="h-4 w-4" /> See in map
             </button>
@@ -145,7 +145,7 @@ export function DiscoverListView({
                     type="button"
                     onClick={onLoadMore}
                     disabled={loadingMore}
-                    className="rounded-xl border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+                    className="cursor-pointer rounded-xl border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loadingMore ? "Loading..." : "Load more"}
                   </button>

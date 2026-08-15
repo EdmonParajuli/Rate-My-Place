@@ -29,7 +29,7 @@ export function DraftCard({ draft, onContinue, onDelete }: { draft: ReviewDraft;
                 <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 uppercase">Draft</span>
               </div>
             </div>
-            <button onClick={onDelete} className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500">
+            <button onClick={onDelete} className="flex h-8 w-8 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -38,7 +38,7 @@ export function DraftCard({ draft, onContinue, onDelete }: { draft: ReviewDraft;
             <div className="mt-3">
               <div className="mb-2 flex gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
-                  <button key={n} type="button" onClick={() => setRating(n)}>
+                  <button key={n} type="button" onClick={() => setRating(n)} className="cursor-pointer">
                     <Star className={`h-5 w-5 cursor-pointer ${n <= rating ? "fill-accent text-accent" : "fill-slate-200 text-slate-200"}`} />
                   </button>
                 ))}
@@ -53,11 +53,11 @@ export function DraftCard({ draft, onContinue, onDelete }: { draft: ReviewDraft;
                 <button
                   onClick={() => onContinue(rating, text)}
                   disabled={!rating || !text.trim()}
-                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700 disabled:opacity-50"
+                  className="cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Save draft
                 </button>
-                <button onClick={() => setEditing(false)} className="rounded-lg px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50">
+                <button onClick={() => setEditing(false)} className="cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-slate-50">
                   Cancel
                 </button>
               </div>
@@ -65,7 +65,7 @@ export function DraftCard({ draft, onContinue, onDelete }: { draft: ReviewDraft;
           ) : (
             <>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-              <button onClick={() => setEditing(true)} className="mt-3 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700">
+              <button onClick={() => setEditing(true)} className="mt-3 cursor-pointer rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-blue-700">
                 Continue writing
               </button>
             </>

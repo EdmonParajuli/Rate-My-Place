@@ -77,13 +77,13 @@ export function MyReviewsPage() {
       <div className="mt-6 flex items-center gap-1 rounded-lg bg-slate-100 p-0.5" style={{ width: "fit-content" }}>
         <button
           onClick={() => setTab("published")}
-          className={`rounded-md px-4 py-1.5 text-xs font-semibold ${tab === "published" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+          className={`cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold ${tab === "published" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
           Published ({totalReviews})
         </button>
         <button
           onClick={() => setTab("drafts")}
-          className={`rounded-md px-4 py-1.5 text-xs font-semibold ${tab === "drafts" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+          className={`cursor-pointer rounded-md px-4 py-1.5 text-xs font-semibold ${tab === "drafts" ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
           Drafts ({drafts.length})
         </button>

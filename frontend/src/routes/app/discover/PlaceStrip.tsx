@@ -23,7 +23,7 @@ export function PlaceStrip({
           {icon}
           <h2 className="text-base font-extrabold">{title}</h2>
         </div>
-        <button type="button" className="flex items-center gap-1 text-xs font-semibold text-primary">
+        <button type="button" className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-primary">
           See all <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>

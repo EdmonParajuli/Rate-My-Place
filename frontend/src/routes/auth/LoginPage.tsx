@@ -48,7 +48,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setTab("signin")}
-              className={`flex-1 rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 cursor-pointer rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
                 tab === "signin" ? "bg-white text-foreground shadow-sm" : "text-slate-500"
               }`}
             >
@@ -57,7 +57,7 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => setTab("signup")}
-              className={`flex-1 rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
+              className={`flex-1 cursor-pointer rounded-[10px] py-2.5 text-center text-sm font-semibold transition-colors ${
                 tab === "signup" ? "bg-white text-foreground shadow-sm" : "text-slate-500"
               }`}
             >

@@ -39,7 +39,7 @@ export function WriteReviewForm({
         <div className="flex items-center gap-3">
           <div className="flex gap-1">
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setRating(n)}>
+              <button key={n} type="button" onClick={() => setRating(n)} className="cursor-pointer">
                 <Star className={`h-6 w-6 cursor-pointer ${n <= rating ? "fill-accent text-accent" : "fill-slate-200 text-slate-200"}`} />
               </button>
             ))}

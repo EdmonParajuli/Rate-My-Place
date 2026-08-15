@@ -63,10 +63,10 @@ export function ReviewCard({
         </div>
         {isMine && !isOwnerViewing && (
           <div className="flex flex-shrink-0 items-center gap-1">
-            <button onClick={onEdit} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-primary">
+            <button onClick={onEdit} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-primary">
               <Edit3 className="h-3.5 w-3.5" />
             </button>
-            <button onClick={onDelete} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500">
+            <button onClick={onDelete} className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-500">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -80,6 +80,8 @@ export function ReviewCard({
           onClick={onToggleHelpful}
           disabled={isMine}
           className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold ${
+            isMine ? "cursor-not-allowed" : "cursor-pointer"
+          } ${
             review.helpfulByMe
               ? "border-primary/20 bg-primary/5 text-primary"
               : isMine
@@ -135,7 +137,7 @@ export function ReviewCard({
           ) : (
             <button
               onClick={() => setReplyOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+              className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
             >
               <MessageCircle className="h-3.5 w-3.5" />
               Reply to this review
