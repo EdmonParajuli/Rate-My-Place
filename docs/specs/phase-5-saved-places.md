@@ -144,6 +144,8 @@ dropped out of every list.
   type per save" decision above).
 - Any UI for browsing *other users'* saved lists — this is a private, single-user
   feature, same as My Reviews' drafts.
-- Fixing the pre-existing `providers_reviews` unique-index bug found during
-  verification (see [02-current-state.md](../02-current-state.md)'s "Still open"
-  list) — unrelated to this ticket.
+- The pre-existing `providers_reviews` unique-index bug found during verification
+  was unrelated to this ticket's actual scope, but got fixed as an immediate
+  follow-up commit rather than left open — see
+  [02-current-state.md](../02-current-state.md) and
+  `20260815170000-make-reviews-unique-index-partial.js`.

@@ -634,10 +634,11 @@ on `(user_id, place_id)`), since un-saving is a hard-delete, not a soft one.
   affordances layered on top.
 
 **Found while verifying**: a real, pre-existing bug in the `providers_reviews` unique
-index (not filtered to non-deleted rows, so deleting a review blocks ever writing a
-new one for that same place) — see `02-current-state.md`'s "Still open" list. Not
-fixed here; unrelated to Saved Places, just tripped over during the Reviewed-tab
-click-through.
+index (not filtered to non-deleted rows, so deleting a review blocked ever writing a
+new one for that same place) — unrelated to Saved Places, just tripped over during
+the Reviewed-tab click-through. Fixed as a follow-up in the same style
+`providers_reviews_replies` already used — see `02-current-state.md`'s fixed-issues
+list and `20260815170000-make-reviews-unique-index-partial.js`.
 
 ## GraphQL schema design principles going forward
 
