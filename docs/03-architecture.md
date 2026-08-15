@@ -759,6 +759,36 @@ existing queries and components.
   `REVIEWER_ONLY_PATH_PREFIXES` so a `BUSINESS` account landing on `/app/profile`
   directly gets bounced to `/app/dashboard` like every other reviewer-only route.
 
+## Built: Settings + account edit (Phase 7, 2026-08-15)
+
+Full design in
+[specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
+First of Phase 7's sequenced tickets (same "build one at a time" approach Phase 5
+used). No new table, one new mutation.
+
+- **`updateUser(input: InputUpdateUser!)` — `fullName` only, no email edit.** Email
+  is the login identifier and this codebase has no email-verification flow anywhere
+  (`forgotPassword`'s reset-code flow doesn't cover a live account changing its own
+  email address) — confirmed directly with the user rather than assumed. `fullName`
+  reuses the same Joi rules `signUpSchema`'s `name` field already has.
+  `UserService.updateUser` calls `BaseRepository.updateOne` (which returns an
+  affected-row count, not the row) then re-fetches via `findByPk` so the resolver has
+  a real `User` to return — same "update then re-fetch" shape
+  `ReviewService.updateReview` already uses.
+- **The existing Phase 6 `SettingsPage.tsx` became the shared screen for both account
+  types, not a second screen built for `REGULAR`.** Its Account tab's hardcoded
+  `"Business owner"` label became a small shared `lib/userTypeLabel.ts` helper
+  (deduped out of `AppLayout.tsx`, which had the identical logic inline); its
+  read-only Full Name display became a real editable input + Save button wired to
+  `updateUser`. The Notifications tab (an explicit static preview) is untouched —
+  real per-type toggles are a separate, later Phase 7 ticket. New `/app/settings`
+  entry added to `REVIEWER_NAV_ITEMS`; the route itself already existed from Phase 6.
+- **`AuthContext` gained a `refreshUser()` escape hatch.** `AppLayout`'s
+  sidebar/topbar name reads from `AuthContext`'s `user` state, not Apollo's cache —
+  after `updateUser` succeeds, `refreshUser()` re-runs the same `authMeUser` lazy
+  query the mount-time token refresh already uses and replaces `user`, so the
+  displayed name updates immediately rather than waiting for a reload.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

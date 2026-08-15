@@ -31,6 +31,10 @@ type AuthContextValue = {
   signUp: (input: InputAuthSignUp) => Promise<void>
   signUpBusiness: (input: InputSignUpBusiness) => Promise<void>
   logout: () => Promise<void>
+  // Re-fetches authMeUser and replaces `user` - needed after updateUser so
+  // the sidebar/topbar name (which reads from this context, not Apollo
+  // cache) reflects the edit immediately rather than on next reload.
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -156,8 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession()
   }, [signOutMutation, clearSession])
 
+  const refreshUser = useCallback(async () => {
+    const result = await fetchAuthMeUser()
+    setUser((result.data?.authMeUser?.data as AuthUser | null | undefined) ?? null)
+  }, [fetchAuthMeUser])
+
   return (
-    <AuthContext.Provider value={{ user, initializing, login, signUp, signUpBusiness, logout }}>
+    <AuthContext.Provider value={{ user, initializing, login, signUp, signUpBusiness, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

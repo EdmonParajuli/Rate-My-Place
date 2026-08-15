@@ -33,10 +33,11 @@ across every feature.
 resolver → typeDefs):**
 - **Users** — signup, login, `authMeUser` (now including `createdAt`, added for the
   Profile screen's "member since"), password hashing, JWT issuance,
-  `changePassword`/`forgotPassword`/`confirmForgotPassword`. Still no
-  `updateUser`/`updateProfile` mutation — name/email are permanently fixed once an
-  account is created (confirmed while building Phase 6's Settings page, which shows
-  them read-only for exactly this reason).
+  `changePassword`/`forgotPassword`/`confirmForgotPassword`, `updateUser`
+  (`fullName` only — email is still permanently fixed once an account is created;
+  no email-verification flow exists anywhere in this codebase, so editing the login
+  identifier without one was deliberately deferred, see
+  [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)).
 - **Places** — create/update/delete/getById/listPlaces (cursor-paginated, sort by
   NEW/NEAREST/HIGHEST_RATED/TRENDING, filter by category/price/rating/open-now),
   owner-gated writes, lat/lng + Haversine `NEAREST` sort, `trendingScore` refreshed
@@ -88,18 +89,25 @@ resolver → typeDefs):**
   avatar + "member since", stats row and 6-month activity chart both computed
   client-side from `myReviews` (no new backend aggregate, same "start simple"
   precedent as My Reviews' `StatsRow`), full badge grid (`myBadges`, earned vs.
-  locked with descriptions), recent-reviews preview. Entirely read-only, same reason
-  as Settings' Account tab: no `updateUser` mutation exists yet. See
-  [specs/phase-5-profile.md](./specs/phase-5-profile.md).
+  locked with descriptions), recent-reviews preview. Still entirely read-only — a
+  deliberate split, not a backend gap: account editing lives on Settings (below),
+  not duplicated here. See [specs/phase-5-profile.md](./specs/phase-5-profile.md).
+- **Settings** (both account types now — Phase 7's first ticket added it to the
+  reviewer nav, reusing Phase 6's screen instead of building a second one) — real
+  editable Full Name (`updateUser`) + real password change; email read-only (no
+  verification flow exists); notification toggles still a static, clearly-labeled
+  preview. See
+  [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
 - **Business console** (`BUSINESS` accounts get their own nav, not the reviewer
   nav — see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md)) —
   Dashboard (KPI cards, trend charts, sentiment, review management), My Listing (edit
   form + live preview), Reviews (full review management), Analytics (trend charts +
   rating distribution, real; keyword mentions/competitor benchmark, explicitly-labeled
   static previews), Promotions (`localStorage`-only preview — no promotions concept
-  exists in the product at all), Settings (real password change; read-only profile
-  since no update mutation exists; notification toggles are a static preview). Full
-  breakdown of what's real vs. illustrative per page:
+  exists in the product at all), Settings (shared with the reviewer nav as of Phase
+  7 — see the Settings bullet above; real password change + editable name,
+  notification toggles are a static preview). Full breakdown of what's real vs.
+  illustrative per page:
   [specs/phase-6-business-console.md](./specs/phase-6-business-console.md).
 
 **Cross-cutting infrastructure already in place and worth keeping:**
@@ -124,8 +132,10 @@ resolver → typeDefs):**
   (`npm run codegen` → `src/lib/graphql/generated/graphql.ts`), `AuthContext` with a
   `useRef`-guarded mount effect (React StrictMode double-invokes effects in dev — the
   guard makes the refresh-token exchange run exactly once per real mount, fixed
-  2026-08-15 after it caused intermittent logout on hard reload), `PrivateRoute` gating
-  the authenticated shell.
+  2026-08-15 after it caused intermittent logout on hard reload), a `refreshUser()`
+  escape hatch (re-fetches `authMeUser` and replaces context `user` — added for
+  `updateUser` so the sidebar/topbar name updates immediately after an edit instead
+  of on next reload), `PrivateRoute` gating the authenticated shell.
 
 ## Known issues / tech debt
 

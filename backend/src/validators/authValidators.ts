@@ -53,6 +53,20 @@ const signOutSchema = Joi.object({
     refreshToken: stringSchema.label("Refresh token").required()
 })
 
+// fullName only, deliberately - email is the login identifier and this
+// codebase has no email-verification flow, so email edit is out of scope
+// for now (docs/specs/phase-7-settings-account-edit.md). Same name rules as
+// signUpSchema's `name` field, just under the field name the User GraphQL
+// type/DB column actually use.
+const updateUserSchema = Joi.object({
+    fullName: stringSchema.label('Name').required().min(2).max(25).pattern(/^[a-zA-Z][\w\s]*[a-zA-Z]$/).trim().messages({
+        "string.empty": "Name shouldnot be Empty.",
+        "string.min": "Name should be at least 2 characters",
+        "string.max": "Name should be at most 25 characters.",
+        "string.pattern.base": "Name should contain only letters."
+    })
+})
+
 // A dedicated schema, per CLAUDE.md's "every mutation input gets one, even a
 // thin one" - not a thin wrapper composing signUpSchema/createPlaceSchema,
 // same field-level rules as both (name/email/password from signUpSchema,
@@ -110,5 +124,6 @@ export {
     forgotPasswordSchema,
     confirmForgotPasswordSchema,
     signOutSchema,
-    signUpBusinessSchema
+    signUpBusinessSchema,
+    updateUserSchema
 };

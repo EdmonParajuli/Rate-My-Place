@@ -73,3 +73,17 @@ mutation SignOut($input: InputRefreshToken) {
     message
   }
 }
+
+mutation UpdateUser($input: InputUpdateUser!) {
+  updateUser(input: $input) {
+    message
+    data {
+      id
+      email
+      fullName
+      userType
+      profilePicture
+      createdAt
+    }
+  }
+}

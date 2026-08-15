@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Bell, CheckCircle2, Eye, EyeOff, FileText, MessageSquare, Save, Star } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { getStoredRefreshToken } from "@/lib/auth/tokenStorage"
-import { useChangePasswordMutation } from "@/lib/graphql/generated/graphql"
+import { userTypeLabel } from "@/lib/userTypeLabel"
+import { useChangePasswordMutation, useUpdateUserMutation } from "@/lib/graphql/generated/graphql"
 
 const fieldClass =
   "field w-full rounded-[10px] border border-border bg-white px-3.5 py-2.5 pr-10 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary/15"
@@ -37,8 +38,13 @@ export function SettingsPage() {
 }
 
 function AccountTab() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [changePasswordMutation, { loading }] = useChangePasswordMutation()
+  const [updateUserMutation, { loading: nameSaving }] = useUpdateUserMutation()
+
+  const [fullName, setFullName] = useState(user?.fullName ?? "")
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [nameSaved, setNameSaved] = useState(false)
 
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
@@ -48,6 +54,18 @@ function AccountTab() {
   const [confirmPw, setConfirmPw] = useState("")
   const [pwError, setPwError] = useState<string | null>(null)
   const [pwSaved, setPwSaved] = useState(false)
+
+  async function handleSaveName() {
+    setNameError(null)
+    try {
+      await updateUserMutation({ variables: { input: { fullName } } })
+      await refreshUser()
+      setNameSaved(true)
+      setTimeout(() => setNameSaved(false), 3000)
+    } catch (err) {
+      setNameError(err instanceof Error ? err.message : "Something went wrong.")
+    }
+  }
 
   async function handleChangePassword() {
     setPwError(null)
@@ -79,8 +97,15 @@ function AccountTab() {
 
         <div className="space-y-4">
           <div>
-            <p className="mb-1 text-xs font-semibold text-slate-500">Full Name</p>
-            <p className="text-sm font-medium text-slate-800">{user?.fullName}</p>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-500">Full Name</label>
+            <input
+              type="text"
+              className={fieldClass}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Your full name"
+            />
+            {nameError && <p className="mt-1.5 text-sm font-medium text-destructive">{nameError}</p>}
           </div>
           <div>
             <p className="mb-1 text-xs font-semibold text-slate-500">Email Address</p>
@@ -88,12 +113,23 @@ function AccountTab() {
           </div>
           <div>
             <p className="mb-1 text-xs font-semibold text-slate-500">Account Type</p>
-            <p className="text-sm font-medium text-slate-800">Business owner</p>
+            <p className="text-sm font-medium text-slate-800">{userTypeLabel(user?.userType)}</p>
           </div>
         </div>
 
-        <p className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-400">
-          Name and email can't be changed from here yet — contact support if you need to update them.
+        <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
+          <button
+            onClick={handleSaveName}
+            disabled={nameSaving || !fullName.trim() || fullName === user?.fullName}
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {nameSaved ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+            {nameSaving ? "Saving..." : nameSaved ? "Saved" : "Save Name"}
+          </button>
+        </div>
+
+        <p className="mt-4 border-t border-slate-100 pt-4 text-xs text-slate-400">
+          Email can't be changed from here yet — contact support if you need to update it.
         </p>
       </div>
 
