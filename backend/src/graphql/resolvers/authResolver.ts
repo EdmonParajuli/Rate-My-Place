@@ -8,10 +8,12 @@ import {
   signOutSchema,
   signUpBusinessSchema,
   signUpSchema,
+  updateUserSchema,
 } from "../../validators";
 import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { AuthService } from "../../services/authService";
 import { BusinessOnboardingService } from "../../services/businessOnboardingService";
+import { UserService } from "../../services/userService";
 import { SuccessResponse } from "../../helpers/responseHelper";
 import { throwError } from "../../helpers/errorHelper";
 import { requireAuth } from "../../utils/auth";
@@ -170,6 +172,30 @@ export const authResolvers = {
         await new AuthService().confirmForgotPassword(args.input);
 
         return { message: "Password reset successfully" };
+      } catch (error: any) {
+        if (error instanceof GraphQLError) {
+          throw error;
+        }
+        throwError(error.message, "BAD_REQUEST", 400);
+      }
+    },
+
+    updateUser: async(
+      parent: ParentNode,
+      args: { input: { fullName: string } },
+      context: ContextInterface,
+      info: GraphQLResolveInfo
+    ) => {
+      try {
+        const user = requireAuth(context);
+        Validator.check(updateUserSchema, args.input);
+
+        const result = await new UserService().updateUser(user.id, args.input.fullName);
+
+        return SuccessResponse.send({
+          message: "Account updated successfully",
+          data: result
+        });
       } catch (error: any) {
         if (error instanceof GraphQLError) {
           throw error;

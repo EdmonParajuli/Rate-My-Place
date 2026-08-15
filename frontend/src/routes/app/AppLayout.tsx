@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { UserAvatar } from "@/components/UserAvatar"
+import { userTypeLabel } from "@/lib/userTypeLabel"
 import { useUnreadNotificationCountQuery } from "@/lib/graphql/generated/graphql"
 
 // Variant A from prototype/authenticated-shell (docs/specs/phase-4-frontend-mvp.md
@@ -43,6 +44,7 @@ const REVIEWER_NAV_ITEMS = [
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
   { to: "/app/notifications", label: "Notifications", icon: Bell, end: false },
   { to: "/app/profile", label: "Profile", icon: User, end: false },
+  { to: "/app/settings", label: "Settings", icon: Settings, end: false },
 ]
 
 const BUSINESS_NAV_ITEMS = [
@@ -76,10 +78,6 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app/settings": { title: "Settings", subtitle: "Manage your account and notification preferences" },
   "/app/notifications": { title: "Notifications", subtitle: "Replies, new reviews, and badges you've earned" },
   "/app/profile": { title: "Profile", subtitle: "Your stats, activity, and badges" },
-}
-
-function userTypeLabel(userType: string | null): string {
-  return userType === "BUSINESS" ? "Business owner" : "Reviewer"
 }
 
 export function AppLayout() {

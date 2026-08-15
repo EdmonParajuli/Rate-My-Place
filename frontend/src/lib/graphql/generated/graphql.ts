@@ -194,6 +194,10 @@ export type InputUpdateReviewReply = {
   description: Scalars['String']['input'];
 };
 
+export type InputUpdateUser = {
+  fullName: Scalars['String']['input'];
+};
+
 export type LoginResponse = {
   __typename?: 'LoginResponse';
   data?: Maybe<UserData>;
@@ -250,6 +254,7 @@ export type Mutation = {
   updatePlace?: Maybe<PlaceResponse>;
   updateReview?: Maybe<ReviewResponse>;
   updateReviewReply?: Maybe<ReviewReplyResponse>;
+  updateUser?: Maybe<UpdateUserResponse>;
 };
 
 
@@ -377,6 +382,11 @@ export type MutationUpdateReviewArgs = {
 export type MutationUpdateReviewReplyArgs = {
   input: InputUpdateReviewReply;
   replyId: Scalars['Int']['input'];
+};
+
+
+export type MutationUpdateUserArgs = {
+  input: InputUpdateUser;
 };
 
 export type Notification = {
@@ -696,6 +706,12 @@ export type ToggleSavePlaceResponse = {
   savedByMe?: Maybe<Scalars['Boolean']['output']>;
 };
 
+export type UpdateUserResponse = {
+  __typename?: 'UpdateUserResponse';
+  data?: Maybe<User>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
 export type User = {
   __typename?: 'User';
   createdAt?: Maybe<Scalars['String']['output']>;
@@ -760,6 +776,13 @@ export type SignOutMutationVariables = Exact<{
 
 
 export type SignOutMutation = { __typename?: 'Mutation', signOut?: { __typename?: 'Message', message?: string | null } | null };
+
+export type UpdateUserMutationVariables = Exact<{
+  input: InputUpdateUser;
+}>;
+
+
+export type UpdateUserMutation = { __typename?: 'Mutation', updateUser?: { __typename?: 'UpdateUserResponse', message?: string | null, data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, createdAt?: string | null } | null } | null };
 
 export type MyBadgesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1159,6 +1182,45 @@ export function useSignOutMutation(baseOptions?: ApolloReactHooks.MutationHookOp
       }
 export type SignOutMutationHookResult = ReturnType<typeof useSignOutMutation>;
 export type SignOutMutationResult = ApolloReactCommon.MutationResult<SignOutMutation>;
+export const UpdateUserDocument = gql`
+    mutation UpdateUser($input: InputUpdateUser!) {
+  updateUser(input: $input) {
+    message
+    data {
+      id
+      email
+      fullName
+      userType
+      profilePicture
+      createdAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useUpdateUserMutation__
+ *
+ * To run a mutation, you first call `useUpdateUserMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useUpdateUserMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [updateUserMutation, { data, loading, error }] = useUpdateUserMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useUpdateUserMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<UpdateUserMutation, UpdateUserMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<UpdateUserMutation, UpdateUserMutationVariables>(UpdateUserDocument, options);
+      }
+export type UpdateUserMutationHookResult = ReturnType<typeof useUpdateUserMutation>;
+export type UpdateUserMutationResult = ApolloReactCommon.MutationResult<UpdateUserMutation>;
 export const MyBadgesDocument = gql`
     query MyBadges {
   myBadges {

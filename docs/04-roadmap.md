@@ -172,14 +172,21 @@ parts:
 
 ## Phase 7 — Settings & account lifecycle
 
-Phase 6's business-console Settings page (see above) shipped a narrower, BUSINESS-only
-slice of this early — read-only profile display + a real password-change flow. The
-items below are still open: no `updateUser` mutation exists (name/email are still
-un-editable for either account type), and this phase is account-type-agnostic (a
-REGULAR account has no Settings screen at all yet).
+Phase 6's business-console Settings page shipped a narrower, BUSINESS-only slice of
+this early — read-only profile display + a real password-change flow. Being split
+into sequenced tickets like Phase 5 was, rather than planned/built all at once — see
+[specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)
+for the first one.
 
-- [ ] Account fields edit, preferences (dark mode, language/timezone — note dark mode
-      needs to exist as a real frontend theme, not just a design mockup)
+- [x] Account fields edit — `updateUser` mutation, `fullName` only (email stays
+      un-editable; no email-verification flow exists anywhere in this codebase, so
+      editing the login identifier without one was deliberately deferred). The
+      existing Settings screen (Phase 6) is now shared by both account types instead
+      of a second screen being built — new `/app/settings` nav item on the reviewer
+      shell, dynamic "Business owner"/"Reviewer" label instead of the old hardcoded
+      one.
+- [ ] Preferences: dark mode (needs to exist as a real frontend theme, not just a
+      design mockup), language/timezone
 - [ ] Notification preference toggles
 - [ ] Privacy: blocked users, data export (GDPR-style — decide scope now, it constrains the data model)
 - [ ] Security: 2FA, active sessions list + revoke (built on the Phase 1 `SESSIONS` table)

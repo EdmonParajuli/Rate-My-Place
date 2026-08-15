@@ -34,6 +34,12 @@ export const authTypedefs: DocumentNode = gql`
         userType: UserTypeEnum
     }
 
+    # fullName only - see User.createdAt's neighbor comment; email edit is
+    # deliberately out of scope (no email-verification flow exists yet).
+    input InputUpdateUser {
+        fullName: String!
+    }
+
     input InputChangePassword {
         previousPassword: String!
         newPassword: String!
@@ -119,6 +125,11 @@ export const authTypedefs: DocumentNode = gql`
         data: User
     }
 
+    type UpdateUserResponse {
+        message: String
+        data: User
+    }
+
     extend type Mutation {
         signUp(input: InputAuthSignUp): SignUpResponse
         signUpBusiness(input: InputSignUpBusiness): SignUpBusinessResponse
@@ -127,6 +138,7 @@ export const authTypedefs: DocumentNode = gql`
         forgotPassword(input: InputForgotPassword!): Message
         changePassword(input: InputChangePassword!): Message
         confirmForgotPassword(input: InputConfirmForgotPassword!): Message
+        updateUser(input: InputUpdateUser!): UpdateUserResponse
     }
 
     extend type Query {
