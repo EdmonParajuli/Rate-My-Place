@@ -1,0 +1,46 @@
+query SavedPlaces($filter: SavedPlaceFilterEnum) {
+  savedPlaces(filter: $filter) {
+    data {
+      id
+      placeId
+      listType
+      createdAt
+      place {
+        id
+        label
+        address
+        priceRange
+        averageRating
+        reviewCount
+        isVerified
+        openNow
+        trendingScore
+        category {
+          id
+          label
+          icon
+        }
+      }
+    }
+  }
+}
+
+mutation ToggleSavePlace($placeId: Int!) {
+  toggleSavePlace(placeId: $placeId) {
+    message
+    savedByMe
+    listType
+  }
+}
+
+mutation SetSavedPlaceListType($placeId: Int!, $listType: SavedListTypeEnum!) {
+  setSavedPlaceListType(placeId: $placeId, listType: $listType) {
+    message
+    data {
+      id
+      placeId
+      listType
+      createdAt
+    }
+  }
+}

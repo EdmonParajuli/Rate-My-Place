@@ -4,6 +4,7 @@ import {
   Star,
   Search,
   Grid3x3,
+  Heart,
   MessageSquare,
   LayoutDashboard,
   Store,
@@ -35,6 +36,7 @@ import { UserAvatar } from "@/components/UserAvatar"
 const REVIEWER_NAV_ITEMS = [
   { to: "/app", label: "Discover", icon: Search, end: true },
   { to: "/app/categories", label: "Categories", icon: Grid3x3, end: false },
+  { to: "/app/saved", label: "Saved", icon: Heart, end: false },
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
 ]
 
@@ -53,11 +55,12 @@ const BUSINESS_NAV_ITEMS = [
 // highlighted. /app/places/:id is deliberately NOT included here - the
 // Dashboard's "View Listing" link depends on BUSINESS accounts keeping
 // access to it.
-const REVIEWER_ONLY_PATH_PREFIXES = ["/app/categories", "/app/my-reviews"]
+const REVIEWER_ONLY_PATH_PREFIXES = ["/app/categories", "/app/saved", "/app/my-reviews"]
 
 const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app": { title: "Discover Places", subtitle: "Find and explore places near you" },
   "/app/categories": { title: "Categories", subtitle: "Browse places by type" },
+  "/app/saved": { title: "Saved", subtitle: "Places you've saved, want to visit, or already reviewed" },
   "/app/my-reviews": { title: "My Reviews", subtitle: "All your published reviews" },
   "/app/dashboard": { title: "Business Dashboard", subtitle: "Your listing's reputation and reviews" },
   "/app/my-listing": { title: "My Listing", subtitle: "Edit how your business appears to visitors" },

@@ -172,6 +172,16 @@ the same branch, not called out in the original spec because they weren't known 
   `signUp`/`signUpBusiness`/`login` all reuse the same `UserData`/`SignUpBusinessData`
   shape (`{user, token}`) the resolvers actually return — an SDL-only fix, no resolver
   change needed.
+- ~~The unique index on `providers_reviews(place_id, reviewer_id)` isn't filtered to
+  non-deleted rows~~ **Fixed.** Found 2026-08-15 while browser-testing Phase 5's
+  Saved → Reviewed tab (delete-then-recreate a review on the same place tripped a
+  generic Sequelize "Validation error" — not a Joi message, easy to mistake for
+  something else). Same bug class `providers_reviews_replies` already had a
+  partial-index fix for; this table never got the same treatment. Fixed the same way
+  (`20260815170000-make-reviews-unique-index-partial.js`: drop the plain unique
+  index, re-add it with `where: {deleted_at: null}`) — confirmed live that a
+  deleted-then-recreated review now succeeds, and that the still-active
+  one-review-per-place-per-reviewer 409 CONFLICT check is untouched.
 
 **Still open:**
 

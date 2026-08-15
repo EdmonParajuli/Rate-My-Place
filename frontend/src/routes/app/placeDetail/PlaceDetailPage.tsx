@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/UserAvatar"
+import { SaveHeartButton } from "@/components/SaveHeartButton"
 import { useAuth } from "@/lib/auth/AuthContext"
 import {
   useGetPlaceByIdQuery,
@@ -166,8 +167,10 @@ export function PlaceDetailPage() {
             <ChevronLeft className="h-4 w-4" />
             Back
           </button>
-          {isOwner && (
+          {isOwner ? (
             <span className="rounded-xl border border-white/20 bg-amber-500/90 px-3 py-2 text-xs font-bold text-white backdrop-blur-sm">Owner view</span>
+          ) : (
+            place.id !== null && place.id !== undefined && <SaveHeartButton placeId={place.id} initialSaved={place.savedByMe} />
           )}
         </div>
         {place.openNow !== null && place.openNow !== undefined && (
