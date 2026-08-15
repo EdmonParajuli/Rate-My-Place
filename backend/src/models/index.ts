@@ -10,6 +10,7 @@ import PlaceHour from "./placeHours";
 import SavedPlace from "./savedPlaces";
 import Badge from "./badges";
 import UserBadge from "./userBadges";
+import Notification from "./notifications";
 
 const Model = {
     User,
@@ -23,7 +24,8 @@ const Model = {
     PlaceHour,
     SavedPlace,
     Badge,
-    UserBadge
+    UserBadge,
+    Notification
 }
 
 export default Model;

@@ -1,0 +1,34 @@
+query MyNotifications($filter: NotificationFilterEnum) {
+  myNotifications(filter: $filter) {
+    data {
+      id
+      type
+      message
+      placeId
+      read
+      createdAt
+    }
+  }
+}
+
+query UnreadNotificationCount {
+  unreadNotificationCount
+}
+
+mutation MarkNotificationRead($notificationId: Int!) {
+  markNotificationRead(notificationId: $notificationId) {
+    message
+  }
+}
+
+mutation MarkAllNotificationsRead {
+  markAllNotificationsRead {
+    message
+  }
+}
+
+mutation DeleteNotification($notificationId: Int!) {
+  deleteNotification(notificationId: $notificationId) {
+    message
+  }
+}

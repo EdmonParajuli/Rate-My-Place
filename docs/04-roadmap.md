@@ -112,14 +112,18 @@ Stand up the frontend against Phases 1–3's API. See
 ## Phase 5 — Personalization
 
 Four largely independent features, being built one at a time rather than planned all
-at once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md) and
-[specs/phase-5-badges.md](./specs/phase-5-badges.md).
+at once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md),
+[specs/phase-5-badges.md](./specs/phase-5-badges.md), and
+[specs/phase-5-notifications.md](./specs/phase-5-notifications.md).
 
 - [x] `SAVED_PLACES` table + resolver + Saved screen (four tabs) — see the spec above
       for the list-type taxonomy decision (SAVED/WANT_TO_VISIT/FAVORITE, single type
       per save) and why "Reviewed" is a live-derived view over `myReviews`, never a
       stored category.
-- [ ] `NOTIFICATIONS` table + resolver + Notifications screen; decide the triggering events (new reply to your review, business responds, etc.)
+- [x] `NOTIFICATIONS` table + resolver + Notifications screen — triggering events
+      decided: `REVIEW_REPLY`, `NEW_REVIEW`, `BADGE_EARNED` (see the spec above for
+      why those three), 2 tabs (All/Unread) rather than the Figma source's 6, nav
+      item + unread-count pill on both the reviewer and business shells.
 - [ ] Profile screen (stats, activity chart, badge grid) — badge data now exists to
       back the grid (see below), still needs the screen itself
 - [x] `BADGES`/`USER_BADGES` — 5 real criteria (FIRST_REVIEW/PROLIFIC_REVIEWER/

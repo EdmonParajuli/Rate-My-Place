@@ -8,6 +8,7 @@ export * from "./reviewReplyTypedefs";
 export * from "./reviewVoteTypedefs";
 export * from "./savedPlaceTypedefs";
 export * from "./badgeTypedefs";
+export * from "./notificationTypedefs";
 export * from "./commonTypedefs";
 export * from "./platformStatsTypedefs";
 export * from "./businessDashboardTypedefs";

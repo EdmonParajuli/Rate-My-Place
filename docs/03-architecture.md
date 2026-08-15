@@ -675,6 +675,44 @@ matching the roadmap's "start with 3-5 real criteria" instruction.
   `Category.icon`. `Badge.earnedAt` is a `String` epoch-millisecond field like every
   other date on this schema, rendered with the existing `formatDate.ts` helper.
 
+## Built: Notifications (Phase 5, 2026-08-15)
+
+Full design in [specs/phase-5-notifications.md](./specs/phase-5-notifications.md).
+`providers_notifications` (`paranoid: true`, the base convention — not a toggle
+table), index on `(user_id, read)`.
+
+- **3 triggering events, decided directly with the user**: `REVIEW_REPLY` (business
+  replies → notifies the reviewer), `NEW_REVIEW` (someone reviews a place → notifies
+  the owner), `BADGE_EARNED` (a badge newly flips to earned → notifies the reviewer,
+  tying into the Badges ticket that shipped right before this one). Each reuses a
+  write path that already exists — no new triggers to build, and together they cover
+  both user types.
+- **Event records, not check-on-read** — unlike Badges, a notification is created at
+  the moment the triggering write happens: `NotificationService.create(...)` is
+  called from inside `ReviewService.createReview` (after the transaction commits —
+  best-effort, not core write correctness), `ReviewReplyService.createReply`
+  (`assertPlaceOwnership` now returns `{review, place}` so the notification doesn't
+  need a second query), and `BadgeService.getForUser`'s newly-earned-badges loop.
+  Services depending on another service for a side effect is the same shape
+  `ReviewVoteService` already uses on `ReviewService` — resolvers stay thin/unchanged.
+- **`message` is precomputed at write time**, not a generic `type`+`payload` blob —
+  simpler for the frontend (no per-type interpretation, no N+1 lookup for a place
+  label per notification row).
+- **Read/unread is a real SQL `where` filter**, a deliberate departure from Saved
+  Places' "fetch all, filter in JS" precedent — that fit a small, capped, 3-way split
+  reused across tabs; a notification feed is unbounded and grows over time, so
+  filtering at the query level is the correct default here.
+- **No websockets** — the nav unread-count pill (`unreadNotificationCount`, both
+  `REVIEWER_NAV_ITEMS` and `BUSINESS_NAV_ITEMS`) polls every 30s
+  (`useUnreadNotificationCountQuery({ pollInterval: 30000 })`), same "start simple,
+  no new real-time infra" call made everywhere else in this codebase. The 3 write
+  mutations (`markNotificationRead`/`markAllNotificationsRead`/`deleteNotification`)
+  additionally pass `refetchQueries: ["UnreadNotificationCount"]` so the pill reflects
+  the user's *own* action immediately rather than waiting up to 30s for the next poll
+  tick — found this gap during click-through verification, not a design change.
+- **Scope trim from the Figma source**: 6 filter tabs → 2 (All/Unread) — with only 3
+  real event types, most of the original 6 would be empty categories.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

@@ -2,6 +2,8 @@ import { Op } from 'sequelize';
 import { ReviewReplyRepository } from '../repositories/reviewReplyRepository';
 import { ReviewService } from './reviewService';
 import PlaceService from './placeService';
+import { NotificationService } from './notificationService';
+import { NotificationTypeEnum } from '../enums/notificationTypeEnum';
 import { throwError } from '../helpers/errorHelper';
 import { assertOwnership } from '../utils/auth';
 
@@ -9,16 +11,20 @@ export class ReviewReplyService {
   private repository: ReviewReplyRepository;
   private reviewService: ReviewService;
   private placeService: PlaceService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.repository = new ReviewReplyRepository();
     this.reviewService = new ReviewService();
     this.placeService = new PlaceService();
+    this.notificationService = new NotificationService();
   }
 
   // Reply authorship is the place's owner, not the review's reviewer - the
   // reply always attaches to a review, but permission to write it comes from
-  // owning the place the review is about.
+  // owning the place the review is about. Returns both fetched entities so
+  // createReply can reuse them for the notification below instead of
+  // re-querying.
   private async assertPlaceOwnership(reviewId: number, requestingUserId: string) {
     const review = await this.reviewService.getReviewById(reviewId);
     if (!review) {
@@ -31,6 +37,8 @@ export class ReviewReplyService {
     }
 
     assertOwnership(place.ownerId, requestingUserId, "You do not own the place this review belongs to.");
+
+    return { review, place };
   }
 
   async createReply({
@@ -42,14 +50,23 @@ export class ReviewReplyService {
     requestingUserId: string;
     description: string;
   }) {
-    await this.assertPlaceOwnership(reviewId, requestingUserId);
+    const { review, place } = await this.assertPlaceOwnership(reviewId, requestingUserId);
 
     const existingReply = await this.repository.findOne({ where: { reviewId } });
     if (existingReply) {
       throwError("This review already has a reply.", "CONFLICT", 409);
     }
 
-    return this.repository.create({ reviewId, ownerId: requestingUserId, description });
+    const reply = await this.repository.create({ reviewId, ownerId: requestingUserId, description });
+
+    await this.notificationService.create({
+      userId: review.reviewerId,
+      type: NotificationTypeEnum.REVIEW_REPLY,
+      message: `${place.label} replied to your review`,
+      placeId: Number(place.id),
+    });
+
+    return reply;
   }
 
   async updateReply({
