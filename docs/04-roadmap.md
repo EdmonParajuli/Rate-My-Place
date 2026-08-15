@@ -109,12 +109,13 @@ Stand up the frontend against Phases 1–3's API. See
         [03-architecture.md](./03-architecture.md) for the backend shape.
 - [x] My Reviews screen
 
-## Phase 5 — Personalization
+## Phase 5 — Personalization — Done
 
-Four largely independent features, being built one at a time rather than planned all
-at once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md),
-[specs/phase-5-badges.md](./specs/phase-5-badges.md), and
-[specs/phase-5-notifications.md](./specs/phase-5-notifications.md).
+Four largely independent features, built one at a time rather than planned all at
+once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md),
+[specs/phase-5-badges.md](./specs/phase-5-badges.md),
+[specs/phase-5-notifications.md](./specs/phase-5-notifications.md), and
+[specs/phase-5-profile.md](./specs/phase-5-profile.md).
 
 - [x] `SAVED_PLACES` table + resolver + Saved screen (four tabs) — see the spec above
       for the list-type taxonomy decision (SAVED/WANT_TO_VISIT/FAVORITE, single type
@@ -124,11 +125,14 @@ at once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md)
       decided: `REVIEW_REPLY`, `NEW_REVIEW`, `BADGE_EARNED` (see the spec above for
       why those three), 2 tabs (All/Unread) rather than the Figma source's 6, nav
       item + unread-count pill on both the reviewer and business shells.
-- [ ] Profile screen (stats, activity chart, badge grid) — badge data now exists to
-      back the grid (see below), still needs the screen itself
+- [x] Profile screen (stats, activity chart, badge grid) — see
+      [specs/phase-5-profile.md](./specs/phase-5-profile.md). Read-only (cover +
+      avatar, stats row reused from My Reviews, 6-month activity chart reused from
+      the business dashboard's `ReviewVolumeChart`, full badge grid, recent-reviews
+      preview), new `/app/profile` nav item on the reviewer shell only.
 - [x] `BADGES`/`USER_BADGES` — 5 real criteria (FIRST_REVIEW/PROLIFIC_REVIEWER/
       HELPFUL_REVIEWER/EXPLORER/ELITE_REVIEWER), permanent once earned, surfaced as a
-      strip on My Reviews ahead of the Profile screen — see the spec above
+      strip on My Reviews and now the full grid on Profile — see the specs above
 
 ## Phase 6 — Business console — Done
 

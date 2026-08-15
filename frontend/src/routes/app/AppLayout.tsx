@@ -12,6 +12,7 @@ import {
   Megaphone,
   Settings,
   Bell,
+  User,
   MoreHorizontal,
   LogOut,
   Menu,
@@ -41,6 +42,7 @@ const REVIEWER_NAV_ITEMS = [
   { to: "/app/saved", label: "Saved", icon: Heart, end: false },
   { to: "/app/my-reviews", label: "My Reviews", icon: MessageSquare, end: false },
   { to: "/app/notifications", label: "Notifications", icon: Bell, end: false },
+  { to: "/app/profile", label: "Profile", icon: User, end: false },
 ]
 
 const BUSINESS_NAV_ITEMS = [
@@ -59,7 +61,7 @@ const BUSINESS_NAV_ITEMS = [
 // highlighted. /app/places/:id is deliberately NOT included here - the
 // Dashboard's "View Listing" link depends on BUSINESS accounts keeping
 // access to it.
-const REVIEWER_ONLY_PATH_PREFIXES = ["/app/categories", "/app/saved", "/app/my-reviews"]
+const REVIEWER_ONLY_PATH_PREFIXES = ["/app/categories", "/app/saved", "/app/my-reviews", "/app/profile"]
 
 const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app": { title: "Discover Places", subtitle: "Find and explore places near you" },
@@ -73,6 +75,7 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app/promotions": { title: "Promotions", subtitle: "Create offers and boost your listing visibility" },
   "/app/settings": { title: "Settings", subtitle: "Manage your account and notification preferences" },
   "/app/notifications": { title: "Notifications", subtitle: "Replies, new reviews, and badges you've earned" },
+  "/app/profile": { title: "Profile", subtitle: "Your stats, activity, and badges" },
 }
 
 function userTypeLabel(userType: string | null): string {

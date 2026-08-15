@@ -698,6 +698,7 @@ export type ToggleSavePlaceResponse = {
 
 export type User = {
   __typename?: 'User';
+  createdAt?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   fullName?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['Int']['output']>;
@@ -751,7 +752,7 @@ export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?:
 export type AuthMeUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type AuthMeUserQuery = { __typename?: 'Query', authMeUser?: { __typename?: 'authMeUserResponse', data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null };
+export type AuthMeUserQuery = { __typename?: 'Query', authMeUser?: { __typename?: 'authMeUserResponse', data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, createdAt?: string | null } | null } | null };
 
 export type SignOutMutationVariables = Exact<{
   input?: InputMaybe<InputRefreshToken>;
@@ -1086,6 +1087,7 @@ export const AuthMeUserDocument = gql`
       fullName
       userType
       profilePicture
+      createdAt
     }
   }
 }
