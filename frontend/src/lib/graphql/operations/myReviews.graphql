@@ -6,6 +6,7 @@ query MyReviews($first: Int, $after: String) {
       rating
       createdAt
       helpfulCount
+      photoCount
       place {
         id
         label

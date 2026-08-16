@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Check as CheckIcon, Clock, Edit3, MapPin, Share2, Star, ThumbsUp, Trash2 } from "lucide-react"
 import { CATEGORY_STYLES } from "@/lib/categoryStyles"
+import { ReviewPhotoStrip } from "@/components/ReviewPhotoStrip"
 import { formatDate } from "@/lib/formatDate"
 import type { MyReview } from "./types"
 
@@ -109,6 +110,8 @@ export function ReviewListItem({
           ) : (
             <p className="mt-2 text-sm leading-relaxed text-slate-600">{review.review}</p>
           )}
+
+          {!isEditing && review.id != null && <ReviewPhotoStrip reviewId={review.id} photoCount={review.photoCount} />}
 
           <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
             <ThumbsUp className="h-3.5 w-3.5 text-emerald-500" />

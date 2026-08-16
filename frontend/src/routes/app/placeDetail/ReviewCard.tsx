@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Clock, CornerDownRight, Edit3, MessageCircle, Send, Star, ThumbsUp, Trash2 } from "lucide-react"
 import { UserAvatar } from "@/components/UserAvatar"
+import { ReviewPhotoStrip } from "@/components/ReviewPhotoStrip"
 import { Button } from "@/components/ui/button"
 import { formatDate } from "@/lib/formatDate"
 import type { PlaceReview } from "./types"
@@ -74,6 +75,8 @@ export function ReviewCard({
       </div>
 
       <p className="mb-3 text-sm leading-relaxed text-slate-600">{review.review}</p>
+
+      {review.id != null && <ReviewPhotoStrip reviewId={review.id} photoCount={review.photoCount} />}
 
       {!isOwnerViewing && (
         <button

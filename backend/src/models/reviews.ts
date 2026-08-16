@@ -49,6 +49,12 @@ const Review = sequelize.define<ReviewModelInterface>(
             allowNull: false,
             defaultValue: 0,
             field: "helpful_count"
+        },
+        photoCount: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            field: "photo_count"
         }
     },
     {

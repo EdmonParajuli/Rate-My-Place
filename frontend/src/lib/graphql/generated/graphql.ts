@@ -565,6 +565,7 @@ export type Query = {
   categories?: Maybe<CategoryListResponse>;
   category?: Maybe<CategoryResponse>;
   getPlaceById?: Maybe<PlaceResponse>;
+  getReviewById?: Maybe<ReviewResponse>;
   listPlaces?: Maybe<PlaceListResponse>;
   mediaUploadSignature?: Maybe<UploadSignatureResponse>;
   myBadges?: Maybe<BadgeListResponse>;
@@ -583,6 +584,11 @@ export type QueryCategoryArgs = {
 
 
 export type QueryGetPlaceByIdArgs = {
+  id: Scalars['Int']['input'];
+};
+
+
+export type QueryGetReviewByIdArgs = {
   id: Scalars['Int']['input'];
 };
 
@@ -644,6 +650,8 @@ export type Review = {
   helpfulByMe?: Maybe<Scalars['Boolean']['output']>;
   helpfulCount?: Maybe<Scalars['Int']['output']>;
   id?: Maybe<Scalars['Int']['output']>;
+  photoCount?: Maybe<Scalars['Int']['output']>;
+  photos?: Maybe<Array<Maybe<Media>>>;
   place?: Maybe<Place>;
   placeId?: Maybe<Scalars['Int']['output']>;
   rating?: Maybe<Scalars['Int']['output']>;
@@ -933,7 +941,7 @@ export type MyReviewsQueryVariables = Exact<{
 }>;
 
 
-export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', label?: string | null, icon?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, photoCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', label?: string | null, icon?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
 
 export type MyNotificationsQueryVariables = Exact<{
   filter?: InputMaybe<NotificationFilterEnum>;
@@ -981,7 +989,14 @@ export type PlaceReviewsQueryVariables = Exact<{
 }>;
 
 
-export type PlaceReviewsQuery = { __typename?: 'Query', placeReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, reviewerId?: number | null, createdAt?: string | null, helpfulCount?: number | null, helpfulByMe?: boolean | null, reviewer?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, reply?: { __typename?: 'ReviewReply', id?: number | null, description?: string | null, createdAt?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+export type PlaceReviewsQuery = { __typename?: 'Query', placeReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, reviewerId?: number | null, createdAt?: string | null, helpfulCount?: number | null, helpfulByMe?: boolean | null, photoCount?: number | null, reviewer?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, reply?: { __typename?: 'ReviewReply', id?: number | null, description?: string | null, createdAt?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+
+export type GetReviewByIdQueryVariables = Exact<{
+  id: Scalars['Int']['input'];
+}>;
+
+
+export type GetReviewByIdQuery = { __typename?: 'Query', getReviewById?: { __typename?: 'ReviewResponse', data?: { __typename?: 'Review', id?: number | null, photoCount?: number | null, photos?: Array<{ __typename?: 'Media', id?: number | null, url?: string | null } | null> | null } | null } | null };
 
 export type CreateReviewMutationVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -1782,6 +1797,7 @@ export const MyReviewsDocument = gql`
       rating
       createdAt
       helpfulCount
+      photoCount
       place {
         id
         label
@@ -2125,6 +2141,7 @@ export const PlaceReviewsDocument = gql`
       createdAt
       helpfulCount
       helpfulByMe
+      photoCount
       reviewer {
         id
         fullName
@@ -2183,6 +2200,57 @@ export type PlaceReviewsQueryHookResult = ReturnType<typeof usePlaceReviewsQuery
 export type PlaceReviewsLazyQueryHookResult = ReturnType<typeof usePlaceReviewsLazyQuery>;
 export type PlaceReviewsSuspenseQueryHookResult = ReturnType<typeof usePlaceReviewsSuspenseQuery>;
 export type PlaceReviewsQueryResult = ApolloReactCommon.QueryResult<PlaceReviewsQuery, PlaceReviewsQueryVariables>;
+export const GetReviewByIdDocument = gql`
+    query GetReviewById($id: Int!) {
+  getReviewById(id: $id) {
+    data {
+      id
+      photoCount
+      photos {
+        id
+        url
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __useGetReviewByIdQuery__
+ *
+ * To run a query within a React component, call `useGetReviewByIdQuery` and pass it any options that fit your needs.
+ * When your component renders, `useGetReviewByIdQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useGetReviewByIdQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useGetReviewByIdQuery(baseOptions: ApolloReactHooks.QueryHookOptions<GetReviewByIdQuery, GetReviewByIdQueryVariables> & ({ variables: GetReviewByIdQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<GetReviewByIdQuery, GetReviewByIdQueryVariables>(GetReviewByIdDocument, options as any);
+      }
+export function useGetReviewByIdLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<GetReviewByIdQuery, GetReviewByIdQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<GetReviewByIdQuery, GetReviewByIdQueryVariables>(GetReviewByIdDocument, options as any);
+        }
+// @ts-ignore
+export function useGetReviewByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<GetReviewByIdQuery, GetReviewByIdQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<GetReviewByIdQuery, GetReviewByIdQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useGetReviewByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetReviewByIdQuery, GetReviewByIdQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<GetReviewByIdQuery | undefined, GetReviewByIdQueryVariables>;
+export function useGetReviewByIdSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<GetReviewByIdQuery, GetReviewByIdQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<GetReviewByIdQuery, GetReviewByIdQueryVariables>(GetReviewByIdDocument, options as any);
+        }
+export type GetReviewByIdQueryHookResult = ReturnType<typeof useGetReviewByIdQuery>;
+export type GetReviewByIdLazyQueryHookResult = ReturnType<typeof useGetReviewByIdLazyQuery>;
+export type GetReviewByIdSuspenseQueryHookResult = ReturnType<typeof useGetReviewByIdSuspenseQuery>;
+export type GetReviewByIdQueryResult = ApolloReactCommon.QueryResult<GetReviewByIdQuery, GetReviewByIdQueryVariables>;
 export const CreateReviewDocument = gql`
     mutation CreateReview($placeId: Int!, $input: InputReview!) {
   createReview(placeId: $placeId, input: $input) {

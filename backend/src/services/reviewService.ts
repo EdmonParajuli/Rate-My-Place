@@ -246,6 +246,13 @@ export class ReviewService {
     return this.repository.updateOne({ id: reviewId, input: { helpfulCount } }, { transaction });
   }
 
+  // Pure write - MediaService (which owns the media data) computes the
+  // count and calls this inside its own transaction, same shape as
+  // updateHelpfulCount above.
+  async updatePhotoCount(reviewId: number, photoCount: number, transaction?: Transaction) {
+    return this.repository.updateOne({ id: reviewId, input: { photoCount } }, { transaction });
+  }
+
   async getReviewerStats(reviewerId: string) {
     return this.repository.getReviewerStats(reviewerId);
   }

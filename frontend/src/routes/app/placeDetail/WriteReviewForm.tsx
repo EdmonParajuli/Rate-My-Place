@@ -1,23 +1,34 @@
 import { useState } from "react"
 import { Star, Send, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ReviewPhotosSection } from "./ReviewPhotosSection"
 
 const RATING_LABEL: Record<number, string> = { 1: "Poor", 2: "Fair", 3: "Good", 4: "Great", 5: "Excellent" }
+
+type GalleryPhoto = { id?: number | null; url?: string | null }
 
 export function WriteReviewForm({
   placeName,
   initialRating,
   initialText,
   isEditing,
+  reviewId,
+  photos,
   submitting,
   onCancel,
   onSubmit,
   onSaveDraft,
+  onPhotosChanged,
 }: {
   placeName: string | null | undefined
   initialRating?: number
   initialText?: string
   isEditing: boolean
+  // Only present while editing an existing (already-created) review - photo
+  // upload needs a real review to attach to, so a not-yet-submitted review
+  // can't take photos yet. See ReviewPhotosSection.
+  reviewId?: number | null
+  photos?: GalleryPhoto[]
   submitting: boolean
   onCancel: () => void
   onSubmit: (rating: number, text: string) => void
@@ -26,6 +37,7 @@ export function WriteReviewForm({
   // §7's My Reviews resolution: a real but client-side-only, this-device-only
   // feature, never sent to the API).
   onSaveDraft?: (rating: number, text: string) => void
+  onPhotosChanged?: () => void
 }) {
   const [rating, setRating] = useState(initialRating ?? 0)
   const [text, setText] = useState(initialText ?? "")
@@ -57,6 +69,13 @@ export function WriteReviewForm({
           onChange={(e) => setText(e.target.value)}
         />
       </div>
+
+      {isEditing && reviewId ? (
+        <ReviewPhotosSection reviewId={reviewId} photos={photos ?? []} onChanged={onPhotosChanged ?? (() => {})} />
+      ) : (
+        !isEditing && <p className="mb-4 text-xs text-slate-400">You can add photos after posting your review.</p>
+      )}
+
       <div className="flex items-center justify-between">
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel

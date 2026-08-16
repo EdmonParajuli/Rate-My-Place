@@ -10,8 +10,6 @@ export const mediaTypedefs: DocumentNode = gql`
         COVER
     }
 
-    # REVIEW exists for doc 3's full polymorphic shape (review photo galleries,
-    # a later ticket) - MediaService rejects it until that ticket lands.
     enum MediaOwnerTypeEnum {
         PLACE
         USER
@@ -49,16 +47,25 @@ export const mediaTypedefs: DocumentNode = gql`
 
     input InputAttachMedia {
         ownerType: MediaOwnerTypeEnum!
-        # Required for PLACE (the place being photographed); ignored for USER
-        # (always the caller's own account - never trust a client-supplied id
-        # there).
+        # Required for PLACE/REVIEW (which one); ignored for USER (always the
+        # caller's own account - never trust a client-supplied id there).
         ownerId: Int
         kind: MediaKindEnum!
         url: String!
     }
 
+    # photoCount needs no field resolver - a real column (materialized by
+    # MediaService, same pattern as Review.helpfulCount), safe to select in
+    # placeReviews/myReviews' list queries. photos is a live per-review
+    # lookup, only safe through the single-review getReviewById query - see
+    # docs/specs/phase-8-media-plumbing.md.
+    extend type Review {
+        photoCount: Int
+        photos: [Media]
+    }
+
     extend type Query {
-        # ownerId required for PLACE, ignored for USER (self).
+        # ownerId required for PLACE/REVIEW, ignored for USER (self).
         mediaUploadSignature(ownerType: MediaOwnerTypeEnum!, kind: MediaKindEnum!, ownerId: Int): UploadSignatureResponse
     }
 

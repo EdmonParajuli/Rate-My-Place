@@ -952,6 +952,25 @@ signed-upload flow, proven end-to-end on avatar/cover before place/review photos
   (no N+1 risk the way Discover's grid created for `coverPhotoUrl`/
   `profilePicture`). `REVIEW` still unimplemented. See the spec's second
   2026-08-16 update.
+- **Update (2026-08-16): review photo galleries — `REVIEW` support added to
+  `MediaService`, closing out Phase 8.** Same shape as the place-gallery update
+  (ownership via `ReviewService.getReviewById` + `assertOwnership`, `PHOTO`-only,
+  additive, capped — 6 this time, `MAX_REVIEW_PHOTOS`), but with a real
+  complication `Place.photos` never had: `placeReviews`/`myReviews` are actual
+  list queries (a place can have dozens of reviews on one page), so a live
+  `Review.photos` resolver there would be a genuine N+1. Fixed by adding
+  `Review.photoCount` as a materialized column (`providers_reviews.photo_count`,
+  migration `20260816180000`) — reuses `ReviewVoteService.toggle`'s existing
+  "recompute a real COUNT and store it" pattern for `helpfulCount` rather than
+  inventing a new one. `Review.photos` (the live resolver) is now only reachable
+  through a new single-review `getReviewById(id)` query, never selected in a
+  list. Caught a real bug during verification: the first version of the
+  recompute ran outside the write's transaction, so it read the pre-write count
+  (the just-inserted/deleted row isn't visible outside its own transaction under
+  `READ COMMITTED`) — fixed by adding a `transaction` option to
+  `BaseRepository.count` (it had none before this) and threading it through.
+  `MediaService` now handles all three `MediaOwnerTypeEnum` values for real. See
+  the spec's third 2026-08-16 update.
 
 ## GraphQL schema design principles going forward
 
