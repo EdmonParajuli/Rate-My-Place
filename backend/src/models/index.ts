@@ -11,6 +11,7 @@ import SavedPlace from "./savedPlaces";
 import Badge from "./badges";
 import UserBadge from "./userBadges";
 import Notification from "./notifications";
+import Media from "./media";
 
 const Model = {
     User,
@@ -25,7 +26,8 @@ const Model = {
     SavedPlace,
     Badge,
     UserBadge,
-    Notification
+    Notification,
+    Media
 }
 
 export default Model;

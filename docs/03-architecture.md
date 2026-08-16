@@ -176,7 +176,8 @@ Notes on the additions:
   sessions" list possible — store a hash of the refresh token, not the token itself.
 - **`MEDIA`** is a single polymorphic table for the three places images show up
   (place photos, review photos, user avatar/cover) rather than three near-identical
-  tables — pairs with an actual object-storage decision (see doc 6).
+  tables — pairs with an actual object-storage decision (see doc 6). **Built**
+  (Phase 8, avatar/cover only so far) — see below.
 - Add `price_range` (`enum $/$$/$$$`) directly onto `PLACES` rather than a new table.
 
 ## `signUpBusiness` (atomic account + place creation)
@@ -901,6 +902,37 @@ configured) — nothing ever applied the class.
   `RegularSettingsPage.tsx` — some of which was a real legibility bug, not just
   cosmetic: hardcoded dark-gray text on a near-black background). The remaining
   coverage gap is flagged as a real follow-up, not swept under anything.
+
+## Built: Media plumbing + avatar/cover upload (Phase 8, 2026-08-16)
+
+Full design in
+[specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md). First of
+Phase 8's sequenced tickets — provider (Cloudinary) + the `MEDIA` table + the
+signed-upload flow, proven end-to-end on avatar/cover before place/review photos
+(separate, later tickets) reuse the same plumbing.
+
+- **`providers_media`** matches the polymorphic shape proposed above
+  (`owner_type`/`owner_id`/`kind` ENUMs, standard paranoid columns) — but only
+  `USER` avatar/cover has a working path through `MediaService` and the GraphQL
+  layer today; `PLACE`/`REVIEW` exist in the enum and DB column but are otherwise
+  unimplemented, deliberately, rather than half-built ahead of need.
+- **`MEDIA` is the audit trail, not the read path.** `attachMedia` writes a
+  `providers_media` row *and* the matching `profile_picture`/`cover_picture` column
+  on `providers_users`, in the same transaction — the same "recompute and store a
+  column" precedent as `Place.averageRating`/`reviewCount`. Chosen specifically
+  because `Place.owner`/`Review.reviewer` both embed `User` and both already select
+  `profilePicture` in real list contexts (place-owner cards, every review card) —
+  resolving it live from `MEDIA` per request would be a real N+1 across those lists;
+  a plain column read isn't.
+- **Cloudinary's signature flavor of "signed URL"**: the backend signs `folder` +
+  `timestamp` with the API secret (`utils/cloudinary.ts`); the browser POSTs the
+  file straight to Cloudinary with that signature. Functionally the same
+  "file bytes never touch this server" property doc 6 asked for, just this
+  provider's specific mechanism for it (no presigned PUT URL the way S3 works).
+- **`graphql/schema/index.ts` builds an explicit array, not a barrel wildcard** —
+  new typeDefs/resolvers have to be added there too, not just to the `typeDefs`/
+  `resolvers` barrel `index.ts` files. Easy to miss (cost one debugging round trip
+  here); worth remembering for the next new feature typedefs file.
 
 ## GraphQL schema design principles going forward
 

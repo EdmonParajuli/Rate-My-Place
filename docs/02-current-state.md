@@ -72,6 +72,14 @@ resolver → typeDefs):**
   (rating-bucket heuristic), response rate, all live-computed from
   `providers_reviews`/`providers_reviews_replies` — see
   [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md).
+- **Media** (Phase 8) — Cloudinary-backed signed uploads (`mediaUploadSignature`/
+  `attachMedia`), `providers_media` is a polymorphic audit table (doc 3's
+  `PLACE | REVIEW | USER` × `PHOTO | AVATAR | COVER` shape) but only `USER`
+  avatar/cover is wired up so far. `User.profilePicture`/`coverPicture` are the
+  actual read path (denormalized columns, same "recompute and store" precedent as
+  `Place.averageRating`) — reading them anywhere `User` is embedded (review/place
+  owner cards included) is a plain column read, never a `MEDIA` lookup. See
+  [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 **Frontend screens, all against the real API above (no mocked data anywhere in
 `frontend/`):**
@@ -107,9 +115,12 @@ resolver → typeDefs):**
   (`ProfileActivityChart.tsx`) both computed client-side from `myReviews` (no new
   backend aggregate, same "start simple" precedent as My Reviews' `StatsRow`), full
   badge grid (`myBadges`, earned vs.
-  locked with descriptions), recent-reviews preview. Still entirely read-only — a
-  deliberate split, not a backend gap: account editing lives on Settings (below),
-  not duplicated here. See [specs/phase-5-profile.md](./specs/phase-5-profile.md).
+  locked with descriptions), recent-reviews preview. Account field editing (name,
+  password) still lives on Settings, not duplicated here — but avatar/cover photo
+  upload is real and lives here (Phase 8's Cloudinary-backed `MEDIA` plumbing, see
+  [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md)), a camera-
+  icon overlay on the avatar and a "Change cover" pill on the banner. See also
+  [specs/phase-5-profile.md](./specs/phase-5-profile.md).
 - **Settings** — `REGULAR` and `BUSINESS` each get their own screen at the same
   `/app/settings` route/nav item (a thin `SettingsPage.tsx` picks by persona), not
   one shared screen — the two have genuinely different designs in their own Figma

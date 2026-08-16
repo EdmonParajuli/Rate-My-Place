@@ -1,0 +1,22 @@
+query MediaUploadSignature($kind: MediaKindEnum!) {
+  mediaUploadSignature(kind: $kind) {
+    data {
+      signature
+      timestamp
+      apiKey
+      cloudName
+      folder
+    }
+  }
+}
+
+mutation AttachMedia($input: InputAttachMedia!) {
+  attachMedia(input: $input) {
+    message
+    data {
+      id
+      kind
+      url
+    }
+  }
+}

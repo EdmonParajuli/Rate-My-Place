@@ -25,6 +25,7 @@ type AuthUser = {
   fullName: string | null
   userType: string | null
   profilePicture: string | null
+  coverPicture: string | null
 }
 
 type AuthContextValue = {

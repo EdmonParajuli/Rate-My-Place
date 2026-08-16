@@ -10,6 +10,7 @@ export interface InputUserInterface {
     fullName: string;
     userType: UserTypeEnum;
     profilePicture?: string;
+    coverPicture?: string;
 }
 
 export interface UserInterface extends ModelTimestampExtend, InputUserInterface {

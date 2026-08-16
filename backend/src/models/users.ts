@@ -41,6 +41,11 @@ const User = sequelize.define<UserModelInterface>(
             field: 'profile_picture',
             allowNull: true
         },
+        coverPicture: {
+            type: Sequelize.TEXT,
+            field: 'cover_picture',
+            allowNull: true
+        },
         userType: {
             type: Sequelize.ENUM(
                 UserTypeEnum.REGULAR,

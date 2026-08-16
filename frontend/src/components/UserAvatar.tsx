@@ -1,6 +1,7 @@
-// No profile-picture upload flow exists yet - profilePicture is null for
-// essentially every real user. Rather than fake a stock photo, unset avatars
-// render as initials-in-a-circle. Shared across AppLayout, review cards, etc.
+// profilePicture is real (Phase 8, ProfileHeader's upload flow) but still
+// null for any account that hasn't uploaded one. Rather than fake a stock
+// photo, unset avatars render as initials-in-a-circle. Shared across
+// AppLayout, review cards, etc.
 export function UserAvatar({ name, profilePicture, className }: { name: string; profilePicture?: string | null; className: string }) {
   if (profilePicture) {
     return <img src={profilePicture} alt="" className={`${className} object-cover`} />

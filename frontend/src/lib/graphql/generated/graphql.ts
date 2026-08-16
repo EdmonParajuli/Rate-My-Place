@@ -26,6 +26,12 @@ export type ActiveSessionsResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type AttachMediaResponse = {
+  __typename?: 'AttachMediaResponse';
+  data?: Maybe<Media>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
 export type AuthMeResponse = {
   __typename?: 'AuthMeResponse';
   data?: Maybe<User>;
@@ -106,6 +112,11 @@ export type CategoryResponse = {
 export type GeoInput = {
   latitude: Scalars['Float']['input'];
   longitude: Scalars['Float']['input'];
+};
+
+export type InputAttachMedia = {
+  kind: MediaKindEnum;
+  url: Scalars['String']['input'];
 };
 
 export type InputAuthLogin = {
@@ -211,6 +222,19 @@ export type LoginToken = {
   sessionId?: Maybe<Scalars['Int']['output']>;
 };
 
+export type Media = {
+  __typename?: 'Media';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['Int']['output']>;
+  kind?: Maybe<MediaKindEnum>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type MediaKindEnum =
+  | 'AVATAR'
+  | 'COVER'
+  | 'PHOTO';
+
 export type Message = {
   __typename?: 'Message';
   message?: Maybe<Scalars['String']['output']>;
@@ -230,6 +254,7 @@ export type MonthlyVolumePoint = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  attachMedia?: Maybe<AttachMediaResponse>;
   changePassword?: Maybe<Message>;
   confirmForgotPassword?: Maybe<Message>;
   createPlace?: Maybe<PlaceResponse>;
@@ -256,6 +281,11 @@ export type Mutation = {
   updateReview?: Maybe<ReviewResponse>;
   updateReviewReply?: Maybe<ReviewReplyResponse>;
   updateUser?: Maybe<UpdateUserResponse>;
+};
+
+
+export type MutationAttachMediaArgs = {
+  input: InputAttachMedia;
 };
 
 
@@ -519,6 +549,7 @@ export type Query = {
   category?: Maybe<CategoryResponse>;
   getPlaceById?: Maybe<PlaceResponse>;
   listPlaces?: Maybe<PlaceListResponse>;
+  mediaUploadSignature?: Maybe<UploadSignatureResponse>;
   myBadges?: Maybe<BadgeListResponse>;
   myNotifications?: Maybe<NotificationListResponse>;
   myReviews?: Maybe<ReviewListResponse>;
@@ -545,6 +576,11 @@ export type QueryListPlacesArgs = {
   first?: InputMaybe<Scalars['Int']['input']>;
   near?: InputMaybe<GeoInput>;
   sort?: InputMaybe<PlaceSortEnum>;
+};
+
+
+export type QueryMediaUploadSignatureArgs = {
+  kind: MediaKindEnum;
 };
 
 
@@ -716,8 +752,24 @@ export type UpdateUserResponse = {
   message?: Maybe<Scalars['String']['output']>;
 };
 
+export type UploadSignature = {
+  __typename?: 'UploadSignature';
+  apiKey?: Maybe<Scalars['String']['output']>;
+  cloudName?: Maybe<Scalars['String']['output']>;
+  folder?: Maybe<Scalars['String']['output']>;
+  signature?: Maybe<Scalars['String']['output']>;
+  timestamp?: Maybe<Scalars['Int']['output']>;
+};
+
+export type UploadSignatureResponse = {
+  __typename?: 'UploadSignatureResponse';
+  data?: Maybe<UploadSignature>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
 export type User = {
   __typename?: 'User';
+  coverPicture?: Maybe<Scalars['String']['output']>;
   createdAt?: Maybe<Scalars['String']['output']>;
   email?: Maybe<Scalars['String']['output']>;
   fullName?: Maybe<Scalars['String']['output']>;
@@ -753,26 +805,26 @@ export type LoginMutationVariables = Exact<{
 }>;
 
 
-export type LoginMutation = { __typename?: 'Mutation', login?: { __typename?: 'LoginResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type LoginMutation = { __typename?: 'Mutation', login?: { __typename?: 'LoginResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, coverPicture?: string | null } | null } | null } | null };
 
 export type SignUpMutationVariables = Exact<{
   input?: InputMaybe<InputAuthSignUp>;
 }>;
 
 
-export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUpResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUpResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, coverPicture?: string | null } | null } | null } | null };
 
 export type SignUpBusinessMutationVariables = Exact<{
   input?: InputMaybe<InputSignUpBusiness>;
 }>;
 
 
-export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?: { __typename?: 'SignUpBusinessResponse', message?: string | null, data?: { __typename?: 'SignUpBusinessData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?: { __typename?: 'SignUpBusinessResponse', message?: string | null, data?: { __typename?: 'SignUpBusinessData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, coverPicture?: string | null } | null } | null } | null };
 
 export type AuthMeUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type AuthMeUserQuery = { __typename?: 'Query', authMeUser?: { __typename?: 'authMeUserResponse', data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, createdAt?: string | null } | null } | null };
+export type AuthMeUserQuery = { __typename?: 'Query', authMeUser?: { __typename?: 'authMeUserResponse', data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, coverPicture?: string | null, createdAt?: string | null } | null } | null };
 
 export type SignOutMutationVariables = Exact<{
   input?: InputMaybe<InputRefreshToken>;
@@ -786,7 +838,7 @@ export type UpdateUserMutationVariables = Exact<{
 }>;
 
 
-export type UpdateUserMutation = { __typename?: 'Mutation', updateUser?: { __typename?: 'UpdateUserResponse', message?: string | null, data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, createdAt?: string | null } | null } | null };
+export type UpdateUserMutation = { __typename?: 'Mutation', updateUser?: { __typename?: 'UpdateUserResponse', message?: string | null, data?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null, coverPicture?: string | null, createdAt?: string | null } | null } | null };
 
 export type MyBadgesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -832,6 +884,20 @@ export type CategoryQueryVariables = Exact<{
 
 
 export type CategoryQuery = { __typename?: 'Query', category?: { __typename?: 'CategoryResponse', data?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null } | null };
+
+export type MediaUploadSignatureQueryVariables = Exact<{
+  kind: MediaKindEnum;
+}>;
+
+
+export type MediaUploadSignatureQuery = { __typename?: 'Query', mediaUploadSignature?: { __typename?: 'UploadSignatureResponse', data?: { __typename?: 'UploadSignature', signature?: string | null, timestamp?: number | null, apiKey?: string | null, cloudName?: string | null, folder?: string | null } | null } | null };
+
+export type AttachMediaMutationVariables = Exact<{
+  input: InputAttachMedia;
+}>;
+
+
+export type AttachMediaMutation = { __typename?: 'Mutation', attachMedia?: { __typename?: 'AttachMediaResponse', message?: string | null, data?: { __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null } | null };
 
 export type MyReviewsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -1001,6 +1067,7 @@ export const LoginDocument = gql`
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -1046,6 +1113,7 @@ export const SignUpDocument = gql`
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -1091,6 +1159,7 @@ export const SignUpBusinessDocument = gql`
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -1129,6 +1198,7 @@ export const AuthMeUserDocument = gql`
       fullName
       userType
       profilePicture
+      coverPicture
       createdAt
     }
   }
@@ -1211,6 +1281,7 @@ export const UpdateUserDocument = gql`
       fullName
       userType
       profilePicture
+      coverPicture
       createdAt
     }
   }
@@ -1555,6 +1626,92 @@ export type CategoryQueryHookResult = ReturnType<typeof useCategoryQuery>;
 export type CategoryLazyQueryHookResult = ReturnType<typeof useCategoryLazyQuery>;
 export type CategorySuspenseQueryHookResult = ReturnType<typeof useCategorySuspenseQuery>;
 export type CategoryQueryResult = ApolloReactCommon.QueryResult<CategoryQuery, CategoryQueryVariables>;
+export const MediaUploadSignatureDocument = gql`
+    query MediaUploadSignature($kind: MediaKindEnum!) {
+  mediaUploadSignature(kind: $kind) {
+    data {
+      signature
+      timestamp
+      apiKey
+      cloudName
+      folder
+    }
+  }
+}
+    `;
+
+/**
+ * __useMediaUploadSignatureQuery__
+ *
+ * To run a query within a React component, call `useMediaUploadSignatureQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMediaUploadSignatureQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMediaUploadSignatureQuery({
+ *   variables: {
+ *      kind: // value for 'kind'
+ *   },
+ * });
+ */
+export function useMediaUploadSignatureQuery(baseOptions: ApolloReactHooks.QueryHookOptions<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables> & ({ variables: MediaUploadSignatureQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>(MediaUploadSignatureDocument, options as any);
+      }
+export function useMediaUploadSignatureLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>(MediaUploadSignatureDocument, options as any);
+        }
+// @ts-ignore
+export function useMediaUploadSignatureSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useMediaUploadSignatureSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MediaUploadSignatureQuery | undefined, MediaUploadSignatureQueryVariables>;
+export function useMediaUploadSignatureSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>(MediaUploadSignatureDocument, options as any);
+        }
+export type MediaUploadSignatureQueryHookResult = ReturnType<typeof useMediaUploadSignatureQuery>;
+export type MediaUploadSignatureLazyQueryHookResult = ReturnType<typeof useMediaUploadSignatureLazyQuery>;
+export type MediaUploadSignatureSuspenseQueryHookResult = ReturnType<typeof useMediaUploadSignatureSuspenseQuery>;
+export type MediaUploadSignatureQueryResult = ApolloReactCommon.QueryResult<MediaUploadSignatureQuery, MediaUploadSignatureQueryVariables>;
+export const AttachMediaDocument = gql`
+    mutation AttachMedia($input: InputAttachMedia!) {
+  attachMedia(input: $input) {
+    message
+    data {
+      id
+      kind
+      url
+    }
+  }
+}
+    `;
+
+/**
+ * __useAttachMediaMutation__
+ *
+ * To run a mutation, you first call `useAttachMediaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useAttachMediaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [attachMediaMutation, { data, loading, error }] = useAttachMediaMutation({
+ *   variables: {
+ *      input: // value for 'input'
+ *   },
+ * });
+ */
+export function useAttachMediaMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<AttachMediaMutation, AttachMediaMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<AttachMediaMutation, AttachMediaMutationVariables>(AttachMediaDocument, options);
+      }
+export type AttachMediaMutationHookResult = ReturnType<typeof useAttachMediaMutation>;
+export type AttachMediaMutationResult = ApolloReactCommon.MutationResult<AttachMediaMutation>;
 export const MyReviewsDocument = gql`
     query MyReviews($first: Int, $after: String) {
   myReviews(first: $first, after: $after) {
