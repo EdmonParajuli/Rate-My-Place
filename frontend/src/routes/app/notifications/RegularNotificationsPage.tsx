@@ -63,7 +63,7 @@ export function RegularNotificationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-12">
+    <div className="space-y-6 pb-12">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Notifications</h1>

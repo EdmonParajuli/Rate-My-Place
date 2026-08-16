@@ -115,9 +115,11 @@ function ToggleRow({ checked, onChange, label }: { checked: boolean; onChange: (
       <span className="text-sm text-foreground">{label}</span>
       <button
         onClick={() => onChange(!checked)}
-        className={`relative h-[22px] w-10 flex-shrink-0 cursor-pointer rounded-full transition-colors ${checked ? "bg-primary" : "bg-switch-background"}`}
+        className={`relative h-[22px] w-10 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${checked ? "bg-primary" : "bg-switch-background"}`}
       >
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
+        <span
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out ${checked ? "translate-x-5" : "translate-x-0"}`}
+        />
       </button>
     </div>
   )

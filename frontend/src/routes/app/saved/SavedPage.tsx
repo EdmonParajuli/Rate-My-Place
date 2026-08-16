@@ -55,7 +55,7 @@ export function SavedPage() {
   const filteredSaved = tab === "ALL" ? savedPlaces : savedPlaces.filter((sp) => sp.listType === tab)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-12">
+    <div className="space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Saved</h1>
         <p className="mt-1 text-sm text-slate-500">Places you've saved, want to visit, or already reviewed.</p>

@@ -35,7 +35,7 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 pb-12">
+    <div className="space-y-5 pb-12">
       <ProfileHeader
         name={me?.fullName ?? "Account"}
         userType={me?.userType ?? null}

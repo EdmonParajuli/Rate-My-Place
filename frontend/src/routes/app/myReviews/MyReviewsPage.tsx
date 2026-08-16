@@ -65,7 +65,7 @@ export function MyReviewsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-6">
+    <div>
       <h1 className="text-2xl font-extrabold">My Reviews</h1>
       <p className="mt-1 text-sm text-muted-foreground">Manage the reviews you've written and pick up where you left off on drafts.</p>
 
