@@ -775,19 +775,56 @@ used). No new table, one new mutation.
   affected-row count, not the row) then re-fetches via `findByPk` so the resolver has
   a real `User` to return — same "update then re-fetch" shape
   `ReviewService.updateReview` already uses.
-- **The existing Phase 6 `SettingsPage.tsx` became the shared screen for both account
-  types, not a second screen built for `REGULAR`.** Its Account tab's hardcoded
-  `"Business owner"` label became a small shared `lib/userTypeLabel.ts` helper
-  (deduped out of `AppLayout.tsx`, which had the identical logic inline); its
+- **~~The existing Phase 6 `SettingsPage.tsx` became the shared screen for both
+  account types~~ — wrong, corrected in the very next ticket.** Its Account tab's
+  hardcoded `"Business owner"` label became a small shared `lib/userTypeLabel.ts`
+  helper (deduped out of `AppLayout.tsx`, which had the identical logic inline); its
   read-only Full Name display became a real editable input + Save button wired to
-  `updateUser`. The Notifications tab (an explicit static preview) is untouched —
-  real per-type toggles are a separate, later Phase 7 ticket. New `/app/settings`
-  entry added to `REVIEWER_NAV_ITEMS`; the route itself already existed from Phase 6.
+  `updateUser`. **What was wrong**: `REGULAR` and `BUSINESS` turned out to have
+  completely different Settings designs in their own Figma sources (a 6-section
+  sidebar vs. a 2-tab screen) — not a shared screen with a label swap. See the next
+  section below for the fix; the `updateUser` mutation and editable-name work here
+  are unaffected, only the "one shared screen" framing was wrong.
 - **`AuthContext` gained a `refreshUser()` escape hatch.** `AppLayout`'s
   sidebar/topbar name reads from `AuthContext`'s `user` state, not Apollo's cache —
   after `updateUser` succeeds, `refreshUser()` re-runs the same `authMeUser` lazy
   query the mount-time token refresh already uses and replaces `user`, so the
   displayed name updates immediately rather than waiting for a reload.
+
+## Built: Settings correction + Security/active sessions (Phase 7, 2026-08-16)
+
+Full design in
+[specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md).
+Second of Phase 7's sequenced tickets — fixes the previous ticket's wrong "shared
+Settings screen" assumption (caught live by the user, not self-caught) and, on the
+corrected foundation, builds the Security section's active-sessions list + revoke.
+
+- **Two Settings screens, not one.** `routes/app/settings/BusinessSettingsPage.tsx`
+  (business-only, reverted to hardcoded `"Business owner"`) and the new
+  `RegularSettingsPage.tsx` (a 6-section left sidebar — Account/Preferences/
+  Notifications/Privacy/Security/Danger Zone — matching its own Figma source 1:1).
+  `SettingsPage.tsx` is now a thin persona router between the two, so `router.tsx`
+  and both `AppLayout.tsx` nav-item lists needed zero changes.
+- **`sessionId` threaded through every session-creating code path** (`AuthService
+  .login`/`signUp`, `BusinessOnboardingService.signUpBusiness`, `SessionService
+  .renew`) and the shared `LoginToken` GraphQL type, persisted client-side
+  (`tokenStorage.ts`, same lifecycle as the refresh token) — lets the Security
+  section mark "This device" in the `activeSessions` list instead of a revoke button
+  that could silently log the user out of their own live session. Confirmed directly
+  with the user: this was worth the (small) blast radius across 4 call sites rather
+  than skipping identification or only adding a generic warning.
+- **`REGULAR`-only Security section — real active sessions, preview 2FA.** Active
+  sessions/revoke were already fully built on the backend since Phase 1 with zero UI
+  on top; this is pure frontend against `activeSessions`/`revokeSession`.
+  `BUSINESS`'s Settings screen has no Security tab at all in its own Figma source, so
+  this stays `REGULAR`-only, unlike Account (real on both).
+- **Whole `REGULAR` shell shipped in one pass, not section-by-section.** Same "build
+  the full Figma screen, label what isn't real yet" precedent Phase 6's business
+  console set (Promotions, keyword-mentions). Preferences/Notifications/Privacy/2FA
+  are labeled previews; Danger Zone's "sign out of all other devices" is real (loops
+  the existing `revokeSession` mutation over every non-current session — no new
+  backend needed), Delete Account is a disabled button with a "Preview feature"
+  caption rather than a working-looking control on a destructive, unbacked action.
 
 ## GraphQL schema design principles going forward
 

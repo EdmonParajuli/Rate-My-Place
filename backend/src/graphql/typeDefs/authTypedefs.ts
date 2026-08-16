@@ -84,6 +84,10 @@ export const authTypedefs: DocumentNode = gql`
     type LoginToken {
         access: String
         refresh: String
+        # Lets the frontend identify "this device" in the activeSessions list
+        # (docs/specs/phase-7-settings-account-edit.md) - persisted client-side
+        # alongside the refresh token, compared against Session.id.
+        sessionId: Int
     }
 
     type UserData {

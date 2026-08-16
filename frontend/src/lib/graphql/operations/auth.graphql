@@ -5,6 +5,7 @@ mutation Login($input: InputAuthLogin) {
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
@@ -24,6 +25,7 @@ mutation SignUp($input: InputAuthSignUp) {
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
@@ -43,6 +45,7 @@ mutation SignUpBusiness($input: InputSignUpBusiness) {
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
