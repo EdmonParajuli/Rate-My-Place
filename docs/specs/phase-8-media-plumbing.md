@@ -1,10 +1,73 @@
 # Phase 8 Spec: Media Plumbing + Avatar/Cover Upload
 
-**Status: ✅ Built (plumbing + avatar/cover), ✅ place cover photo (read-only,
-seeded), ❌ no place/review photo upload flow or gallery yet.** First of Phase 8's
-sequenced tickets.
+**Status: ✅ Built (plumbing, avatar/cover, place cover photo + gallery upload),
+❌ no review photo upload flow yet.** First two of Phase 8's sequenced tickets.
 
-## Update (2026-08-16): Place cover photo, seeded directly
+## Update (2026-08-16): Place photo galleries (real upload, not seeded)
+
+Extends `attachMedia`/`mediaUploadSignature` (previously USER-only) to also
+support `PLACE`, so business owners can upload their own cover photo and gallery
+for real - not the direct-DB seed from the previous update. My Listing's
+"Photo uploads coming soon" placeholder (`ListingPreviewCard.tsx`) had been sitting
+there since Phase 6, waiting for exactly this.
+
+**GraphQL surface now carries `ownerType`/`ownerId`, no longer USER-implicit.**
+The original avatar/cover ticket deliberately kept `mediaUploadSignature`/
+`attachMedia` narrow (self only, no owner arguments at all) rather than
+speculatively wiring arguments nothing used yet. Extending to `PLACE` is exactly
+the point where that deferred cost comes due - both now take
+`ownerType: MediaOwnerTypeEnum!` and an optional `ownerId: Int` (required for
+`PLACE`, ignored for `USER` - never trust a client-supplied id for "my own
+account"). `REVIEW` still has no working path; the schema enum includes it
+(matches doc 3's full shape) but `MediaService` rejects it, same as `PHOTO`
+was rejected for `USER` in the first ticket.
+
+**Ownership is checked against the real place, every time.** Both
+`getUploadSignature` and `attachMedia` fetch the place via `PlaceService` and
+`assertOwnership(place.ownerId, callerId, ...)` before doing anything - the same
+check `PlaceService.updatePlace`/`delete` already use. Verified directly: a second
+business account attempting to sign or attach media for a place it doesn't own
+gets a 403, not just a client-side-hidden button.
+
+**Cover behaves like `USER`'s (single-slot, replace-on-upload); `PHOTO` is a real,
+additive gallery, capped at 12.** Setting a new cover deletes the old `COVER` row
+and updates `Place.coverPhotoUrl` in the same transaction (identical shape to the
+avatar/cover ticket, just parameterized by owner instead of hardcoded to `USER` -
+`PlaceService.updateCoverPhoto` mirrors `UserService.updateProfilePicture`).
+`PHOTO` uploads are additive - no delete-before-create - since a gallery needs to
+accumulate rows. The cap (`MAX_PLACE_PHOTOS = 12` in `mediaService.ts`) is a plain
+constant, not asked for explicitly but a reasonable default to stop one place from
+accumulating an unbounded number of rows; verified directly (the 13th upload is
+rejected with a clear message).
+
+**New `removeMedia(mediaId)` mutation** - deleting an individual gallery photo
+needed a real mutation this ticket didn't have before (avatar/cover only ever
+*replaced*, never bare-deleted). Ownership resolves by the media row's own
+`ownerType`: `USER` checks the caller owns the row directly, `PLACE` checks the
+caller owns the underlying place. If the removed row was a `COVER`, the matching
+denormalized column (`Place.coverPhotoUrl` or `User.profilePicture`/`coverPicture`)
+is cleared to `null` in the same transaction, so it never keeps pointing at a
+soft-deleted row's URL - this also means `removeMedia` technically supports
+un-setting your own avatar/cover now, even though no UI calls it that way yet
+(no "remove avatar" button was built - out of scope, not asked for).
+
+**`Place.photos: [Media]` is a live resolver, not denormalized.** Unlike
+`coverPhotoUrl` (needed a column because Discover's grid renders many places at
+once), a gallery is inherently a list and is only ever requested for one place at a
+time (Place Detail, My Listing) - no N+1 risk to design around here.
+
+**No Figma reference for the gallery UI either.** Same situation as avatar/cover's
+camera-icon overlay: neither persona's Figma source predates Phase 8, so
+`PlacePhotosSection.tsx` (cover thumbnail + "Change Cover" button, a photo grid
+with hover-to-delete, a dashed "Add Photo" tile) is a reasonable, common convention
+for a listing-management gallery, not a translation of an existing design.
+
+## Update (2026-08-16): Place cover photo, seeded directly (superseded above)
+
+This update predates the real upload flow above - kept for history. At the time,
+`attachMedia` had no `PLACE` support at all, so cover photos were seeded directly
+in the DB rather than uploaded. That gap is now closed; new cover photos should go
+through the real upload flow in `PlacePhotosSection.tsx`, not another seed script.
 
 The user asked to seed place photos "directly in the db" to check the feature
 visually in the UI - both `PlaceCard.tsx` (Discover grid) and

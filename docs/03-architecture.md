@@ -935,8 +935,23 @@ signed-upload flow, proven end-to-end on avatar/cover before place/review photos
   here); worth remembering for the next new feature typedefs file.
 - **Update (2026-08-16): `Place.coverPhotoUrl`**, same denormalized-column
   reasoning extended to places — `providers_places.cover_photo_url` (migration
-  `20260816170000`), read-only for now (seeded directly, no `attachMedia` support
-  for `PLACE`). See the spec's 2026-08-16 update.
+  `20260816170000`). Originally read-only (seeded directly); superseded by the
+  next update, which gave it a real upload path.
+- **Update (2026-08-16): place photo galleries — `PLACE` support added to
+  `MediaService`.** `mediaUploadSignature`/`attachMedia` gained `ownerType`/
+  `ownerId` args (deliberately absent in the first update — narrow-scope-until-
+  needed, and `PLACE` is where that need arrived). Ownership is a real check
+  (`assertOwnership` against `PlaceService.getPlaceById`), not a hidden button.
+  `COVER` replaces-on-upload like `USER`'s; `PHOTO` is additive (a real gallery),
+  capped at 12 (`MAX_PLACE_PHOTOS` in `mediaService.ts`). New `removeMedia(mediaId)`
+  mutation — ownership resolves off the media row's own `ownerType`, and clears
+  the matching denormalized column (`coverPhotoUrl`/`profilePicture`/
+  `coverPicture`) if the removed row was a `COVER`. `Place.photos: [Media]` is a
+  live per-place resolver, not denormalized — deliberately different from
+  `coverPhotoUrl`, since a gallery is only ever fetched for one place at a time
+  (no N+1 risk the way Discover's grid created for `coverPhotoUrl`/
+  `profilePicture`). `REVIEW` still unimplemented. See the spec's second
+  2026-08-16 update.
 
 ## GraphQL schema design principles going forward
 

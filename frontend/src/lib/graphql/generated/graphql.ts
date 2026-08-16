@@ -116,6 +116,8 @@ export type GeoInput = {
 
 export type InputAttachMedia = {
   kind: MediaKindEnum;
+  ownerId?: InputMaybe<Scalars['Int']['input']>;
+  ownerType: MediaOwnerTypeEnum;
   url: Scalars['String']['input'];
 };
 
@@ -227,6 +229,8 @@ export type Media = {
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['Int']['output']>;
   kind?: Maybe<MediaKindEnum>;
+  ownerId?: Maybe<Scalars['Int']['output']>;
+  ownerType?: Maybe<MediaOwnerTypeEnum>;
   url?: Maybe<Scalars['String']['output']>;
 };
 
@@ -234,6 +238,11 @@ export type MediaKindEnum =
   | 'AVATAR'
   | 'COVER'
   | 'PHOTO';
+
+export type MediaOwnerTypeEnum =
+  | 'PLACE'
+  | 'REVIEW'
+  | 'USER';
 
 export type Message = {
   __typename?: 'Message';
@@ -269,6 +278,7 @@ export type Mutation = {
   markAllNotificationsRead?: Maybe<Message>;
   markNotificationRead?: Maybe<Message>;
   refreshAccessToken?: Maybe<RefreshTokenResponse>;
+  removeMedia?: Maybe<Message>;
   revokeSession?: Maybe<Message>;
   setPlaceHours?: Maybe<PlaceHoursResponse>;
   setSavedPlaceListType?: Maybe<SavedPlaceResponse>;
@@ -353,6 +363,11 @@ export type MutationMarkNotificationReadArgs = {
 
 export type MutationRefreshAccessTokenArgs = {
   input: InputRefreshAccessToken;
+};
+
+
+export type MutationRemoveMediaArgs = {
+  mediaId: Scalars['Int']['input'];
 };
 
 
@@ -473,6 +488,7 @@ export type Place = {
   openNow?: Maybe<Scalars['Boolean']['output']>;
   owner?: Maybe<User>;
   phone?: Maybe<Scalars['String']['output']>;
+  photos?: Maybe<Array<Maybe<Media>>>;
   priceRange?: Maybe<PriceRangeEnum>;
   ratingBreakdown?: Maybe<Array<Maybe<RatingBreakdownEntry>>>;
   reviewCount?: Maybe<Scalars['Int']['output']>;
@@ -582,6 +598,8 @@ export type QueryListPlacesArgs = {
 
 export type QueryMediaUploadSignatureArgs = {
   kind: MediaKindEnum;
+  ownerId?: InputMaybe<Scalars['Int']['input']>;
+  ownerType: MediaOwnerTypeEnum;
 };
 
 
@@ -887,7 +905,9 @@ export type CategoryQueryVariables = Exact<{
 export type CategoryQuery = { __typename?: 'Query', category?: { __typename?: 'CategoryResponse', data?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null, coverImageUrl?: string | null, businessCount?: number | null, avgRating?: number | null } | null } | null };
 
 export type MediaUploadSignatureQueryVariables = Exact<{
+  ownerType: MediaOwnerTypeEnum;
   kind: MediaKindEnum;
+  ownerId?: InputMaybe<Scalars['Int']['input']>;
 }>;
 
 
@@ -899,6 +919,13 @@ export type AttachMediaMutationVariables = Exact<{
 
 
 export type AttachMediaMutation = { __typename?: 'Mutation', attachMedia?: { __typename?: 'AttachMediaResponse', message?: string | null, data?: { __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null } | null };
+
+export type RemoveMediaMutationVariables = Exact<{
+  mediaId: Scalars['Int']['input'];
+}>;
+
+
+export type RemoveMediaMutation = { __typename?: 'Mutation', removeMedia?: { __typename?: 'Message', message?: string | null } | null };
 
 export type MyReviewsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -944,7 +971,7 @@ export type GetPlaceByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
+export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, photos?: Array<{ __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null> | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
 
 export type PlaceReviewsQueryVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -1628,8 +1655,8 @@ export type CategoryLazyQueryHookResult = ReturnType<typeof useCategoryLazyQuery
 export type CategorySuspenseQueryHookResult = ReturnType<typeof useCategorySuspenseQuery>;
 export type CategoryQueryResult = ApolloReactCommon.QueryResult<CategoryQuery, CategoryQueryVariables>;
 export const MediaUploadSignatureDocument = gql`
-    query MediaUploadSignature($kind: MediaKindEnum!) {
-  mediaUploadSignature(kind: $kind) {
+    query MediaUploadSignature($ownerType: MediaOwnerTypeEnum!, $kind: MediaKindEnum!, $ownerId: Int) {
+  mediaUploadSignature(ownerType: $ownerType, kind: $kind, ownerId: $ownerId) {
     data {
       signature
       timestamp
@@ -1653,7 +1680,9 @@ export const MediaUploadSignatureDocument = gql`
  * @example
  * const { data, loading, error } = useMediaUploadSignatureQuery({
  *   variables: {
+ *      ownerType: // value for 'ownerType'
  *      kind: // value for 'kind'
+ *      ownerId: // value for 'ownerId'
  *   },
  * });
  */
@@ -1713,6 +1742,37 @@ export function useAttachMediaMutation(baseOptions?: ApolloReactHooks.MutationHo
       }
 export type AttachMediaMutationHookResult = ReturnType<typeof useAttachMediaMutation>;
 export type AttachMediaMutationResult = ApolloReactCommon.MutationResult<AttachMediaMutation>;
+export const RemoveMediaDocument = gql`
+    mutation RemoveMedia($mediaId: Int!) {
+  removeMedia(mediaId: $mediaId) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useRemoveMediaMutation__
+ *
+ * To run a mutation, you first call `useRemoveMediaMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRemoveMediaMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [removeMediaMutation, { data, loading, error }] = useRemoveMediaMutation({
+ *   variables: {
+ *      mediaId: // value for 'mediaId'
+ *   },
+ * });
+ */
+export function useRemoveMediaMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RemoveMediaMutation, RemoveMediaMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RemoveMediaMutation, RemoveMediaMutationVariables>(RemoveMediaDocument, options);
+      }
+export type RemoveMediaMutationHookResult = ReturnType<typeof useRemoveMediaMutation>;
+export type RemoveMediaMutationResult = ApolloReactCommon.MutationResult<RemoveMediaMutation>;
 export const MyReviewsDocument = gql`
     query MyReviews($first: Int, $after: String) {
   myReviews(first: $first, after: $after) {
@@ -1987,6 +2047,11 @@ export const GetPlaceByIdDocument = gql`
       isVerified
       openNow
       coverPhotoUrl
+      photos {
+        id
+        kind
+        url
+      }
       savedByMe
       savedListType
       category {

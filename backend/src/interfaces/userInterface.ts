@@ -9,8 +9,8 @@ export interface InputUserInterface {
     phoneNumber?:string;
     fullName: string;
     userType: UserTypeEnum;
-    profilePicture?: string;
-    coverPicture?: string;
+    profilePicture?: string | null;
+    coverPicture?: string | null;
 }
 
 export interface UserInterface extends ModelTimestampExtend, InputUserInterface {

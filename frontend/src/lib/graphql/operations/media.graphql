@@ -1,5 +1,5 @@
-query MediaUploadSignature($kind: MediaKindEnum!) {
-  mediaUploadSignature(kind: $kind) {
+query MediaUploadSignature($ownerType: MediaOwnerTypeEnum!, $kind: MediaKindEnum!, $ownerId: Int) {
+  mediaUploadSignature(ownerType: $ownerType, kind: $kind, ownerId: $ownerId) {
     data {
       signature
       timestamp
@@ -18,5 +18,11 @@ mutation AttachMedia($input: InputAttachMedia!) {
       kind
       url
     }
+  }
+}
+
+mutation RemoveMedia($mediaId: Int!) {
+  removeMedia(mediaId: $mediaId) {
+    message
   }
 }

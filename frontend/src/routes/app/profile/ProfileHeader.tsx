@@ -30,8 +30,8 @@ export function ProfileHeader({
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
-  const avatarUpload = useMediaUpload("AVATAR", onMediaUploaded)
-  const coverUpload = useMediaUpload("COVER", onMediaUploaded)
+  const avatarUpload = useMediaUpload("AVATAR", "USER", undefined, onMediaUploaded)
+  const coverUpload = useMediaUpload("COVER", "USER", undefined, onMediaUploaded)
 
   function handleFileChange(input: HTMLInputElement, upload: (file: File) => void) {
     const file = input.files?.[0]

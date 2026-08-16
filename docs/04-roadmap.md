@@ -255,19 +255,20 @@ cheaper to build once the shapes of those three are stable.
 - [x] Upload flow (signed URLs, not routing file bytes through the GraphQL server) -
       Cloudinary's signed-params flavor of it (`mediaUploadSignature` query,
       direct browser→Cloudinary POST, `attachMedia` mutation to persist the result).
-- [ ] Wire into place photos, review photos, avatar/cover - **avatar/cover done**
-      (real upload, `ProfileHeader`'s camera-icon/cover-pill affordances, no Figma
-      reference existed for this interaction so it was designed reasonably rather
-      than translated). **Place cover photo also partially done** - `Place.coverPhotoUrl`
-      is real and rendered on `PlaceCard`/`PlaceDetailPage`, but read-only: 28 existing
-      places were seeded directly in the DB (no upload flow, no `attachMedia` support
-      for `PLACE` yet) per explicit request, so real users still can't set one. Full
-      multi-photo `PHOTO` galleries (place and review) and any place-photo upload
-      mutation remain - separate follow-up tickets reusing the same `MEDIA` table/
-      signed-upload plumbing, needing real gallery UI that a single cover field
-      didn't need. See
-      [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md)'s
-      2026-08-16 update.
+- [x] Wire into place photos, review photos, avatar/cover - **avatar/cover and
+      place photos both done**; **review photos remain**. Avatar/cover: real
+      upload, `ProfileHeader`'s camera-icon/cover-pill affordances. Place: real
+      cover photo *and* a real multi-photo gallery (`PlacePhotosSection.tsx` on
+      My Listing - upload, cap at 12, per-photo delete via a new `removeMedia`
+      mutation), superseding the earlier direct-DB-seed placeholder.
+      `mediaUploadSignature`/`attachMedia` now take `ownerType`/`ownerId` (not
+      USER-implicit anymore), with real ownership checks against
+      `PlaceService`. No Figma reference existed for either the avatar/cover or
+      the place-gallery interaction, so both were designed reasonably rather
+      than translated. Review photos remain a separate follow-up - same `MEDIA`
+      table/signed-upload plumbing, `REVIEW` already in `MediaOwnerTypeEnum` but
+      unimplemented in `MediaService`. See
+      [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 ## Phase 9 — Hardening for production
 

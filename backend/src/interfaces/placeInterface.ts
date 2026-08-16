@@ -17,6 +17,11 @@ export interface InputPlaceInterface {
       latitude?: number,
       longitude?: number,
       priceRange?: PriceRangeEnum,
+      // Not part of the public create/update GraphQL input either - only
+      // written by PlaceService.updateCoverPhoto (MediaService.attachMedia/
+      // removeMedia), same reasoning as averageRating/reviewCount above. See
+      // docs/specs/phase-8-media-plumbing.md.
+      coverPhotoUrl?: string | null,
 }
 
 export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterface {
@@ -30,10 +35,6 @@ export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterfac
       // Not part of the public create/update GraphQL input - only written by
       // the trending-score refresh job (src/jobs/trendingScoreJob.ts).
       trendingScore?: number,
-      // Not part of the public create/update GraphQL input - no write path
-      // yet (no attachMedia support for PLACE), seeded directly for now. See
-      // docs/specs/phase-8-media-plumbing.md.
-      coverPhotoUrl?: string,
 }
 
 export interface PlaceFilterOptions {
