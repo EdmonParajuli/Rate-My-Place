@@ -5,11 +5,15 @@ pieces of this now (Phase 1 of the roadmap), not after the product is "done."
 
 ## Testing
 
-There are zero tests in the repo today. Suggested layers, cheapest-value-first:
+**Layer 1 built (2026-08-16, Phase 9)** — see
+[specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md). Layers 2-4 below are
+still open. Suggested layers, cheapest-value-first:
 
 1. **Service-layer unit tests** (Jest) — the business logic (ownership checks,
    average-rating recomputation, password hashing) lives in services; test it there
-   without spinning up Apollo or a real DB, using a mocked repository.
+   without spinning up Apollo or a real DB, using a mocked repository. **Built**:
+   `backend/tests/` (Jest + ts-jest), 43 tests covering `businessDashboardMath`,
+   `utils/auth`, `authService`, `reviewService`.
 2. **Repository/integration tests** against a real (containerized, throwaway)
    Postgres — verifies the Sequelize models, migrations, and `BaseRepository` methods
    actually work together. Use `docker-compose` to spin up a disposable test DB.
@@ -24,41 +28,38 @@ auth, ownership checks, rating aggregation, payment/upgrade flow if that ships.
 
 ## CI/CD
 
-A minimal GitHub Actions pipeline, added now, catches regressions for the rest of the
-project's life for very little upfront cost:
+**Built (2026-08-16, Phase 9)** — `.github/workflows/ci.yml`: two jobs (`backend`,
+`frontend`, matching the two independent `package.json`s), each `npm ci` → `npm run
+build`, `backend` additionally running `npm test`. Triggers on push to `main` and
+every pull request.
 
-```yaml
-# .github/workflows/ci.yml (sketch)
-on: [pull_request, push]
-jobs:
-  backend:
-    steps:
-      - checkout
-      - setup-node
-      - npm ci
-      - npm run build        # tsc — catches type errors
-      - npm test              # once tests exist
-```
-
-Add `npm run lint`/`npm run format:check` once ESLint/Prettier configs are actually
-wired into `package.json` scripts (both are already devDependencies but there's no
-lint/format script yet — quick win).
+Still open: `frontend/package.json` already has a real `lint` script (`oxlint`), but
+it's untested in CI (see the ticket spec for why — a local Node-version mismatch
+means it couldn't be verified to pass before wiring it in). Add `npm run
+lint`/`npm run format:check` for `backend/` once ESLint/Prettier configs are actually
+wired into `package.json` scripts there (both are already devDependencies but
+there's no lint/format script yet — quick win).
 
 ## Security
 
 - **Ownership checks**: fix issue #2 in doc 2 before it's copy-pasted into
   review/reply resolvers.
-- **Rate limiting**: `express-rate-limit` on `/graphql` at minimum; consider a
-  query-cost/depth limiter (`graphql-query-complexity` or Apollo's built-in
+- **Rate limiting**: `express-rate-limit` on `/graphql` at minimum. **Built** —
+  `backend/src/middlewares/rateLimiter.ts`, wired into `server.ts`. Still open:
+  a query-cost/depth limiter (`graphql-query-complexity` or Apollo's built-in
   `costAnalysis` plugin) once the schema has nested list fields that could be abused.
 - **Secrets**: `.env` is gitignored (verified) — keep it that way; `.env.example`
   documents required vars without values, which is the right pattern, keep it current
   as new config (S3 keys, session secret, etc.) gets added.
 - **Refresh tokens**: persist a hash of them (Phase 1's `SESSIONS` table) so a leaked
-  token can be revoked and "active sessions" is real, not decorative.
+  token can be revoked and "active sessions" is real, not decorative. **Built**
+  (Phase 1) — `providers_sessions`, `SessionService`.
 - **Password reset / forgot password**: implement with a short-lived, single-use,
   hashed token (not the raw token stored anywhere) — standard, but easy to get wrong,
   worth a deliberate look when Phase 1 builds `forgotPassword`/`confirmForgotPassword`.
+  **Built** — `AuthService.forgotPassword`/`confirmForgotPassword`, a hashed
+  `codeHash` + `expiresAt` on `PasswordResetTokenRepository`, single-use via
+  `usedAt`.
 
 ## Observability
 

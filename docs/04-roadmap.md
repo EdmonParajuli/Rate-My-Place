@@ -244,7 +244,7 @@ apart — see the correction note in ticket 1's spec.
       `deleteUser` mutation itself is still unbuilt, so a "successful" click shows a
       preview-notice message and does nothing. This closes out Phase 7.
 
-## Phase 8 — Media
+## Phase 8 — Media — Done
 
 Deliberately last-but-not-forgotten: photos touch places, reviews, and users, so it's
 cheaper to build once the shapes of those three are stable.
@@ -282,6 +282,35 @@ cheaper to build once the shapes of those three are stable.
 Not really sequential — start doc 6's testing/CI recommendations as early as Phase 1,
 don't save all of it for the end. This phase is "the remaining, harder ops work":
 deployment pipeline, rate limiting/query cost limiting, observability, load testing.
+
+- [x] Rate limiting — `express-rate-limit` on `/graphql` (`backend/src/middlewares/rateLimiter.ts`),
+      already wired into `server.ts` before this phase's work formally started (built
+      opportunistically per doc 6's "start it as early as Phase 1" note, just never
+      checked off here). Blanket request-volume limiter, not per-query cost/depth —
+      that's still open below.
+- [x] Testing (doc 6 layer 1, service-layer unit tests) + CI — see
+      [specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md). Jest + ts-jest,
+      43 tests across `businessDashboardMath` (pure reputation-score/insights logic),
+      `utils/auth` (`requireAuth`/`requireOwner`/`assertOwnership`), `authService`
+      (signup/login/password-change/forgot-password, real bcrypt hashing against a
+      mocked repository), and `reviewService` (self-review/duplicate-review guards,
+      ownership checks, rating recomputation + transaction rollback) — the highest
+      money/trust-on-the-line paths per doc 6's "don't chase 100% coverage" guidance.
+      `.github/workflows/ci.yml` runs `npm run build` + `npm test` for `backend/` and
+      `npm run build` for `frontend/` on every push to `main` and every PR.
+      Repository/integration tests (layer 2, against a real containerized Postgres)
+      and resolver/GraphQL tests (layer 3) are still open — this ticket only covers
+      layer 1.
+- [ ] Query cost/depth limiting (`graphql-query-complexity` or Apollo's `costAnalysis`
+      plugin) — doc 6 flags this as needed "once the schema has nested list fields
+      that could be abused"; not urgent yet at current schema/traffic shape.
+- [ ] Structured logging (pino) with a request id threaded resolver → service →
+      repository, replacing the current bare `console.log`/`console.error`.
+- [ ] Error tracking (Sentry or similar) — blocked on there being a real deployed
+      environment to report from.
+- [ ] Deployment: `docker-compose` for local Postgres, real hosting (Railway/Render/
+      Fly.io per doc 6), `sequelize-cli db:migrate` as an explicit deploy step.
+- [ ] Load testing.
 
 ## Phase 10 — Place attributes & amenities
 
