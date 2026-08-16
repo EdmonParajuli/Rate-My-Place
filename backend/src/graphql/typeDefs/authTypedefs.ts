@@ -15,6 +15,11 @@ export const authTypedefs: DocumentNode = gql`
         fullName: String
         userType: UserTypeEnum
         profilePicture: String
+        # Denormalized from the latest providers_media row of kind COVER -
+        # see docs/specs/phase-8-media-plumbing.md. Resolves via default
+        # field resolution off the cover_picture column, same as
+        # profilePicture.
+        coverPicture: String
         # Epoch-millisecond String, same convention as every other date on this
         # schema (Review.createdAt, Badge.earnedAt, ...) - resolves via default
         # field resolution off the model instance returned by authMeUser/login/

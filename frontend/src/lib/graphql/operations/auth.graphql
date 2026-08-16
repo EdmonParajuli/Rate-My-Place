@@ -13,6 +13,7 @@ mutation Login($input: InputAuthLogin) {
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -33,6 +34,7 @@ mutation SignUp($input: InputAuthSignUp) {
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -53,6 +55,7 @@ mutation SignUpBusiness($input: InputSignUpBusiness) {
         fullName
         userType
         profilePicture
+        coverPicture
       }
     }
   }
@@ -66,6 +69,7 @@ query AuthMeUser {
       fullName
       userType
       profilePicture
+      coverPicture
       createdAt
     }
   }
@@ -86,6 +90,7 @@ mutation UpdateUser($input: InputUpdateUser!) {
       fullName
       userType
       profilePicture
+      coverPicture
       createdAt
     }
   }

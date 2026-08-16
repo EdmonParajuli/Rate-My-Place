@@ -1,3 +1,4 @@
+import { Transaction } from "sequelize";
 import { UserRepository } from "../repositories/userRepository";
 
 export class UserService {
@@ -17,5 +18,19 @@ export class UserService {
   async updateUser(id: number | string, fullName: string) {
     await this.repository.updateOne({ id, input: { fullName } });
     return this.repository.findByPk(id);
+  }
+
+  // Called by MediaService inside its own transaction after writing the
+  // providers_media audit row - profilePicture/coverPicture are a
+  // denormalized read cache (same "recompute, store, read the column"
+  // pattern as Place.averageRating) so every place/review list that embeds
+  // User.profilePicture stays a plain column read, not a per-row Media
+  // lookup.
+  async updateProfilePicture(id: number | string, url: string, transaction?: Transaction) {
+    await this.repository.updateOne({ id, input: { profilePicture: url } }, { transaction });
+  }
+
+  async updateCoverPicture(id: number | string, url: string, transaction?: Transaction) {
+    await this.repository.updateOne({ id, input: { coverPicture: url } }, { transaction });
   }
 }

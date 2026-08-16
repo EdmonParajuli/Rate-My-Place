@@ -12,6 +12,11 @@ const mustExist = <T>(value: T | undefined, name: string): T => {
   };
 
 export const port = mustExist(+process.env.PORT!, "PORT") as number,
+  cloudinary = {
+    cloudName: mustExist(process.env.CLOUDINARY_NAME!, "CLOUDINARY_NAME"),
+    apiKey: mustExist(process.env.API_KEY!, "API_KEY"),
+    apiSecret: mustExist(process.env.API_SECRET!, "API_SECRET"),
+  },
   db = {
     username: mustExist(process.env.DB_USER!, "DB_USER"),
     password: mustExist(process.env.DB_PASSWORD!, "DB_PASSWORD"),

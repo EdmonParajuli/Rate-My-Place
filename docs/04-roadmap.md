@@ -249,9 +249,18 @@ apart — see the correction note in ticket 1's spec.
 Deliberately last-but-not-forgotten: photos touch places, reviews, and users, so it's
 cheaper to build once the shapes of those three are stable.
 
-- [ ] Pick an object storage provider (see doc 6) + the `MEDIA` table from doc 3
-- [ ] Upload flow (signed URLs, not routing file bytes through the GraphQL server)
-- [ ] Wire into place photos, review photos, avatar/cover
+- [x] Pick an object storage provider (see doc 6) + the `MEDIA` table from doc 3 -
+      **Cloudinary**, chosen for lowest setup friction at this project's stage. See
+      [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
+- [x] Upload flow (signed URLs, not routing file bytes through the GraphQL server) -
+      Cloudinary's signed-params flavor of it (`mediaUploadSignature` query,
+      direct browser→Cloudinary POST, `attachMedia` mutation to persist the result).
+- [ ] Wire into place photos, review photos, avatar/cover - **avatar/cover done**
+      (real upload, `ProfileHeader`'s camera-icon/cover-pill affordances, no Figma
+      reference existed for this interaction so it was designed reasonably rather
+      than translated). Place photos and review photos remain - separate follow-up
+      tickets reusing the same `MEDIA` table/signed-upload plumbing, needing real
+      multi-photo gallery UI that avatar/cover's single-slot model didn't need.
 
 ## Phase 9 — Hardening for production
 
