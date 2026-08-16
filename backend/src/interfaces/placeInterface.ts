@@ -30,6 +30,10 @@ export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterfac
       // Not part of the public create/update GraphQL input - only written by
       // the trending-score refresh job (src/jobs/trendingScoreJob.ts).
       trendingScore?: number,
+      // Not part of the public create/update GraphQL input - no write path
+      // yet (no attachMedia support for PLACE), seeded directly for now. See
+      // docs/specs/phase-8-media-plumbing.md.
+      coverPhotoUrl?: string,
 }
 
 export interface PlaceFilterOptions {

@@ -10,6 +10,7 @@ query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInpu
       reviewCount
       isVerified
       trendingScore
+      coverPhotoUrl
       latitude
       longitude
       distance

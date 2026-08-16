@@ -933,6 +933,10 @@ signed-upload flow, proven end-to-end on avatar/cover before place/review photos
   new typeDefs/resolvers have to be added there too, not just to the `typeDefs`/
   `resolvers` barrel `index.ts` files. Easy to miss (cost one debugging round trip
   here); worth remembering for the next new feature typedefs file.
+- **Update (2026-08-16): `Place.coverPhotoUrl`**, same denormalized-column
+  reasoning extended to places — `providers_places.cover_photo_url` (migration
+  `20260816170000`), read-only for now (seeded directly, no `attachMedia` support
+  for `PLACE`). See the spec's 2026-08-16 update.
 
 ## GraphQL schema design principles going forward
 

@@ -12,6 +12,7 @@ query GetPlaceById($id: Int!) {
       reviewCount
       isVerified
       openNow
+      coverPhotoUrl
       savedByMe
       savedListType
       category {

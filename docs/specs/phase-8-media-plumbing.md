@@ -1,7 +1,38 @@
 # Phase 8 Spec: Media Plumbing + Avatar/Cover Upload
 
-**Status: ✅ Built (plumbing + avatar/cover), ❌ not yet wired into place photos
-or review photos.** First of Phase 8's sequenced tickets.
+**Status: ✅ Built (plumbing + avatar/cover), ✅ place cover photo (read-only,
+seeded), ❌ no place/review photo upload flow or gallery yet.** First of Phase 8's
+sequenced tickets.
+
+## Update (2026-08-16): Place cover photo, seeded directly
+
+The user asked to seed place photos "directly in the db" to check the feature
+visually in the UI - both `PlaceCard.tsx` (Discover grid) and
+`PlaceDetailPage.tsx` (hero) had placeholder UI explicitly labeled "Phase 8 Media"
+already waiting for this, so making seeded data visible required a small real
+addition, not just an INSERT:
+
+- **`providers_places.cover_photo_url`** (new column, migration `20260816170000`) -
+  same denormalized-read-cache reasoning as `User.profilePicture`/`coverPicture`:
+  `PlaceCard` renders many places at once (a Discover grid), so resolving this live
+  from `providers_media` per row would reintroduce the exact N+1 this ticket's
+  original design avoided for users. `Place.coverPhotoUrl` resolves via plain
+  default field resolution, zero resolver code.
+- **No write path (no `attachMedia` support for `PLACE`) - seeded directly.**
+  Exactly what was asked for: a one-off script (`node -r ts-node/register`, not
+  committed, deleted after running) set `cover_photo_url` on 28 existing places to
+  a category-matched Unsplash photo, and inserted a matching `providers_media` row
+  (`PLACE`/`COVER`) for each so the audit table stays consistent with the real
+  upload path's shape - even though nothing reads those rows today (the column is
+  the read path). A real place-photo upload ticket, when it lands, should write
+  both together the same way `attachMedia` does for users.
+- **Frontend**: `PlaceCard.tsx` and `PlaceDetailPage.tsx` both render
+  `coverPhotoUrl` when present, falling back to their existing placeholders
+  (category-tinted gradient / dashed "Cover photo — Phase 8 Media" box) when not -
+  most places still won't have one until a real upload flow exists.
+- **Still not built**: any mutation to set a place's cover photo, and the full
+  multi-photo `PHOTO` gallery (for both places and reviews) - this is one seeded,
+  read-only field, not the place-photo upload ticket itself.
 
 ## Context
 

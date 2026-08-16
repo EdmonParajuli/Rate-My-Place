@@ -85,6 +85,9 @@ export const placeDefs: DocumentNode = gql`
         openNow: Boolean
         ratingBreakdown: [RatingBreakdownEntry]
         trendingScore: Float
+        # Denormalized read cache, no write path yet (no attachMedia support
+        # for PLACE) - see docs/specs/phase-8-media-plumbing.md.
+        coverPhotoUrl: String
     }
 
     type PlaceResponse {
