@@ -116,14 +116,22 @@ resolver → typeDefs):**
   sources. `RegularSettingsPage.tsx`: 6-section sidebar (Account, Preferences,
   Notifications, Privacy, Security, Danger Zone) — Account (editable Full Name via
   `updateUser`, real password change, email read-only), Security's active-sessions
-  list + revoke (+ Danger Zone's "sign out of all other devices"), and Preferences'
-  Dark Mode toggle (real site-wide theme, see below) are real; the rest are labeled
-  previews. `BusinessSettingsPage.tsx`: the original Phase 6 2-tab screen
+  list + revoke (+ Danger Zone's "sign out of all other devices"), and Danger Zone's
+  Delete Account typed-confirmation gate (button disabled until the input reads
+  exactly `"DELETE"`) are real; the deletion itself is still a preview no-op (no
+  `deleteUser` mutation exists — see
+  [specs/phase-7-delete-account.md](./specs/phase-7-delete-account.md) for the
+  decided-but-unbuilt retention/anonymization policy). Preferences' Dark Mode toggle
+  exists (`ThemeContext`, see below) but is currently hidden/disabled — too many
+  visual bugs across unaudited screens to ship, mechanism kept intact behind a
+  feature flag. Everything else on this screen is a labeled preview.
+  `BusinessSettingsPage.tsx`: the original Phase 6 2-tab screen
   (Account/Notifications), unchanged. See
   [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)
   (includes a correction note — these two were briefly, incorrectly merged into one
-  shared component before being split back apart) and
-  [specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md).
+  shared component before being split back apart),
+  [specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md),
+  and [specs/phase-7-delete-account.md](./specs/phase-7-delete-account.md).
 - **Business console** (`BUSINESS` accounts get their own nav, not the reviewer
   nav — see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md)) —
   Dashboard (KPI cards, trend charts, sentiment, review management), My Listing (edit
@@ -161,10 +169,11 @@ resolver → typeDefs):**
   escape hatch (re-fetches `authMeUser` and replaces context `user` — added for
   `updateUser` so the sidebar/topbar name updates immediately after an edit instead
   of on next reload), `PrivateRoute` gating the authenticated shell, `ThemeContext`
-  (`lib/theme/`) for real dark mode — `localStorage`-persisted, a pre-mount inline
-  script in `index.html` avoids a flash of the wrong theme on load. Visual dark-mode
-  coverage is partial (44 files still use hardcoded literal colors instead of
-  theme-aware tokens) — see
+  (`lib/theme/`) for dark mode — `localStorage`-persisted, a pre-mount inline script
+  in `index.html` avoids a flash of the wrong theme on load — currently **disabled**
+  behind a `DARK_MODE_ENABLED` flag in both `ThemeContext.tsx` and the `index.html`
+  script (too many visual bugs across unaudited screens: 44 files still use
+  hardcoded literal colors instead of theme-aware tokens) — see
   [specs/phase-7-preferences-dark-mode.md](./specs/phase-7-preferences-dark-mode.md).
 
 ## Known issues / tech debt
