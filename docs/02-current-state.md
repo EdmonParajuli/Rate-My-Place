@@ -296,13 +296,19 @@ the same branch, not called out in the original spec because they weren't known 
   created, by either account type, since no email-verification flow exists anywhere
   in this codebase and email is the login identifier. See
   [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
-- **No tests, no CI.** Verification across every phase so far has been manual:
-  `npm run build` for type errors, then exercising backend changes against a live
-  `npm run start:dev` server via GraphQL introspection. Per explicit user direction,
-  frontend/UI changes are verified by typecheck alone — this repo's workflow does not
-  require driving a browser to click-test (see the root `CLAUDE.md`). This is the
-  established, working method for this project, not a gap silently being routed
-  around — but it's still worth naming as debt.
+- ~~No tests, no CI~~ **Partially fixed (Phase 9, 2026-08-16).** 43 Jest service-layer
+  unit tests (`backend/tests/`, mocked repositories — `businessDashboardMath`,
+  `utils/auth`, `authService`, `reviewService`) plus `.github/workflows/ci.yml`
+  running `npm run build`+`npm test` (`backend/`) and `npm run build` (`frontend/`)
+  on every push to `main` and every PR. See
+  [specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md). Still open: doc 6's
+  testing layers 2/3 (repository/integration tests against a real Postgres,
+  resolver/GraphQL tests), and frontend tests. Verification for everything not yet
+  covered by the new suite is still manual, same as before: `npm run build` for type
+  errors, then exercising backend changes against a live `npm run start:dev` server
+  via GraphQL introspection. Per explicit user direction, frontend/UI changes are
+  verified by typecheck alone — this repo's workflow does not require driving a
+  browser to click-test (see the root `CLAUDE.md`).
 - **`providers_category` is still a singular table name**, inconsistent with every
   other table (`providers_reviews`, `providers_reviews_replies`, `providers_sessions`,
   etc.). Cosmetic, low priority, would need a migration to rename.
