@@ -1,7 +1,25 @@
 # Phase 7 Spec: Preferences — Real Dark Mode
 
-**Status: ✅ Built (mechanism), ⚠️ partial (visual coverage).** Third of Phase 7's
+**Status: ⏸️ Disabled (mechanism built, hidden from users).** Third of Phase 7's
 sequenced tickets, after Account edit and Security/active sessions.
+
+## Update (2026-08-16): temporarily disabled
+
+Shipped, then the user found enough visual bugs across the ~44 unaudited files
+(see "Visual coverage" below) to pull it back out rather than leave it live.
+**The toggle is hidden and the theme never actually applies — but no code was
+deleted.** Two flags gate it off:
+- `frontend/index.html`'s pre-mount script: `var DARK_MODE_ENABLED = false;`
+  skips adding the `.dark` class even if `localStorage` has `"dark"` saved
+  from before this was disabled.
+- `frontend/src/lib/theme/ThemeContext.tsx`: `const DARK_MODE_ENABLED = false`
+  pins `theme` to `"light"` and makes `toggleTheme()` a no-op.
+- `RegularSettingsPage.tsx`'s `PreferencesSection` no longer renders the Dark
+  Mode `ToggleRow` at all.
+
+Re-enabling is flipping both `DARK_MODE_ENABLED` flags back to `true` and
+un-commenting the `ToggleRow` — after the visual-coverage sweep below actually
+happens, not before.
 
 ## Context
 

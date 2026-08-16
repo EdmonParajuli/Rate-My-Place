@@ -17,7 +17,6 @@ import {
   LogOut,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
-import { useTheme } from "@/lib/theme/ThemeContext"
 import { getStoredRefreshToken, getStoredSessionId } from "@/lib/auth/tokenStorage"
 import { formatDate } from "@/lib/formatDate"
 import {
@@ -272,11 +271,13 @@ function StaticPickerRow({ label, value }: { label: string; value: string }) {
 }
 
 function PreferencesSection() {
-  const { theme, toggleTheme } = useTheme()
-
+  // Dark Mode toggle temporarily hidden (2026-08-16) - too many visual bugs
+  // to ship yet. Theme mechanism (lib/theme/ThemeContext.tsx) is untouched
+  // and disabled at its own flag; this just stops surfacing the control
+  // while that's off. Re-add `<ToggleRow checked={theme === "dark"}
+  // onChange={toggleTheme} label="Dark Mode" />` once re-enabled.
   return (
     <Card title="Preferences">
-      <ToggleRow checked={theme === "dark"} onChange={toggleTheme} label="Dark Mode" />
       <PreviewNotice>language and time zone aren't wired up to anything real yet.</PreviewNotice>
       <StaticPickerRow label="Language" value="English (US)" />
       <StaticPickerRow label="Time Zone" value="EST (UTC -5)" />
@@ -298,7 +299,7 @@ function NotificationsSection() {
 
   return (
     <Card title="Notification Preferences">
-      <PreviewNotice>real per-type notifications (in-app) are on My Reviews' bell icon - these email/push toggles aren't sent anywhere yet.</PreviewNotice>
+      <PreviewNotice>real per-type notifications (in-app) are on the Notifications page - these email/push toggles aren't sent anywhere yet.</PreviewNotice>
       {NOTIF_ROWS.map((row) => (
         <ToggleRow key={row.id} checked={toggles[row.id]} onChange={(v) => setToggles((t) => ({ ...t, [row.id]: v }))} label={row.label} />
       ))}

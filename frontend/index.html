@@ -12,12 +12,18 @@
          of the wrong theme on load. Explicit choice (localStorage) wins;
          otherwise falls back to the OS-level preference. Kept as plain
          inline JS, not a React effect, specifically so it runs before first
-         paint - see lib/theme/ThemeContext.tsx for the React-side toggle. -->
+         paint - see lib/theme/ThemeContext.tsx for the React-side toggle.
+
+         DARK_MODE_ENABLED: temporarily off (2026-08-16) - visual coverage
+         had too many bugs to ship. Mechanism kept intact; flip back to true
+         (and the matching flag in ThemeContext.tsx) once the coverage sweep
+         lands. -->
     <script>
       (function () {
+        var DARK_MODE_ENABLED = false;
         var stored = localStorage.getItem("rmp_theme");
         var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-        if (dark) document.documentElement.classList.add("dark");
+        if (DARK_MODE_ENABLED && dark) document.documentElement.classList.add("dark");
       })();
     </script>
     <div id="root"></div>

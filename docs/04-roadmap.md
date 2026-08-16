@@ -211,8 +211,14 @@ apart — see the correction note in ticket 1's spec.
       from the original shadcn scaffold, so this was mostly wiring, not building
       from scratch. Language/timezone stay labeled previews (real i18n/timezone
       handling is separate, unrequested scope).
-- [ ] Notification preference toggles (email/push — distinct from Phase 5's real
-      in-app notifications) — labeled preview on the `REGULAR` Settings shell
+- [x] Notification preference toggles (email/push — distinct from Phase 5's real
+      in-app notifications) — labeled preview on the `REGULAR` Settings shell. Landed
+      alongside the Security/active-sessions ticket
+      ([specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md),
+      "build the whole shell" pass), just never checked off here — this line was a
+      docs-sync catch-up (2026-08-16), not new work. Fixed one stale copy detail
+      while here: the preview's caption pointed at "My Reviews' bell icon" for real
+      in-app notifications, which is now its own Notifications page/nav item.
 - [ ] Privacy: blocked users, data export (GDPR-style — decide scope now, it
       constrains the data model) — labeled preview on the `REGULAR` Settings shell
 - [ ] 2FA — labeled preview toggle on the `REGULAR` Settings shell's Security section
