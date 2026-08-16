@@ -8,6 +8,7 @@ import { UserRepository } from "../repositories/userRepository";
 import { PasswordResetTokenRepository } from "../repositories/passwordResetTokenRepository";
 import { SessionService } from "./sessionService";
 import { throwError } from "../helpers/errorHelper";
+import { logger } from "../utils/logger";
 
 dotenv.config();
 
@@ -142,7 +143,7 @@ export class AuthService {
     await this.sessionService.revokeAllForUser(userId, input.refreshToken);
   }
 
-  public async forgotPassword(input: { email: string }): Promise<void> {
+  public async forgotPassword(input: { email: string }, context?: ContextInterface): Promise<void> {
     const user = await this.repository.findOne({ where: { email: input.email } });
 
     // Always behave the same way regardless of whether the account exists -
@@ -164,7 +165,7 @@ export class AuthService {
     // No email provider is wired up yet (see docs/06-quality-and-ops.md) -
     // surface the code outside production so the flow is testable end to end.
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[dev-only] Password reset code for ${input.email}: ${code}`);
+      (context?.logger ?? logger).info({ email: input.email }, `[dev-only] Password reset code: ${code}`);
     }
   }
 

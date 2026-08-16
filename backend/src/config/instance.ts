@@ -1,5 +1,6 @@
 import sequelize from "sequelize";
 import { db } from ".";
+import { logger } from "../utils/logger";
 
 class Database {
   private static instance: Database;
@@ -56,9 +57,9 @@ class Database {
   async connection(): Promise<void> {
     try {
       await this.sequelize.authenticate();
-      console.info(`${db.dialect} database connected`);
+      logger.info(`${db.dialect} database connected`);
     } catch (error: any) {
-      console.error(error.message);
+      logger.error({ err: error }, "Database authentication failed");
       return error;
     }
   }

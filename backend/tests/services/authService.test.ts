@@ -166,6 +166,18 @@ describe("AuthService", () => {
       expect(codeHash).toEqual(expect.any(String));
       expect(expiresAt.getTime()).toBeGreaterThan(Date.now());
     });
+
+    it("logs the dev-only reset code through the request-scoped logger when one is on context", async () => {
+      mockFindOne.mockResolvedValue({ id: "user-1" });
+      const requestLogger = { info: jest.fn() };
+
+      await authService.forgotPassword(
+        { email: "user@example.com" },
+        { ...context, logger: requestLogger as any }
+      );
+
+      expect(requestLogger.info).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("confirmForgotPassword", () => {

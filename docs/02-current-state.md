@@ -309,6 +309,13 @@ the same branch, not called out in the original spec because they weren't known 
   via GraphQL introspection. Per explicit user direction, frontend/UI changes are
   verified by typecheck alone — this repo's workflow does not require driving a
   browser to click-test (see the root `CLAUDE.md`).
+- **Structured logging (Phase 9, 2026-08-16).** Bare `console.log`/`console.error`
+  replaced with `pino` — a per-request child logger (`pino-http`, generates/echoes
+  an `x-request-id`) is available as `context.logger` in every resolver, and an
+  Apollo plugin logs every GraphQL operation's start/completion/errors tagged with
+  that id, without needing changes in each of the 14 resolver files. See
+  [specs/phase-9-structured-logging.md](./specs/phase-9-structured-logging.md).
+  Still open: Sentry/error tracking (gated on a real deployed environment existing).
 - **`providers_category` is still a singular table name**, inconsistent with every
   other table (`providers_reviews`, `providers_reviews_replies`, `providers_sessions`,
   etc.). Cosmetic, low priority, would need a migration to rename.

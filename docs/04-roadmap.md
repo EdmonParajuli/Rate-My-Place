@@ -304,8 +304,18 @@ deployment pipeline, rate limiting/query cost limiting, observability, load test
 - [ ] Query cost/depth limiting (`graphql-query-complexity` or Apollo's `costAnalysis`
       plugin) — doc 6 flags this as needed "once the schema has nested list fields
       that could be abused"; not urgent yet at current schema/traffic shape.
-- [ ] Structured logging (pino) with a request id threaded resolver → service →
-      repository, replacing the current bare `console.log`/`console.error`.
+- [x] Structured logging (pino) with a request id threaded resolver → service →
+      repository, replacing the previous bare `console.log`/`console.error` — see
+      [specs/phase-9-structured-logging.md](./specs/phase-9-structured-logging.md).
+      `pino-http` generates/echoes an `x-request-id` per request; every resolver's
+      `context.logger`/`context.requestId` carries it; an Apollo plugin logs every
+      operation's start/completion/errors uniformly (no per-resolver edits needed);
+      `AuthService.forgotPassword` is a worked example of threading it into a
+      service. All other pre-existing `console.*` call sites (server boot, DB
+      connect, the trending-score cron job) swapped to the pino logger too, except
+      `config/index.ts`'s fail-fast env-var guard (deliberately kept as
+      `console.error` — runs before any logger exists and needs a guaranteed-
+      synchronous flush ahead of `process.exit(1)`).
 - [ ] Error tracking (Sentry or similar) — blocked on there being a real deployed
       environment to report from.
 - [ ] Deployment: `docker-compose` for local Postgres, real hosting (Railway/Render/

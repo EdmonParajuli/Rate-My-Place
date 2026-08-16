@@ -125,7 +125,7 @@ export const authResolvers = {
         args.input.email = args.input?.email.toLowerCase();
         Validator.check(forgotPasswordSchema, args.input);
 
-        await new AuthService().forgotPassword(args.input);
+        await new AuthService().forgotPassword(args.input, context);
 
         // Same message whether or not the email is registered - don't let a
         // caller use this mutation to enumerate accounts.
