@@ -208,6 +208,7 @@ export type LoginToken = {
   __typename?: 'LoginToken';
   access?: Maybe<Scalars['String']['output']>;
   refresh?: Maybe<Scalars['String']['output']>;
+  sessionId?: Maybe<Scalars['Int']['output']>;
 };
 
 export type Message = {
@@ -749,21 +750,21 @@ export type LoginMutationVariables = Exact<{
 }>;
 
 
-export type LoginMutation = { __typename?: 'Mutation', login?: { __typename?: 'LoginResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type LoginMutation = { __typename?: 'Mutation', login?: { __typename?: 'LoginResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
 
 export type SignUpMutationVariables = Exact<{
   input?: InputMaybe<InputAuthSignUp>;
 }>;
 
 
-export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUpResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type SignUpMutation = { __typename?: 'Mutation', signUp?: { __typename?: 'SignUpResponse', message?: string | null, data?: { __typename?: 'UserData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
 
 export type SignUpBusinessMutationVariables = Exact<{
   input?: InputMaybe<InputSignUpBusiness>;
 }>;
 
 
-export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?: { __typename?: 'SignUpBusinessResponse', message?: string | null, data?: { __typename?: 'SignUpBusinessData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
+export type SignUpBusinessMutation = { __typename?: 'Mutation', signUpBusiness?: { __typename?: 'SignUpBusinessResponse', message?: string | null, data?: { __typename?: 'SignUpBusinessData', token?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null, user?: { __typename?: 'User', id?: number | null, email?: string | null, fullName?: string | null, userType?: UserTypeEnum | null, profilePicture?: string | null } | null } | null } | null };
 
 export type AuthMeUserQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -966,7 +967,19 @@ export type RefreshAccessTokenMutationVariables = Exact<{
 }>;
 
 
-export type RefreshAccessTokenMutation = { __typename?: 'Mutation', refreshAccessToken?: { __typename?: 'RefreshTokenResponse', data?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null } | null } | null };
+export type RefreshAccessTokenMutation = { __typename?: 'Mutation', refreshAccessToken?: { __typename?: 'RefreshTokenResponse', data?: { __typename?: 'LoginToken', access?: string | null, refresh?: string | null, sessionId?: number | null } | null } | null };
+
+export type ActiveSessionsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type ActiveSessionsQuery = { __typename?: 'Query', activeSessions?: { __typename?: 'ActiveSessionsResponse', data?: Array<{ __typename?: 'Session', id?: number | null, deviceLabel?: string | null, ipAddress?: string | null, createdAt?: string | null, lastUsedAt?: string | null } | null> | null } | null };
+
+export type RevokeSessionMutationVariables = Exact<{
+  sessionId: Scalars['Int']['input'];
+}>;
+
+
+export type RevokeSessionMutation = { __typename?: 'Mutation', revokeSession?: { __typename?: 'Message', message?: string | null } | null };
 
 
 export const LoginDocument = gql`
@@ -977,6 +990,7 @@ export const LoginDocument = gql`
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
@@ -1021,6 +1035,7 @@ export const SignUpDocument = gql`
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
@@ -1065,6 +1080,7 @@ export const SignUpBusinessDocument = gql`
       token {
         access
         refresh
+        sessionId
       }
       user {
         id
@@ -2365,6 +2381,7 @@ export const RefreshAccessTokenDocument = gql`
     data {
       access
       refresh
+      sessionId
     }
   }
 }
@@ -2393,3 +2410,83 @@ export function useRefreshAccessTokenMutation(baseOptions?: ApolloReactHooks.Mut
       }
 export type RefreshAccessTokenMutationHookResult = ReturnType<typeof useRefreshAccessTokenMutation>;
 export type RefreshAccessTokenMutationResult = ApolloReactCommon.MutationResult<RefreshAccessTokenMutation>;
+export const ActiveSessionsDocument = gql`
+    query ActiveSessions {
+  activeSessions {
+    data {
+      id
+      deviceLabel
+      ipAddress
+      createdAt
+      lastUsedAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useActiveSessionsQuery__
+ *
+ * To run a query within a React component, call `useActiveSessionsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useActiveSessionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useActiveSessionsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useActiveSessionsQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<ActiveSessionsQuery, ActiveSessionsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<ActiveSessionsQuery, ActiveSessionsQueryVariables>(ActiveSessionsDocument, options as any);
+      }
+export function useActiveSessionsLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<ActiveSessionsQuery, ActiveSessionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<ActiveSessionsQuery, ActiveSessionsQueryVariables>(ActiveSessionsDocument, options as any);
+        }
+// @ts-ignore
+export function useActiveSessionsSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<ActiveSessionsQuery, ActiveSessionsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ActiveSessionsQuery, ActiveSessionsQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useActiveSessionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ActiveSessionsQuery, ActiveSessionsQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<ActiveSessionsQuery | undefined, ActiveSessionsQueryVariables>;
+export function useActiveSessionsSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<ActiveSessionsQuery, ActiveSessionsQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<ActiveSessionsQuery, ActiveSessionsQueryVariables>(ActiveSessionsDocument, options as any);
+        }
+export type ActiveSessionsQueryHookResult = ReturnType<typeof useActiveSessionsQuery>;
+export type ActiveSessionsLazyQueryHookResult = ReturnType<typeof useActiveSessionsLazyQuery>;
+export type ActiveSessionsSuspenseQueryHookResult = ReturnType<typeof useActiveSessionsSuspenseQuery>;
+export type ActiveSessionsQueryResult = ApolloReactCommon.QueryResult<ActiveSessionsQuery, ActiveSessionsQueryVariables>;
+export const RevokeSessionDocument = gql`
+    mutation RevokeSession($sessionId: Int!) {
+  revokeSession(sessionId: $sessionId) {
+    message
+  }
+}
+    `;
+
+/**
+ * __useRevokeSessionMutation__
+ *
+ * To run a mutation, you first call `useRevokeSessionMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRevokeSessionMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [revokeSessionMutation, { data, loading, error }] = useRevokeSessionMutation({
+ *   variables: {
+ *      sessionId: // value for 'sessionId'
+ *   },
+ * });
+ */
+export function useRevokeSessionMutation(baseOptions?: ApolloReactHooks.MutationHookOptions<RevokeSessionMutation, RevokeSessionMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useMutation<RevokeSessionMutation, RevokeSessionMutationVariables>(RevokeSessionDocument, options);
+      }
+export type RevokeSessionMutationHookResult = ReturnType<typeof useRevokeSessionMutation>;
+export type RevokeSessionMutationResult = ApolloReactCommon.MutationResult<RevokeSessionMutation>;

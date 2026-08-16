@@ -62,7 +62,7 @@ export class AuthService {
       user.userType
     )
 
-    await this.sessionService.createSession({
+    const session = await this.sessionService.createSession({
       userId: user.id,
       refreshToken,
       userAgent: context.headers?.["user-agent"] as string | undefined,
@@ -73,7 +73,8 @@ export class AuthService {
         user,
         token :{
           access: accessToken,
-          refresh: refreshToken
+          refresh: refreshToken,
+          sessionId: session.id
         }
       })
   }
@@ -98,7 +99,7 @@ export class AuthService {
       user.userType
     )
 
-    await this.sessionService.createSession({
+    const session = await this.sessionService.createSession({
       userId: user.id,
       refreshToken,
       userAgent: context.headers?.["user-agent"] as string | undefined,
@@ -110,6 +111,7 @@ export class AuthService {
       token: {
         access: accessToken,
         refresh: refreshToken,
+        sessionId: session.id,
       },
     };
   }

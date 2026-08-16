@@ -11,7 +11,13 @@ import {
   type InputSignUpBusiness,
 } from "@/lib/graphql/generated/graphql"
 import { getAccessToken, setAccessToken } from "./accessToken"
-import { getStoredRefreshToken, setStoredRefreshToken, clearStoredRefreshToken } from "./tokenStorage"
+import {
+  getStoredRefreshToken,
+  setStoredRefreshToken,
+  clearStoredRefreshToken,
+  setStoredSessionId,
+  clearStoredSessionId,
+} from "./tokenStorage"
 
 type AuthUser = {
   id: number
@@ -54,10 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [fetchAuthMeUser] = useAuthMeUserLazyQuery({ fetchPolicy: "network-only" })
 
   const applySession = useCallback(
-    (token: { access?: string | null; refresh?: string | null } | null | undefined, sessionUser: AuthUser | null | undefined) => {
+    (
+      token: { access?: string | null; refresh?: string | null; sessionId?: number | null } | null | undefined,
+      sessionUser: AuthUser | null | undefined
+    ) => {
       setAccessToken(token?.access ?? null)
       if (token?.refresh) {
         setStoredRefreshToken(token.refresh)
+      }
+      if (token?.sessionId != null) {
+        setStoredSessionId(String(token.sessionId))
       }
       setUser(sessionUser ?? null)
     },
@@ -67,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(() => {
     setAccessToken(null)
     clearStoredRefreshToken()
+    clearStoredSessionId()
     setUser(null)
   }, [])
 
@@ -112,6 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token.access)
         if (token.refresh) {
           setStoredRefreshToken(token.refresh)
+        }
+        if (token.sessionId != null) {
+          setStoredSessionId(String(token.sessionId))
         }
         const meResult = await fetchAuthMeUser()
         setUser((meResult.data?.authMeUser?.data as AuthUser | null | undefined) ?? null)

@@ -176,21 +176,35 @@ Phase 6's business-console Settings page shipped a narrower, BUSINESS-only slice
 this early — read-only profile display + a real password-change flow. Being split
 into sequenced tickets like Phase 5 was, rather than planned/built all at once — see
 [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)
-for the first one.
+(ticket 1, and its correction note) and
+[specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md)
+(ticket 2). **REGULAR accounts have their own Settings screen design, not a shared
+one with BUSINESS** — a 6-section sidebar (Account/Preferences/Notifications/
+Privacy/Security/Danger Zone) vs. BUSINESS's 2-tab screen; the two were briefly,
+incorrectly merged into one shared component before being caught and split back
+apart — see the correction note in ticket 1's spec.
 
 - [x] Account fields edit — `updateUser` mutation, `fullName` only (email stays
       un-editable; no email-verification flow exists anywhere in this codebase, so
-      editing the login identifier without one was deliberately deferred). The
-      existing Settings screen (Phase 6) is now shared by both account types instead
-      of a second screen being built — new `/app/settings` nav item on the reviewer
-      shell, dynamic "Business owner"/"Reviewer" label instead of the old hardcoded
-      one.
+      editing the login identifier without one was deliberately deferred). Real on
+      both personas' Account section/tab.
+- [x] Security: active sessions list + revoke (built on the Phase 1 `SESSIONS`
+      table) — `REGULAR`-only Security section for now (`BUSINESS`'s Settings screen
+      has no Security tab in its own Figma source). `sessionId` threaded through
+      login/signup/refresh so the UI can mark "This device" and avoid a
+      silent-self-logout revoke. Danger Zone's "sign out of all other devices" is
+      real too (loops the same revoke mutation); 2FA stays a labeled preview.
 - [ ] Preferences: dark mode (needs to exist as a real frontend theme, not just a
-      design mockup), language/timezone
-- [ ] Notification preference toggles
-- [ ] Privacy: blocked users, data export (GDPR-style — decide scope now, it constrains the data model)
-- [ ] Security: 2FA, active sessions list + revoke (built on the Phase 1 `SESSIONS` table)
-- [ ] Delete-account flow with typed confirmation + actual data retention/anonymization policy
+      design mockup), language/timezone — shipped as a labeled preview on the new
+      `REGULAR` Settings shell, not yet real
+- [ ] Notification preference toggles (email/push — distinct from Phase 5's real
+      in-app notifications) — labeled preview on the `REGULAR` Settings shell
+- [ ] Privacy: blocked users, data export (GDPR-style — decide scope now, it
+      constrains the data model) — labeled preview on the `REGULAR` Settings shell
+- [ ] 2FA — labeled preview toggle on the `REGULAR` Settings shell's Security section
+- [ ] Delete-account flow with typed confirmation + actual data retention/anonymization
+      policy — labeled preview (disabled button) on the `REGULAR` Settings shell's
+      Danger Zone; no `deleteUser` mutation or retention policy exists yet
 
 ## Phase 8 — Media
 

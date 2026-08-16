@@ -3,6 +3,25 @@ mutation RefreshAccessToken($input: InputRefreshAccessToken!) {
     data {
       access
       refresh
+      sessionId
     }
+  }
+}
+
+query ActiveSessions {
+  activeSessions {
+    data {
+      id
+      deviceLabel
+      ipAddress
+      createdAt
+      lastUsedAt
+    }
+  }
+}
+
+mutation RevokeSession($sessionId: Int!) {
+  revokeSession(sessionId: $sessionId) {
+    message
   }
 }

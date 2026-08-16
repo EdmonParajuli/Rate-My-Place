@@ -63,7 +63,7 @@ export class BusinessOnboardingService {
     // the atomicity this mutation exists to guarantee.
     const { accessToken, refreshToken } = signToken(user.id, user.userType);
 
-    await this.sessionService.createSession({
+    const session = await this.sessionService.createSession({
       userId: user.id,
       refreshToken,
       userAgent: context.headers?.["user-agent"] as string | undefined,
@@ -76,6 +76,7 @@ export class BusinessOnboardingService {
       token: {
         access: accessToken,
         refresh: refreshToken,
+        sessionId: session.id,
       },
     };
   }

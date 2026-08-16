@@ -57,7 +57,8 @@ resolver → typeDefs):**
   `Review`.
 - **Sessions** — refresh tokens hashed and persisted at issuance (`providers_sessions`),
   rotated on every renewal, revocable (`signOut`, `revokeSession`, automatically on
-  password change), `activeSessions` query lists them.
+  password change), `activeSessions` query lists them. `LoginToken.sessionId` (Phase
+  7) lets the frontend identify its own live session for the Security settings UI.
 - **Platform stats** — orchestration-only `PlatformStatsService` (no repository of its
   own), composes Place/Review/User counts for the marketing landing page's stats strip.
 - **Business dashboard** — orchestration-only `BusinessDashboardService`: reputation
@@ -92,22 +93,28 @@ resolver → typeDefs):**
   locked with descriptions), recent-reviews preview. Still entirely read-only — a
   deliberate split, not a backend gap: account editing lives on Settings (below),
   not duplicated here. See [specs/phase-5-profile.md](./specs/phase-5-profile.md).
-- **Settings** (both account types now — Phase 7's first ticket added it to the
-  reviewer nav, reusing Phase 6's screen instead of building a second one) — real
-  editable Full Name (`updateUser`) + real password change; email read-only (no
-  verification flow exists); notification toggles still a static, clearly-labeled
-  preview. See
-  [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
+- **Settings** — `REGULAR` and `BUSINESS` each get their own screen at the same
+  `/app/settings` route/nav item (a thin `SettingsPage.tsx` picks by persona), not
+  one shared screen — the two have genuinely different designs in their own Figma
+  sources. `RegularSettingsPage.tsx`: 6-section sidebar (Account, Preferences,
+  Notifications, Privacy, Security, Danger Zone) — Account (editable Full Name via
+  `updateUser`, real password change, email read-only) and Security's active-sessions
+  list + revoke (+ Danger Zone's "sign out of all other devices") are real; the rest
+  are labeled previews. `BusinessSettingsPage.tsx`: the original Phase 6 2-tab screen
+  (Account/Notifications), unchanged. See
+  [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)
+  (includes a correction note — these two were briefly, incorrectly merged into one
+  shared component before being split back apart) and
+  [specs/phase-7-settings-security-sessions.md](./specs/phase-7-settings-security-sessions.md).
 - **Business console** (`BUSINESS` accounts get their own nav, not the reviewer
   nav — see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md)) —
   Dashboard (KPI cards, trend charts, sentiment, review management), My Listing (edit
   form + live preview), Reviews (full review management), Analytics (trend charts +
   rating distribution, real; keyword mentions/competitor benchmark, explicitly-labeled
   static previews), Promotions (`localStorage`-only preview — no promotions concept
-  exists in the product at all), Settings (shared with the reviewer nav as of Phase
-  7 — see the Settings bullet above; real password change + editable name,
-  notification toggles are a static preview). Full breakdown of what's real vs.
-  illustrative per page:
+  exists in the product at all), Settings (see the Settings bullet above — real
+  password change + editable name, notification toggles are a static preview). Full
+  breakdown of what's real vs. illustrative per page:
   [specs/phase-6-business-console.md](./specs/phase-6-business-console.md).
 
 **Cross-cutting infrastructure already in place and worth keeping:**
@@ -218,17 +225,18 @@ the same branch, not called out in the original spec because they weren't known 
   — unrealistically short for most real street addresses. Pre-existing (not
   introduced by any recent work), newly noticed 2026-08-15 while building My Listing's
   edit form; worth a follow-up since it'll trip real users, not just test data.
-- **No `updateUser`/`updateProfile` mutation exists.** A user's name/email can never
-  be changed once the account is created, by either account type. Phase 6's Settings
-  page shows this as a read-only profile rather than a form that would silently no-op
-  on save; a real fix is Phase 7 scope (account-type-agnostic, not business-console
-  specific).
+- **`updateUser` only covers `fullName` — email can never be changed.** Fixed as of
+  Phase 7's first ticket for name; email stays permanently fixed once the account is
+  created, by either account type, since no email-verification flow exists anywhere
+  in this codebase and email is the login identifier. See
+  [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
 - **No tests, no CI.** Verification across every phase so far has been manual:
-  `npm run build` for type errors, then exercising the change against a live
-  `npm run start:dev` server via GraphQL introspection (backend) or a
-  claude-in-chrome click-through (frontend). This is the established, working method
-  for this project, not a gap silently being routed around — but it's still worth
-  naming as debt.
+  `npm run build` for type errors, then exercising backend changes against a live
+  `npm run start:dev` server via GraphQL introspection. Per explicit user direction,
+  frontend/UI changes are verified by typecheck alone — this repo's workflow does not
+  require driving a browser to click-test (see the root `CLAUDE.md`). This is the
+  established, working method for this project, not a gap silently being routed
+  around — but it's still worth naming as debt.
 - **`providers_category` is still a singular table name**, inconsistent with every
   other table (`providers_reviews`, `providers_reviews_replies`, `providers_sessions`,
   etc.). Cosmetic, low priority, would need a migration to rename.

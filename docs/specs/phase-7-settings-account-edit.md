@@ -5,6 +5,39 @@ tickets, following Phase 5's "build one at a time" precedent rather than plannin
 the whole phase up front. See [03-architecture.md](../03-architecture.md)'s "Built:
 Settings + account edit" section for the condensed version.
 
+## Correction (2026-08-16): the "shared screen" decision below was wrong
+
+The "Reuse the existing Settings screen" decision further down this doc assumed one
+shared component was correct because the *content* (profile fields + password
+change) looked similar enough. It wasn't checked against either persona's actual
+Figma source before shipping. When checked (prompted by the user, who caught this
+live): the two account types have **completely different Settings designs**, not a
+shared one with a label swap —
+
+- `BUSINESS` (`oVTXc2TbEHvaGM5mVXL6L1`'s `src/app/components/dashboard/SettingsPage.tsx`):
+  a 2-tab screen (Account/Notifications). This is what shipped and is correct as-is.
+- `REGULAR` (`uecnUKqT4CI7LuIpWo50Pp`'s `SettingsScreen()` in `App.tsx`): a
+  **6-section left sidebar** (Account, Preferences, Notifications, Privacy, Security,
+  Danger Zone) — a materially bigger, differently-organized screen, not a re-skin of
+  the business one.
+
+Fixed in the same ticket that added Security's active-sessions section (see
+[specs/phase-7-settings-security-sessions.md](./phase-7-settings-security-sessions.md)):
+the shared component was split back into `BusinessSettingsPage.tsx` (business-only,
+reverted to hardcoded `"Business owner"`, otherwise unchanged) and a new
+`RegularSettingsPage.tsx` (the 6-section sidebar, matching its own Figma 1:1), with a
+thin `SettingsPage.tsx` left as the persona-routing wrapper both `router.tsx` and
+`AppLayout.tsx`'s nav items point at unchanged. The `updateUser` mutation, `fullName`
+editable field, and `refreshUser()` context addition described below are all still
+correct and unaffected — only the "one shared screen" framing was wrong, not the
+backend work.
+
+**Lesson**: this codebase's whole build discipline (see every other `Built:` section
+in [03-architecture.md](../03-architecture.md)) is "reconcile against the real Figma
+source before building," not "assume similar-looking screens are the same screen." A
+"generic/shared component" call should have been checked against both source files
+first, the same way every other screen in this project already was.
+
 ## Context
 
 Per `04-roadmap.md`, Phase 7 opens with: **"Account fields edit, preferences...
@@ -41,15 +74,15 @@ included or silently dropped. Adding an edit field for a value nothing else in t
 app reads back would be dead-end UI; left for whenever `phoneNumber` gets an actual
 purpose.
 
-**Reuse the existing Settings screen — don't build a second one.** Phase 6's
-`SettingsPage.tsx` (Account tab: profile display + real password change;
-Notifications tab: explicit static preview) was `BUSINESS`-console-scoped only
-because `REGULAR` had no Settings screen and Notifications toggles didn't exist yet
-when it was built. Nothing about that screen is actually business-specific once its
-one hardcoded `"Business owner"` label becomes dynamic — so this ticket makes it the
-shared screen for both account types rather than duplicating it for `REGULAR`. Its
-Notifications tab is untouched (still a labeled preview) — real per-type toggles
-are a separate, later Phase 7 ticket, deliberately out of scope here.
+**~~Reuse the existing Settings screen — don't build a second one.~~ Superseded, see
+Correction above.** The reasoning at the time: Phase 6's `SettingsPage.tsx` (Account
+tab: profile display + real password change; Notifications tab: explicit static
+preview) was `BUSINESS`-console-scoped only because `REGULAR` had no Settings screen
+yet, and nothing about the screen's *content* looked business-specific once its
+`"Business owner"` label became dynamic. That reasoning skipped the one check that
+would have caught it — comparing against `REGULAR`'s actual Figma source, which
+turned out to have a completely different 6-section design. Left here as a record of
+the mistake, not as guidance to follow.
 
 ## Backend
 
@@ -78,17 +111,20 @@ column and `updateOne` machinery via `BaseRepository`.
    the same `User` fields `AuthMeUser` does (including the Profile ticket's
    `createdAt`) so a post-edit refetch has everything the rest of the app expects.
 2. **`lib/userTypeLabel.ts`** (new): `userTypeLabel(userType)` — extracted from
-   `AppLayout.tsx`'s inline function of the same name once `SettingsPage.tsx` needed
-   the identical logic, rather than duplicating it a second time. `AppLayout.tsx`
-   now imports it too.
+   `AppLayout.tsx`'s inline function of the same name once the (since-reverted)
+   shared Settings screen needed the identical logic. `AppLayout.tsx` still imports
+   it for the sidebar persona label; Settings no longer needs it post-correction
+   (`BusinessSettingsPage.tsx` hardcodes its own label again).
 3. **`lib/auth/AuthContext.tsx`**: new `refreshUser()` on the context value —
    re-invokes the same `authMeUser` lazy query the mount-time token-refresh path
    already uses and replaces `user` state. Needed because `AppLayout`'s
    sidebar/topbar name reads from this context, not Apollo's cache; without it, a
    successful name edit wouldn't visibly update anything until the next reload.
-4. **`routes/app/settings/SettingsPage.tsx`**: `AccountTab`'s previously read-only
-   Full Name `<p>` became a controlled `<input>` + "Save Name" button (disabled
-   until changed and non-empty, same disabled-state pattern the password form
+4. **`routes/app/settings/SettingsPage.tsx`** (at the time; now
+   `BusinessSettingsPage.tsx` post-correction — see above): `AccountTab`'s previously
+   read-only Full Name `<p>` became a controlled `<input>` + "Save Name" button
+   (disabled until changed and non-empty, same disabled-state pattern the password
+   form
    already uses), calling `updateUser` then `refreshUser()`. The previously
    hardcoded `"Business owner"` Account Type row now calls `userTypeLabel(user
    ?.userType)`. Email row and its disclaimer text stayed read-only, copy updated to

@@ -58,7 +58,7 @@ export class SessionService {
   async renew(
     refreshToken: string,
     context: { userAgent?: string; ip?: string }
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string; sessionId: string }> {
     let decoded;
     try {
       decoded = verifyRefreshJwt(refreshToken);
@@ -83,14 +83,14 @@ export class SessionService {
       decoded.userType as UserTypeEnum
     );
 
-    await this.createSession({
+    const newSession = await this.createSession({
       userId: decoded.id,
       refreshToken: newRefreshToken,
       userAgent: context.userAgent,
       ip: context.ip,
     });
 
-    return { accessToken, refreshToken: newRefreshToken };
+    return { accessToken, refreshToken: newRefreshToken, sessionId: newSession.id };
   }
 
   async revokeByToken(refreshToken: string, userId: string): Promise<void> {

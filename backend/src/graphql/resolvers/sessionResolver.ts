@@ -14,7 +14,7 @@ export const sessionResolver = {
             info: GraphQLResolveInfo
         ) => {
             try {
-                const { accessToken, refreshToken } = await new SessionService().renew(
+                const { accessToken, refreshToken, sessionId } = await new SessionService().renew(
                     args.input.refreshToken,
                     {
                         userAgent: context.headers?.["user-agent"] as string | undefined,
@@ -24,7 +24,7 @@ export const sessionResolver = {
 
                 return SuccessResponse.send({
                     message: "Access token refreshed successfully",
-                    data: { access: accessToken, refresh: refreshToken },
+                    data: { access: accessToken, refresh: refreshToken, sessionId },
                 });
             } catch (error: any) {
                 if (error instanceof GraphQLError) {

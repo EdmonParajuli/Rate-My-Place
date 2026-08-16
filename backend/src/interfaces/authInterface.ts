@@ -32,6 +32,7 @@ export interface SignUpBusinessResponseInterface {
     token: {
         access: string;
         refresh: string;
+        sessionId: string;
     };
 }
 
@@ -45,6 +46,7 @@ export interface AuthResponseInterface {
     token: {
         access: string;
         refresh: string;
+        sessionId: string;
       };
 }
 
