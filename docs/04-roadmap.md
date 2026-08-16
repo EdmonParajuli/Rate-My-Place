@@ -220,11 +220,29 @@ apart — see the correction note in ticket 1's spec.
       while here: the preview's caption pointed at "My Reviews' bell icon" for real
       in-app notifications, which is now its own Notifications page/nav item.
 - [ ] Privacy: blocked users, data export (GDPR-style — decide scope now, it
-      constrains the data model) — labeled preview on the `REGULAR` Settings shell
-- [ ] 2FA — labeled preview toggle on the `REGULAR` Settings shell's Security section
-- [ ] Delete-account flow with typed confirmation + actual data retention/anonymization
-      policy — labeled preview (disabled button) on the `REGULAR` Settings shell's
-      Danger Zone; no `deleteUser` mutation or retention policy exists yet
+      constrains the data model) — labeled preview on the `REGULAR` Settings shell.
+      The preview UI already shipped in the Security/active-sessions ticket's
+      "build the whole shell" pass (same as Notifications above) — what's still
+      genuinely open is the scope decision. Asked directly (2026-08-16): blocked
+      users isn't needed yet (deferred, not scoped), and the data-export mechanism
+      (sync query vs. async job — the latter is blocked on Phase 8's object-storage
+      decision anyway, since there's nowhere to park a generated file today) is also
+      deferred entirely. Stays unchecked and undecided on purpose, not an oversight.
+- [x] 2FA — labeled preview toggle on the `REGULAR` Settings shell's Security section.
+      Same story as the notification toggles above: already shipped in the
+      Security/active-sessions ticket's "build the whole shell" pass
+      (`SecuritySection`'s `PreviewNotice` + `ToggleRow` for "Two-Factor
+      Authentication") — checkbox just wasn't flipped. Docs-sync only, 2026-08-16,
+      no code changed.
+- [x] Delete-account flow with typed confirmation + actual data retention/anonymization
+      policy — see
+      [specs/phase-7-delete-account.md](./specs/phase-7-delete-account.md). Real
+      typed-confirmation gate (Delete Account button disabled until the input reads
+      exactly `"DELETE"`), retention policy decided and documented (reviews get
+      anonymized, not removed; the `User` row gets anonymized in place via the
+      existing `paranoid` soft-delete convention, not hard-deleted) — but the
+      `deleteUser` mutation itself is still unbuilt, so a "successful" click shows a
+      preview-notice message and does nothing. This closes out Phase 7.
 
 ## Phase 8 — Media
 

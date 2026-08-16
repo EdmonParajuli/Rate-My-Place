@@ -408,6 +408,10 @@ function DangerZoneSection({ sessions, onSignedOutOthers }: { sessions: ActiveSe
   const currentSessionId = getStoredSessionId()
   const otherSessions = sessions.filter((s) => !(currentSessionId != null && String(s.id) === currentSessionId))
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [confirmText, setConfirmText] = useState("")
+  const [deleteAttempted, setDeleteAttempted] = useState(false)
+
   async function handleSignOutOthers() {
     setSigningOut(true)
     try {
@@ -416,6 +420,12 @@ function DangerZoneSection({ sessions, onSignedOutOthers }: { sessions: ActiveSe
     } finally {
       setSigningOut(false)
     }
+  }
+
+  function handleCancelDelete() {
+    setShowDeleteConfirm(false)
+    setConfirmText("")
+    setDeleteAttempted(false)
   }
 
   return (
@@ -441,10 +451,45 @@ function DangerZoneSection({ sessions, onSignedOutOthers }: { sessions: ActiveSe
             </p>
           </div>
         </div>
-        <button disabled className="cursor-not-allowed rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white opacity-40">
-          Delete My Account
-        </button>
-        <p className="mt-2 text-xs text-rose-500">Preview feature — account deletion isn't implemented yet.</p>
+
+        {showDeleteConfirm ? (
+          <div className="space-y-3">
+            <input
+              value={confirmText}
+              onChange={(e) => {
+                setConfirmText(e.target.value)
+                setDeleteAttempted(false)
+              }}
+              placeholder="Type DELETE to confirm"
+              className="w-full rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-rose-400"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelDelete}
+                className="flex-1 cursor-pointer rounded-xl border border-border py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setDeleteAttempted(true)}
+                disabled={confirmText !== "DELETE"}
+                className="flex-1 cursor-pointer rounded-xl bg-rose-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Delete Account
+              </button>
+            </div>
+            {deleteAttempted && (
+              <p className="text-xs font-medium text-rose-500">Preview feature — account deletion isn't implemented yet. Nothing was deleted.</p>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="cursor-pointer rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700"
+          >
+            Delete My Account
+          </button>
+        )}
       </div>
     </>
   )
