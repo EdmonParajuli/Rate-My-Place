@@ -255,19 +255,26 @@ cheaper to build once the shapes of those three are stable.
 - [x] Upload flow (signed URLs, not routing file bytes through the GraphQL server) -
       Cloudinary's signed-params flavor of it (`mediaUploadSignature` query,
       direct browser→Cloudinary POST, `attachMedia` mutation to persist the result).
-- [x] Wire into place photos, review photos, avatar/cover - **avatar/cover and
-      place photos both done**; **review photos remain**. Avatar/cover: real
-      upload, `ProfileHeader`'s camera-icon/cover-pill affordances. Place: real
-      cover photo *and* a real multi-photo gallery (`PlacePhotosSection.tsx` on
-      My Listing - upload, cap at 12, per-photo delete via a new `removeMedia`
-      mutation), superseding the earlier direct-DB-seed placeholder.
-      `mediaUploadSignature`/`attachMedia` now take `ownerType`/`ownerId` (not
-      USER-implicit anymore), with real ownership checks against
-      `PlaceService`. No Figma reference existed for either the avatar/cover or
-      the place-gallery interaction, so both were designed reasonably rather
-      than translated. Review photos remain a separate follow-up - same `MEDIA`
-      table/signed-upload plumbing, `REVIEW` already in `MediaOwnerTypeEnum` but
-      unimplemented in `MediaService`. See
+- [x] Wire into place photos, review photos, avatar/cover - **all three done,
+      Phase 8 complete**. Avatar/cover: real upload, `ProfileHeader`'s
+      camera-icon/cover-pill affordances. Place: real cover photo *and* a real
+      multi-photo gallery (`PlacePhotosSection.tsx` on My Listing - upload, cap
+      at 12, per-photo delete). Review: real multi-photo gallery too
+      (`ReviewPhotosSection.tsx`, only while editing an existing review - a
+      brand-new review has no id to attach photos to yet - cap at 6), plus a
+      read-only `ReviewPhotoStrip.tsx` shared by every place a review appears
+      (Place Detail's cards, My Reviews). Reviews needed one thing places
+      didn't: `placeReviews`/`myReviews` are real list queries (unlike Place
+      Detail/My Listing, which only ever show one place at a time), so
+      `Review.photos` couldn't be a live per-row resolver without a real N+1 -
+      `Review.photoCount` is a materialized column instead (same "recompute and
+      store" pattern `helpfulCount` already used), and the actual photo URLs
+      only load through a new single-review `getReviewById` query, never
+      embedded in a list. `mediaUploadSignature`/`attachMedia` take
+      `ownerType`/`ownerId` throughout, with real ownership checks
+      (`PlaceService`/`ReviewService`). No Figma reference existed for any of
+      the three upload interactions, so all were designed reasonably rather
+      than translated. See
       [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 ## Phase 9 — Hardening for production

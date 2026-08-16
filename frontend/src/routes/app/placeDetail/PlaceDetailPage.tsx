@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/auth/AuthContext"
 import {
   useGetPlaceByIdQuery,
   usePlaceReviewsQuery,
+  useGetReviewByIdQuery,
   useCreateReviewMutation,
   useUpdateReviewMutation,
   useDeleteReviewMutation,
@@ -61,6 +62,15 @@ export function PlaceDetailPage() {
 
   const { data: reviewsData, refetch: refetchReviews } = usePlaceReviewsQuery({ variables: { placeId: id, first: 20, sort } })
   const reviews = (reviewsData?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null)
+
+  // Single-review scoped fetch, seeds the edit form's photo gallery - not
+  // part of placeReviews above, which would be a real N+1. See
+  // docs/specs/phase-8-media-plumbing.md.
+  const { data: editingReviewData, refetch: refetchEditingReviewPhotos } = useGetReviewByIdQuery({
+    variables: { id: editingReviewId ?? 0 },
+    skip: !editingReviewId,
+  })
+  const editingReviewPhotos = (editingReviewData?.getReviewById?.data?.photos ?? []).filter((p): p is NonNullable<typeof p> => p !== null)
 
   const { data: similarData } = useListPlacesQuery({
     variables: { filter: { categoryId: place?.category?.id ?? undefined }, first: 4 },
@@ -308,10 +318,16 @@ export function PlaceDetailPage() {
                 initialRating={editingReview?.rating ?? undefined}
                 initialText={editingReview?.review ?? undefined}
                 isEditing={Boolean(editingReview)}
+                reviewId={editingReview?.id}
+                photos={editingReviewPhotos}
                 submitting={submittingReview}
                 onCancel={cancelWriteForm}
                 onSubmit={handleSubmitReview}
                 onSaveDraft={editingReview ? undefined : handleSaveDraft}
+                onPhotosChanged={() => {
+                  void refetchEditingReviewPhotos()
+                  void refetchReviews()
+                }}
               />
               {reviewError && <p className="text-xs text-destructive">{reviewError}</p>}
             </>

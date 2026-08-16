@@ -12,6 +12,9 @@ import { ReviewReplyService } from "../../services/reviewReplyService";
 import { ReviewVoteService } from "../../services/reviewVoteService";
 import { ReviewInterface } from "../../interfaces/reviewInterface";
 import { ReviewSortEnum } from "../../enums/reviewSortEnum";
+import { MediaService } from "../../services/mediaService";
+import { MediaOwnerTypeEnum } from "../../enums/mediaOwnerTypeEnum";
+import { MediaKindEnum } from "../../enums/mediaKindEnum";
 
 export const reviewResolver = {
     Mutation: {
@@ -149,6 +152,32 @@ export const reviewResolver = {
                 }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
+        },
+
+        getReviewById: async(
+            parent: ParentNode,
+            args: { id: number },
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                requireAuth(context);
+
+                const data = await new ReviewService().getReviewById(args.id);
+                if (!data) {
+                    throwError(`Review with ID ${args.id} not found`, "NOT_FOUND", 404);
+                }
+
+                return SuccessResponse.send({
+                    message: "Review fetched successfully",
+                    data
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
         }
     },
     Review: {
@@ -167,6 +196,13 @@ export const reviewResolver = {
         // instance, same as ReviewReply.createdAt.
         helpfulByMe: async (parent: ReviewInterface, args: unknown, context: ContextInterface) => {
             return new ReviewVoteService().hasVoted(parent.id, context.user?.id);
+        },
+        // Live per-review lookup - only safe because this is exclusively
+        // reached through getReviewById (one review at a time), never
+        // through placeReviews/myReviews (real lists, which use the
+        // materialized photoCount instead - see docs/specs/phase-8-media-plumbing.md).
+        photos: async (parent: ReviewInterface) => {
+            return new MediaService().getForOwner(MediaOwnerTypeEnum.REVIEW, Number(parent.id), MediaKindEnum.PHOTO);
         }
     }
 }

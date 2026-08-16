@@ -2,6 +2,7 @@ import { Transaction } from 'sequelize';
 import { MediaRepository } from '../repositories/mediaRepository';
 import { UserService } from './userService';
 import PlaceService from './placeService';
+import { ReviewService } from './reviewService';
 import { MediaOwnerTypeEnum } from '../enums/mediaOwnerTypeEnum';
 import { MediaKindEnum } from '../enums/mediaKindEnum';
 import { Database, cloudinary as cloudinaryConfig } from '../config';
@@ -9,22 +10,20 @@ import { generateUploadSignature } from '../utils/cloudinary';
 import { throwError } from '../helpers/errorHelper';
 import { assertOwnership } from '../utils/auth';
 
-// REVIEW isn't implemented yet (review photo galleries are a separate,
-// later ticket) - the providers_media table and MediaOwnerTypeEnum already
-// support it (doc 3's full polymorphic shape), the GraphQL layer/this
-// service just reject it until that ticket lands. See
-// docs/specs/phase-8-media-plumbing.md.
 const MAX_PLACE_PHOTOS = 12;
+const MAX_REVIEW_PHOTOS = 6;
 
 export class MediaService {
   private repository: MediaRepository;
   private userService: UserService;
   private placeService: PlaceService;
+  private reviewService: ReviewService;
 
   constructor() {
     this.repository = new MediaRepository();
     this.userService = new UserService();
     this.placeService = new PlaceService();
+    this.reviewService = new ReviewService();
   }
 
   private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
@@ -39,7 +38,7 @@ export class MediaService {
     }
   }
 
-  // ownerId required for PLACE (checked against real place ownership);
+  // ownerId required for PLACE/REVIEW (checked against real ownership);
   // ignored for USER - always the caller's own account, never a
   // client-supplied id.
   async getUploadSignature(
@@ -64,8 +63,17 @@ export class MediaService {
       }
       await this.assertOwnsPlace(ownerId!, userId);
       folder = `rate-my-place/places/${ownerId}/${kind.toLowerCase()}`;
+    } else if (ownerType === MediaOwnerTypeEnum.REVIEW) {
+      if (kind !== MediaKindEnum.PHOTO) {
+        throwError("Only PHOTO uploads are supported for a review.", "BAD_REQUEST", 400);
+      }
+      if (!ownerId) {
+        throwError("ownerId is required for a review upload.", "BAD_REQUEST", 400);
+      }
+      await this.assertOwnsReview(ownerId!, userId);
+      folder = `rate-my-place/reviews/${ownerId}/photo`;
     } else {
-      throwError("Only USER or PLACE uploads are supported so far.", "BAD_REQUEST", 400);
+      throwError("Only USER, PLACE, or REVIEW uploads are supported.", "BAD_REQUEST", 400);
       return;
     }
 
@@ -87,6 +95,26 @@ export class MediaService {
     }
     assertOwnership(place!.ownerId, userId, "You do not own this place.");
     return place!;
+  }
+
+  private async assertOwnsReview(reviewId: number, userId: string) {
+    const review = await this.reviewService.getReviewById(reviewId);
+    if (!review) {
+      throwError(`Review with ID ${reviewId} not found`, "NOT_FOUND", 404);
+    }
+    assertOwnership(review!.reviewerId, userId, "You do not own this review.");
+    return review!;
+  }
+
+  // Recomputes from source rather than +1/-1 - same "recompute and store"
+  // pattern as ReviewVoteService.toggle maintaining helpfulCount, and reuses
+  // the same count attachMedia's cap check just computed.
+  private async syncReviewPhotoCount(reviewId: number, transaction: Transaction) {
+    // Must pass the transaction through - the just-created/removed row isn't
+    // visible to a query outside it (default READ COMMITTED), so an
+    // un-scoped count here would silently read the pre-write count.
+    const count = await this.repository.count({ where: { ownerType: MediaOwnerTypeEnum.REVIEW, ownerId: reviewId, kind: MediaKindEnum.PHOTO }, transaction });
+    await this.reviewService.updatePhotoCount(reviewId, count, transaction);
   }
 
   async attachMedia(
@@ -141,14 +169,36 @@ export class MediaService {
       return this.repository.create({ ownerType: MediaOwnerTypeEnum.PLACE, ownerId: ownerId!, kind, url });
     }
 
-    throwError("Only USER or PLACE uploads are supported so far.", "BAD_REQUEST", 400);
+    if (ownerType === MediaOwnerTypeEnum.REVIEW) {
+      if (!ownerId) {
+        throwError("ownerId is required for a review upload.", "BAD_REQUEST", 400);
+      }
+      await this.assertOwnsReview(ownerId!, userId);
+
+      // PHOTO only - additive, same gallery shape as PLACE's, just a
+      // smaller cap (a single review, not a whole listing).
+      const existingCount = await this.repository.count({ where: { ownerType: MediaOwnerTypeEnum.REVIEW, ownerId: ownerId!, kind: MediaKindEnum.PHOTO } });
+      if (existingCount >= MAX_REVIEW_PHOTOS) {
+        throwError(`A review can have at most ${MAX_REVIEW_PHOTOS} photos. Remove one before adding another.`, "BAD_REQUEST", 400);
+      }
+
+      return this.withTransaction(async (transaction) => {
+        const media = await this.repository.create({ ownerType: MediaOwnerTypeEnum.REVIEW, ownerId: ownerId!, kind: MediaKindEnum.PHOTO, url }, { transaction });
+        await this.syncReviewPhotoCount(ownerId!, transaction);
+        return media;
+      });
+    }
+
+    throwError("Only USER, PLACE, or REVIEW uploads are supported.", "BAD_REQUEST", 400);
   }
 
-  // Live, per-owner lookup (not denormalized like coverPhotoUrl) - a
-  // gallery is inherently a list, and this is only ever requested for one
-  // place at a time (Place Detail, My Listing), never across a list of many
-  // places at once, so there's no N+1 risk to avoid here the way there was
-  // for coverPhotoUrl on Discover's grid.
+  // Live, per-owner lookup (not denormalized) - a gallery is inherently a
+  // list, and this is only ever requested for one owner at a time (Place
+  // Detail/My Listing for a place, getReviewById for a review), never
+  // across a list of many owners at once, so there's no N+1 risk to avoid
+  // here the way there was for coverPhotoUrl/profilePicture. Review lists
+  // (placeReviews/myReviews) use the materialized photoCount instead of
+  // this - see syncReviewPhotoCount above.
   async getForOwner(ownerType: MediaOwnerTypeEnum, ownerId: number, kind: MediaKindEnum) {
     return this.repository.findAll({
       where: { ownerType, ownerId, kind },
@@ -166,15 +216,17 @@ export class MediaService {
       assertOwnership(media!.ownerId, userId, "You do not own this media.");
     } else if (media!.ownerType === MediaOwnerTypeEnum.PLACE) {
       await this.assertOwnsPlace(Number(media!.ownerId), userId);
+    } else if (media!.ownerType === MediaOwnerTypeEnum.REVIEW) {
+      await this.assertOwnsReview(Number(media!.ownerId), userId);
     } else {
-      throwError("Only USER or PLACE media can be removed so far.", "BAD_REQUEST", 400);
+      throwError("Only USER, PLACE, or REVIEW media can be removed.", "BAD_REQUEST", 400);
     }
 
     await this.withTransaction(async (transaction) => {
       await this.repository.deleteOne(mediaId, transaction);
 
-      // Clear the denormalized column too, so it never points at a
-      // soft-deleted row's URL.
+      // Clear the denormalized column/count too, so it never keeps
+      // pointing at a soft-deleted row.
       if (media!.kind === MediaKindEnum.COVER) {
         if (media!.ownerType === MediaOwnerTypeEnum.USER) {
           await this.userService.updateCoverPicture(media!.ownerId, null, transaction);
@@ -183,6 +235,8 @@ export class MediaService {
         }
       } else if (media!.kind === MediaKindEnum.AVATAR) {
         await this.userService.updateProfilePicture(media!.ownerId, null, transaction);
+      } else if (media!.kind === MediaKindEnum.PHOTO && media!.ownerType === MediaOwnerTypeEnum.REVIEW) {
+        await this.syncReviewPhotoCount(Number(media!.ownerId), transaction);
       }
     });
   }

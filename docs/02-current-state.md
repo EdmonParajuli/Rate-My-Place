@@ -72,20 +72,24 @@ resolver → typeDefs):**
   (rating-bucket heuristic), response rate, all live-computed from
   `providers_reviews`/`providers_reviews_replies` — see
   [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md).
-- **Media** (Phase 8) — Cloudinary-backed signed uploads (`mediaUploadSignature`/
-  `attachMedia`, both taking `ownerType`/`ownerId`), `providers_media` is a
-  polymorphic audit table (doc 3's `PLACE | REVIEW | USER` × `PHOTO | AVATAR |
-  COVER` shape). `USER` (avatar/cover) and `PLACE` (cover + a real, capped-at-12
-  `PHOTO` gallery) both have real upload flows now, gated by real ownership
-  checks (`assertOwnership` against `PlaceService` for places); `REVIEW` is still
-  unimplemented. `User.profilePicture`/`coverPicture` and `Place.coverPhotoUrl`
-  are denormalized read-cache columns (same "recompute and store" precedent as
-  `Place.averageRating`) — reading them anywhere embedded (review/place owner
-  cards, Discover cards) is a plain column read, never a `MEDIA` lookup.
-  `Place.photos` is the one live (non-denormalized) list resolver — safe because
-  it's only ever requested for one place at a time, never across a list of many.
-  A new `removeMedia` mutation deletes an individual media row (ownership-checked,
-  clears the matching denormalized column if it was the current cover). See
+- **Media** (Phase 8, complete) — Cloudinary-backed signed uploads
+  (`mediaUploadSignature`/`attachMedia`, both taking `ownerType`/`ownerId`),
+  `providers_media` is a polymorphic audit table (doc 3's `PLACE | REVIEW | USER`
+  × `PHOTO | AVATAR | COVER` shape). All three owner types have real upload flows
+  now, each gated by real ownership checks (`assertOwnership` against
+  `PlaceService`/`ReviewService` for places/reviews). `User.profilePicture`/
+  `coverPicture` and `Place.coverPhotoUrl` are denormalized read-cache columns
+  (same "recompute and store" precedent as `Place.averageRating`) — reading them
+  anywhere embedded (review/place owner cards, Discover cards) is a plain column
+  read, never a `MEDIA` lookup. `Place.photos` is a live list resolver — safe
+  because it's only ever requested for one place at a time. `Review.photos` is
+  also live, but reviews are genuinely listed in bulk (`placeReviews`/
+  `myReviews`), so it's only reachable through a single-review `getReviewById`
+  query, never embedded in those list queries — `Review.photoCount` (a
+  materialized column, same pattern as `helpfulCount`) is what the lists
+  actually select. A `removeMedia` mutation deletes an individual media row
+  (ownership-checked, clears/resyncs the matching denormalized
+  column/count). See
   [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 **Frontend screens, all against the real API above (no mocked data anywhere in
@@ -96,16 +100,22 @@ resolver → typeDefs):**
   `Place` atomically via `signUpBusiness`), session persistence across reloads (a
   stored refresh token silently re-authenticates on mount).
 - **Discover** — search/filter/sort, card grid + a real Leaflet/OpenStreetMap view
-  toggle. Cards show a real `coverPhotoUrl` when a place has one (most don't yet —
-  no upload flow, see the Media bullet above), falling back to the existing
+  toggle. Cards show a real `coverPhotoUrl` when a place has one (real upload now
+  lives on My Listing, see the Media bullet above), falling back to the existing
   category-tinted gradient placeholder.
 - **Categories** — browse grid (real cover images/stats) + category-detail sub-screen.
 - **Place Detail** — full write/edit/reply review flow, helpful votes, rating
   breakdown, business hours. Hero renders `coverPhotoUrl` when set, falling back to
-  the dashed "Cover photo" placeholder.
+  the dashed "Cover photo" placeholder. Review cards can attach real photos too —
+  only while editing an existing review (a not-yet-created review has no id to
+  attach to), capped at 6, via `ReviewPhotosSection.tsx`; every review with
+  photos shows a click-to-expand `ReviewPhotoStrip.tsx` (shared with My Reviews).
 - **My Reviews** — Published/Drafts tabs (drafts are a deliberate client-side-only,
   `localStorage` feature — no backend draft concept exists), real edit/delete, a
-  compact 5-badge earned/locked strip (`BadgeStrip.tsx`).
+  compact 5-badge earned/locked strip (`BadgeStrip.tsx`). Its own inline-edit UI
+  (`ReviewListItem.tsx`) stays text/rating-only — photo upload only lives on
+  Place Detail's review composer (see above) — but photos already attached are
+  visible here too via the same shared `ReviewPhotoStrip.tsx`.
 - **Saved** — four tabs (All Saved/Want to Visit/Reviewed/Favorites), save/heart
   toggle from Place Detail and Discover cards.
 - **Notifications** — `REGULAR` and `BUSINESS` get different screens at the same

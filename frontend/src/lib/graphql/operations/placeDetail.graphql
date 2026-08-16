@@ -53,6 +53,7 @@ query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSor
       createdAt
       helpfulCount
       helpfulByMe
+      photoCount
       reviewer {
         id
         fullName
@@ -67,6 +68,23 @@ query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSor
     pageInfo {
       hasNextPage
       endCursor
+    }
+  }
+}
+
+# Single-review scoped, unlike placeReviews above - fetches a review's real
+# photos on demand (edit form seeding it, or a viewer expanding "N photos" on
+# a card). Never embedded in the list query - see
+# docs/specs/phase-8-media-plumbing.md.
+query GetReviewById($id: Int!) {
+  getReviewById(id: $id) {
+    data {
+      id
+      photoCount
+      photos {
+        id
+        url
+      }
     }
   }
 }

@@ -50,5 +50,10 @@ export const reviewTypedefs: DocumentNode = gql`
     extend type Query {
         placeReviews(placeId: Int!, first: Int, after: String, sort: ReviewSortEnum): ReviewListResponse
         myReviews(first: Int, after: String): ReviewListResponse
+        # Single-review scoped, unlike placeReviews/myReviews - lets the
+        # frontend fetch a review's photos (Review.photos) without embedding
+        # that live resolver in a list query, which would be a real N+1. See
+        # docs/specs/phase-8-media-plumbing.md.
+        getReviewById(id: Int!): ReviewResponse
     }
 `

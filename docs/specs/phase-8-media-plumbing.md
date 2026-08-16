@@ -1,7 +1,79 @@
 # Phase 8 Spec: Media Plumbing + Avatar/Cover Upload
 
-**Status: ✅ Built (plumbing, avatar/cover, place cover photo + gallery upload),
-❌ no review photo upload flow yet.** First two of Phase 8's sequenced tickets.
+**Status: ✅ Built — avatar/cover, place cover photo + gallery, review photo
+gallery. Phase 8 complete**, all three `MediaOwnerTypeEnum` values now have a
+real, working path.
+
+## Update (2026-08-16): Review photo galleries
+
+Extends `MediaService` to also support `REVIEW` - the last unimplemented
+`MediaOwnerTypeEnum` value, closing out Phase 8. `PHOTO` only (no avatar/cover
+concept for a review), additive gallery, capped at 6 (`MAX_REVIEW_PHOTOS` -
+smaller than a place's 12, since this is one review, not a whole listing).
+Ownership checks against the review's own author (`ReviewService.getReviewById`
++ `assertOwnership(review.reviewerId, callerId)`), same shape as the place
+ticket's `assertOwnsPlace`.
+
+**A real N+1 risk this time, unlike Place.photos - solved with a materialized
+`photoCount`, not a live per-row resolver.** `Place.photos` was safe as a live
+resolver because it's only ever fetched for one place at a time (Place Detail,
+My Listing). Reviews are different: `placeReviews`/`myReviews` are genuinely
+list queries - a place can have dozens of reviews on one page. Embedding a live
+`Review.photos` resolver there would fire one `providers_media` query per review
+row, the exact anti-pattern this whole media effort has been careful to avoid
+(`User.profilePicture`/`Place.coverPhotoUrl` were denormalized specifically to
+dodge it). The fix: `Review.photoCount` is a materialized column
+(`providers_reviews.photo_count`, migration `20260816180000`), recomputed from
+source and stored by `MediaService` on every attach/remove - same "recompute and
+store" pattern `ReviewVoteService.toggle` already uses for `helpfulCount`
+(literally reused that exact precedent, including recomputing via a real COUNT
+query rather than +1/-1, since that's already proven correct here for a
+concurrent-write-prone counter). List queries select `photoCount` only (a plain
+column, list-safe); the real photo URLs (`Review.photos`, still a live resolver)
+are only ever fetched through a new single-review `getReviewById(id)` query -
+never embedded in a list, by construction.
+
+**A real bug, caught by testing, not by review.** The first version of
+`syncReviewPhotoCount` ran its `COUNT` query without the enclosing transaction -
+since the just-created/removed `providers_media` row isn't visible outside that
+transaction yet (default `READ COMMITTED` isolation), the recomputed count
+silently reflected the *pre-write* state, so `photoCount` never actually updated
+on the first attach. Caught by the same real-Cloudinary-upload verification this
+whole Phase 8 effort has used throughout (attach a photo, check `photoCount`,
+notice it's still 0) - fixed by adding a `transaction` option to
+`BaseRepository.count` (it had none before) and passing it through. Confirmed
+fixed the same way: attach, count updates; remove, count updates back down.
+
+**Photo management scope: upload/delete lives only in Place Detail's review
+composer, not My Reviews' separate inline-edit UI.** `MyReviewsPage.tsx` has its
+own self-contained edit UI (`ReviewListItem.tsx`, text/rating only, doesn't
+share code with `WriteReviewForm.tsx`) - duplicating the whole upload gallery
+there roughly doubles the integration work for a feature that's fully available
+from Place Detail either way (editing your own review works from both surfaces,
+but only Place Detail's edit form gained the photo section). *Viewing* photos
+(read-only) is available everywhere a review appears, though -
+`ReviewPhotoStrip.tsx` (`components/`) is shared by both `ReviewCard.tsx` and
+`ReviewListItem.tsx`.
+
+**Photos can only be added while editing an existing review, not while writing
+a brand-new one.** `attachMedia`'s ownership check needs a real `reviewId` to
+verify against - a review that doesn't exist yet has nothing to check ownership
+of. Rather than a two-phase "create, then silently unlock photo upload"
+transition, `WriteReviewForm` just shows a plain hint ("You can add photos
+after posting your review") while writing, and the full `ReviewPhotosSection`
+gallery once `isEditing` is true (reached by clicking the pencil icon on your
+own published review, which already had a working edit flow). A cleaner
+single-submit UX (pick photos while writing, upload them right after
+`createReview` resolves) was considered and rejected as more complexity than
+the ask warranted - documented here as a deliberate simplification, not a gap.
+
+**`ReviewPhotoStrip.tsx` opens photos in a new tab, not a custom lightbox.**
+Clicking a thumbnail is a plain `<a target="_blank">` to the full Cloudinary
+URL - avoids building/maintaining a modal/carousel component for a first pass.
+Thumbnails themselves are click-to-reveal (a "N photos" toggle expands them),
+fetched only at that point via `getReviewById` - so a review list with many
+reviews that have photos still costs zero extra queries until a viewer actually
+asks to see one.
 
 ## Update (2026-08-16): Place photo galleries (real upload, not seeded)
 

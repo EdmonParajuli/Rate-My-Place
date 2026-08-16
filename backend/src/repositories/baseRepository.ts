@@ -87,7 +87,7 @@ interface RepositoryReader<IT, RT> {
     distinct?: boolean;
   }): Promise<{ count: number; rows: RT[] }>;
 
-  count({ where }: { where?: WhereOptions }): Promise<number>;
+  count({ where, transaction }: { where?: WhereOptions; transaction?: Transaction }): Promise<number>;
 
   rawQuery(sql: string): Promise<any>;
 }
@@ -198,13 +198,15 @@ export abstract class BaseRepository<IT, RT>
   count({
     where,
     include,
-    distinct
+    distinct,
+    transaction
   }:{
     where?: WhereOptions<any>;
     include?: IncludeOptions[];
     distinct?: boolean;
+    transaction?: Transaction;
   }): Promise<number>{
-    return this.model.count({where, include, distinct});
+    return this.model.count({where, include, distinct, transaction});
   };
 
   create(input: Partial<IT>, options?: CreateOptions): Promise<RT>{
