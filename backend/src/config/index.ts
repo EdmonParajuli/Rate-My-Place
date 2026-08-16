@@ -3,6 +3,11 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Deliberately console.error, not the pino logger (see src/utils/logger.ts):
+// this runs at module-load time, before a request/logger context exists, and
+// dev's pino-pretty transport writes via a worker thread - not guaranteed to
+// flush before the immediately-following process.exit(1). console.error to
+// stderr is synchronous and always flushes first.
 const mustExist = <T>(value: T | undefined, name: string): T => {
     if (!value) {
       console.error(`Missing Config: ${name} !!!`);

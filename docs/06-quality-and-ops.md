@@ -64,7 +64,15 @@ there's no lint/format script yet — quick win).
 ## Observability
 
 - Structured logging (pino) with a request id threaded through resolver → service →
-  repository, instead of the current bare `console.log`/`console.error`.
+  repository, instead of the current bare `console.log`/`console.error`. **Built**
+  (2026-08-16, Phase 9) — see
+  [specs/phase-9-structured-logging.md](./specs/phase-9-structured-logging.md).
+  `pino-http` generates/echoes an `x-request-id`; `context.logger` carries a
+  per-request child logger into every resolver; an Apollo plugin logs every
+  operation's start/completion/errors uniformly. Not threaded into every service/
+  repository method — nothing else in those layers logs anything today, so that
+  was left for whenever a real need shows up, per the spec's "deliberately left
+  out" section.
 - Error tracking (Sentry or similar) once there's a deployed environment — the
   GraphQL error extensions already carry a `code`/`status`, which maps cleanly onto
   most APM tools' error grouping.

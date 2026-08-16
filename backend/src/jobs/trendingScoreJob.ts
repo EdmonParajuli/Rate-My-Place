@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import PlaceService from "../services/placeService";
+import { logger } from "../utils/logger";
 
 // The first scheduled/background job in this codebase - everything else so
 // far is request-driven. Design decided in docs/08-trending-strategy.md:
@@ -25,12 +26,12 @@ const refreshTrendingScores = async (): Promise<void> => {
 // deployment story in docs/06-quality-and-ops.md.
 export const startTrendingScoreJob = (): void => {
     refreshTrendingScores().catch((error) => {
-        console.error("Initial trending score refresh failed:", error.message);
+        logger.error({ err: error }, "Initial trending score refresh failed");
     });
 
     cron.schedule("0 * * * *", () => {
         refreshTrendingScores().catch((error) => {
-            console.error("Scheduled trending score refresh failed:", error.message);
+            logger.error({ err: error }, "Scheduled trending score refresh failed");
         });
     });
 };
