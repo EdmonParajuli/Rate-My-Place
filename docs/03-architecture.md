@@ -713,6 +713,13 @@ table), index on `(user_id, read)`.
 - **Scope trim from the Figma source**: 6 filter tabs → 2 (All/Unread) — with only 3
   real event types, most of the original 6 would be empty categories.
 
+**Update (2026-08-16, see "Built: Profile + Notifications persona fix" below)**: this
+whole design was `BUSINESS`-only reasoning applied to both personas without checking
+`REGULAR`'s own richer Figma (6 category tabs, avatar rows) — `BUSINESS` keeps this
+exact 2-tab implementation unchanged, `REGULAR` got rebuilt against its own source,
+and 2 more event types (`WATCHED_PLACE_REVIEW`, `HELPFUL_VOTE_RECEIVED`) were added
+to back tabs that were previously dropped as "would be empty."
+
 ## Built: Profile (Phase 5, 2026-08-15)
 
 Full design in [specs/phase-5-profile.md](./specs/phase-5-profile.md). Last of Phase
@@ -729,14 +736,17 @@ existing queries and components.
 - **Entirely read-only, entirely client-computed** — no new backend aggregate was
   added for stats or the activity chart. Stats row reuses `myReviews/StatsRow.tsx`
   as-is (same 3 numbers already computed client-side for My Reviews). The 6-month
-  activity chart reuses the business dashboard's `ReviewVolumeChart.tsx` component
-  directly (it's pure presentational — `{month, reviewCount}[]` in, bars out — no
-  business-specific coupling), fed by a new small client-side bucketing helper
+  activity chart is fed by a small client-side bucketing helper
   (`profile/activityMonths.ts`) that zero-fills the last 6 calendar months from the
   reviewer's own `myReviews` rows, mirroring `businessDashboardMath.ts`'s
   `computeMonthlyBuckets` shape but computed in the browser rather than the server —
   there's no reviewer-side equivalent of the dashboard's `reviewVolumeByMonth` query,
-  and this didn't need one.
+  and this didn't need one. **Originally rendered via the business dashboard's
+  `ReviewVolumeChart.tsx` (a bar chart) reused directly — wrong, caught 2026-08-16:
+  the regular-user Figma's own Profile screen uses a gradient area chart for this
+  section, a different design, not the same component with different data. Fixed by
+  a new `ProfileActivityChart.tsx`** — see
+  [specs/phase-7-profile-notifications-persona-fix.md](./specs/phase-7-profile-notifications-persona-fix.md).
 - **Badge grid is a new, bigger sibling of `BadgeStrip.tsx`, not a replacement** —
   `BadgeGrid.tsx` reuses the same `myBadges` query and `lib/badgeIcons.ts` lookup, but
   always shows each badge's description text (vs. `BadgeStrip`'s hover-tooltip) since
@@ -825,6 +835,44 @@ corrected foundation, builds the Security section's active-sessions list + revok
   the existing `revokeSession` mutation over every non-current session — no new
   backend needed), Delete Account is a disabled button with a "Preview feature"
   caption rather than a working-looking control on a destructive, unbacked action.
+
+## Built: Profile + Notifications persona fix (2026-08-16)
+
+Full design in
+[specs/phase-7-profile-notifications-persona-fix.md](./specs/phase-7-profile-notifications-persona-fix.md).
+A third round of the Settings correction's same lesson (see the two sections above),
+this time on Phase 5's Profile and Notifications screens — caught by the user
+asking directly, not self-caught.
+
+- **Profile's activity chart**: swapped the business dashboard's `ReviewVolumeChart`
+  (bar chart) for a new `ProfileActivityChart.tsx` (gradient area chart), matching
+  the regular-user Figma's own Profile screen. Unambiguous fix, no product decision
+  needed — same data (`activityMonths.ts`'s zero-filled 6-month buckets), different
+  chart type.
+- **Notifications split**: `BUSINESS` keeps its existing 2-tab
+  `BusinessNotificationsPage.tsx` unchanged (confirmed directly with the user —
+  explicitly declined building a topbar-bell dropdown to match `BUSINESS`'s own
+  Figma pattern, despite that being the literal source-accurate fix). `REGULAR` got
+  rebuilt as `RegularNotificationsPage.tsx` against its own Figma: 6 real category
+  tabs (not the previous 2), avatar-first rows.
+- **2 new triggering events**, both previously deferred, now built per explicit
+  direction: `WATCHED_PLACE_REVIEW` (a saved/reviewed place gets reviewed by someone
+  else — new `ReviewRepository.getReviewerIdsForPlace` +
+  `SavedPlaceService.getSaverUserIds`, unioned and notified from
+  `ReviewService.createReview`) and `HELPFUL_VOTE_RECEIVED` (someone helpful-votes
+  your review — fired from `ReviewVoteService.toggle`, no dedup/throttling, a known
+  limitation carried forward from the original deferral in
+  [specs/phase-5-notifications.md](./specs/phase-5-notifications.md)'s non-goals).
+  Required a real migration (`ALTER TYPE ... ADD VALUE`) since
+  `providers_notifications.type` is a native Postgres enum, not a plain string
+  column.
+- **`Notification.place: Place`** (new field resolver, mirrors `Review.place`) backs
+  the avatar-first rows' initials — there's no per-notification actor photo/name
+  anywhere in this schema, so the associated place's label is the only real identity
+  available to show, not a fabricated person.
+- **"Recommendations" tab stays genuinely empty**, not a labeled preview — confirmed
+  directly with the user as a real future phase (business recommendations), so
+  there's nothing to fake or label; it's just an empty category today.
 
 ## GraphQL schema design principles going forward
 

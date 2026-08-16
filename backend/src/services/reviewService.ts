@@ -9,6 +9,7 @@ import { CursorBasedPagination, SortEnum } from '../packages/cursors/service';
 import { ReviewSortEnum } from '../enums/reviewSortEnum';
 import { NotificationService } from './notificationService';
 import { NotificationTypeEnum } from '../enums/notificationTypeEnum';
+import { SavedPlaceService } from './savedPlaceService';
 
 const NEWEST_FIRST = { order: 'createdAt', sort: SortEnum.Desc };
 
@@ -28,12 +29,14 @@ export class ReviewService {
   private placeService: PlaceService;
   private pagination: CursorBasedPagination;
   private notificationService: NotificationService;
+  private savedPlaceService: SavedPlaceService;
 
   constructor() {
     this.repository = new ReviewRepository();
     this.placeService = new PlaceService();
     this.pagination = new CursorBasedPagination();
     this.notificationService = new NotificationService();
+    this.savedPlaceService = new SavedPlaceService();
   }
 
   private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
@@ -105,7 +108,36 @@ export class ReviewService {
       placeId: Number(place.id),
     });
 
+    await this.notifyWatchers(place, reviewerId);
+
     return created;
+  }
+
+  // Everyone who's saved this place or reviewed it before (minus the
+  // reviewer who just wrote this one, and the owner - already notified via
+  // NEW_REVIEW above) gets a WATCHED_PLACE_REVIEW notification. Best-effort,
+  // same as the NEW_REVIEW notification above - failures here never affect
+  // the review write itself.
+  private async notifyWatchers(place: { id: number | string; label: string; ownerId: string | number }, reviewerId: string) {
+    const [saverIds, pastReviewerIds] = await Promise.all([
+      this.savedPlaceService.getSaverUserIds(Number(place.id)),
+      this.repository.getReviewerIdsForPlace(Number(place.id), reviewerId),
+    ]);
+
+    const watcherIds = new Set([...saverIds, ...pastReviewerIds].map(String));
+    watcherIds.delete(String(reviewerId));
+    watcherIds.delete(String(place.ownerId));
+
+    await Promise.all(
+      Array.from(watcherIds).map((userId) =>
+        this.notificationService.create({
+          userId,
+          type: NotificationTypeEnum.WATCHED_PLACE_REVIEW,
+          message: `New review on ${place.label}`,
+          placeId: Number(place.id),
+        })
+      )
+    );
   }
 
   async updateReview({

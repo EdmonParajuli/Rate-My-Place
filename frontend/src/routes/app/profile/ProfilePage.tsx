@@ -1,7 +1,7 @@
-import { BarChart2 } from "lucide-react"
+import { TrendingUp } from "lucide-react"
 import { useAuthMeUserQuery, useMyBadgesQuery, useMyReviewsQuery } from "@/lib/graphql/generated/graphql"
 import { StatsRow } from "../myReviews/StatsRow"
-import { ReviewVolumeChart } from "../dashboard/ReviewVolumeChart"
+import { ProfileActivityChart } from "./ProfileActivityChart"
 import { ProfileHeader } from "./ProfileHeader"
 import { BadgeGrid } from "./BadgeGrid"
 import { RecentReviewsPreview } from "./RecentReviewsPreview"
@@ -46,12 +46,12 @@ export function ProfilePage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold">Review Activity</h2>
           <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <BarChart2 className="h-3.5 w-3.5" />
+            <TrendingUp className="h-3.5 w-3.5" />
             Last 6 months
           </span>
         </div>
-        <div className="mt-3 h-48">
-          <ReviewVolumeChart data={monthlyActivity} />
+        <div className="mt-3 h-32">
+          <ProfileActivityChart data={monthlyActivity} />
         </div>
       </div>
 

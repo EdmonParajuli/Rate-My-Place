@@ -115,21 +115,30 @@ Four largely independent features, built one at a time rather than planned all a
 once — see [specs/phase-5-saved-places.md](./specs/phase-5-saved-places.md),
 [specs/phase-5-badges.md](./specs/phase-5-badges.md),
 [specs/phase-5-notifications.md](./specs/phase-5-notifications.md), and
-[specs/phase-5-profile.md](./specs/phase-5-profile.md).
+[specs/phase-5-profile.md](./specs/phase-5-profile.md). **Notifications and
+Profile were both later corrected** (2026-08-16, while working Phase 7) after
+initially applying `BUSINESS`-only or wrong-source design assumptions to both
+account types without checking each persona's actual Figma source — see
+[specs/phase-7-profile-notifications-persona-fix.md](./specs/phase-7-profile-notifications-persona-fix.md).
 
 - [x] `SAVED_PLACES` table + resolver + Saved screen (four tabs) — see the spec above
       for the list-type taxonomy decision (SAVED/WANT_TO_VISIT/FAVORITE, single type
       per save) and why "Reviewed" is a live-derived view over `myReviews`, never a
       stored category.
-- [x] `NOTIFICATIONS` table + resolver + Notifications screen — triggering events
-      decided: `REVIEW_REPLY`, `NEW_REVIEW`, `BADGE_EARNED` (see the spec above for
-      why those three), 2 tabs (All/Unread) rather than the Figma source's 6, nav
-      item + unread-count pill on both the reviewer and business shells.
+- [x] `NOTIFICATIONS` table + resolver + Notifications screen — triggering events:
+      `REVIEW_REPLY`, `NEW_REVIEW`, `BADGE_EARNED` (original 3), plus
+      `WATCHED_PLACE_REVIEW`/`HELPFUL_VOTE_RECEIVED` (added in the correction pass,
+      previously deferred/dropped). `REGULAR` and `BUSINESS` now get different
+      screens (see the correction spec) — `REGULAR`'s has the full 6 category tabs
+      the Figma source always had; `BUSINESS` keeps its original 2-tab (All/Unread)
+      implementation unchanged, by explicit choice rather than matching its own
+      Figma's topbar-bell pattern.
 - [x] Profile screen (stats, activity chart, badge grid) — see
       [specs/phase-5-profile.md](./specs/phase-5-profile.md). Read-only (cover +
-      avatar, stats row reused from My Reviews, 6-month activity chart reused from
-      the business dashboard's `ReviewVolumeChart`, full badge grid, recent-reviews
-      preview), new `/app/profile` nav item on the reviewer shell only.
+      avatar, stats row reused from My Reviews, a 6-month gradient area chart
+      matching the regular-user Figma source — originally the business dashboard's
+      bar chart, corrected — full badge grid, recent-reviews preview), new
+      `/app/profile` nav item on the reviewer shell only.
 - [x] `BADGES`/`USER_BADGES` — 5 real criteria (FIRST_REVIEW/PROLIFIC_REVIEWER/
       HELPFUL_REVIEWER/EXPLORER/ELITE_REVIEWER), permanent once earned, surfaced as a
       strip on My Reviews and now the full grid on Profile — see the specs above

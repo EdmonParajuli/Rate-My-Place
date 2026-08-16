@@ -8,6 +8,8 @@ export const notificationTypedefs: DocumentNode = gql`
         REVIEW_REPLY
         NEW_REVIEW
         BADGE_EARNED
+        WATCHED_PLACE_REVIEW
+        HELPFUL_VOTE_RECEIVED
     }
 
     enum NotificationFilterEnum {
@@ -20,6 +22,11 @@ export const notificationTypedefs: DocumentNode = gql`
         type: NotificationTypeEnum
         message: String
         placeId: Int
+        # Resolved on demand from placeId - null for BADGE_EARNED. The
+        # REGULAR Notifications screen uses place.label as an avatar-initials
+        # stand-in since no per-notification actor identity (photo/name)
+        # exists anywhere in this schema.
+        place: Place
         read: Boolean
         createdAt: String
     }

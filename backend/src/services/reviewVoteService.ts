@@ -1,16 +1,20 @@
 import { Transaction } from 'sequelize';
 import { ReviewVoteRepository } from '../repositories/reviewVoteRepository';
 import { ReviewService } from './reviewService';
+import { NotificationService } from './notificationService';
+import { NotificationTypeEnum } from '../enums/notificationTypeEnum';
 import { Database } from '../config';
 import { throwError } from '../helpers/errorHelper';
 
 export class ReviewVoteService {
   private repository: ReviewVoteRepository;
   private reviewService: ReviewService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.repository = new ReviewVoteRepository();
     this.reviewService = new ReviewService();
+    this.notificationService = new NotificationService();
   }
 
   private async withTransaction<T>(fn: (transaction: Transaction) => Promise<T>): Promise<T> {
@@ -37,7 +41,7 @@ export class ReviewVoteService {
     // (Review.helpfulCount - materialized so placeReviews's HELPFUL sort can
     // order on it, see docs/03-architecture.md) all happen in one transaction
     // so the stored count can never drift from the actual vote rows.
-    return this.withTransaction(async (transaction) => {
+    const result = await this.withTransaction(async (transaction) => {
       let helpfulByMe: boolean;
       if (existingVote) {
         await this.repository.deleteMany({ where: { reviewId, userId }, transaction });
@@ -52,6 +56,23 @@ export class ReviewVoteService {
 
       return { helpfulCount, helpfulByMe };
     });
+
+    // Best-effort, outside the transaction - same "side effect, not core
+    // write correctness" precedent every other notification hook follows.
+    // Only fires on a new vote (not un-voting), and never for a
+    // self-vote. No dedup - toggling off and back on re-fires this, a known
+    // limitation carried over from the original decision to defer this event
+    // (docs/specs/phase-5-notifications.md's non-goals).
+    if (result.helpfulByMe && String(review.reviewerId) !== String(userId)) {
+      await this.notificationService.create({
+        userId: review.reviewerId,
+        type: NotificationTypeEnum.HELPFUL_VOTE_RECEIVED,
+        message: `Someone found your review helpful`,
+        placeId: review.placeId,
+      });
+    }
+
+    return result;
   }
 
   async hasVoted(reviewId: number | string, userId?: string): Promise<boolean> {

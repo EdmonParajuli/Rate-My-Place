@@ -1,7 +1,9 @@
 import { GraphQLError, GraphQLResolveInfo } from "graphql";
 import { ContextInterface } from "../../interfaces";
+import { NotificationInterface } from "../../interfaces/notificationInterface";
 import { requireAuth } from "../../utils/auth";
 import { NotificationService } from "../../services/notificationService";
+import PlaceService from "../../services/placeService";
 import { throwError } from "../../helpers/errorHelper";
 import { SuccessResponse } from "../../helpers/responseHelper";
 
@@ -112,6 +114,16 @@ export const notificationResolver = {
                 }
                 throwError(error.message, "BAD_REQUEST", 400);
             }
+        }
+    },
+    Notification: {
+        // Nullable - BADGE_EARNED has no placeId. Same "resolve on demand
+        // from the id already on the row" pattern as Review.place.
+        place: async (parent: NotificationInterface) => {
+            if (!parent.placeId) {
+                return null;
+            }
+            return new PlaceService().getPlaceById(parent.placeId);
         }
     }
 }

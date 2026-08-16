@@ -50,11 +50,17 @@ resolver → typeDefs):**
 - **Reviews** — create/update/delete, one review per `(place, reviewer)` (service
   check + DB unique index), self-review blocked, cursor-paginated `placeReviews`/
   `myReviews` (sort by RECENT/HELPFUL), `ratingBreakdown` (zero-filled 5..1 star
-  counts), `Place.averageRating`/`reviewCount` recomputed from source on every write.
+  counts), `Place.averageRating`/`reviewCount` recomputed from source on every
+  write. `createReview` also notifies every user watching the place (saved it or
+  reviewed it before, minus the new reviewer and the owner) via
+  `WATCHED_PLACE_REVIEW`.
 - **Review replies** — create/update/delete, one reply per review (DB unique index),
   owner-gated.
 - **Review helpful votes** — `toggleHelpfulVote`, `helpfulCount`/`helpfulByMe` on
-  `Review`.
+  `Review`. Notifies the review's author via `HELPFUL_VOTE_RECEIVED` on a new vote
+  (not on un-vote, never for a self-vote) — no dedup, a known spam-vector limitation
+  carried forward from when this event was originally deferred
+  ([specs/phase-5-notifications.md](./specs/phase-5-notifications.md)).
 - **Sessions** — refresh tokens hashed and persisted at issuance (`providers_sessions`),
   rotated on every renewal, revocable (`signOut`, `revokeSession`, automatically on
   password change), `activeSessions` query lists them. `LoginToken.sessionId` (Phase
@@ -84,12 +90,23 @@ resolver → typeDefs):**
   compact 5-badge earned/locked strip (`BadgeStrip.tsx`).
 - **Saved** — four tabs (All Saved/Want to Visit/Reviewed/Favorites), save/heart
   toggle from Place Detail and Discover cards.
-- **Notifications** — All/Unread tabs, mark-read/mark-all-read/delete, nav pill
-  polling every 30s on both reviewer and business shells.
+- **Notifications** — `REGULAR` and `BUSINESS` get different screens at the same
+  `/app/notifications` route/nav item (a thin `NotificationsPage.tsx` picks by
+  persona), same split as Settings.
+  `RegularNotificationsPage.tsx`: 6 real category tabs (All/Reviews/Likes/Replies/
+  Recommendations/System — Recommendations stays genuinely empty, a real future
+  feature, not a preview), avatar-first rows (`Notification.place.label` backs the
+  initials, no per-notification actor photo/name exists anywhere in this schema).
+  `BusinessNotificationsPage.tsx`: the original 2-tab All/Unread screen, unchanged.
+  Nav pill (`unreadNotificationCount`) still polls every 30s on both shells. 5
+  triggering event types total now: `REVIEW_REPLY`/`NEW_REVIEW`/`BADGE_EARNED`
+  (Phase 5) plus `WATCHED_PLACE_REVIEW`/`HELPFUL_VOTE_RECEIVED` (added here,
+  see [specs/phase-7-profile-notifications-persona-fix.md](./specs/phase-7-profile-notifications-persona-fix.md)).
 - **Profile** (`REGULAR` accounts only, new `/app/profile` nav item) — cover +
-  avatar + "member since", stats row and 6-month activity chart both computed
-  client-side from `myReviews` (no new backend aggregate, same "start simple"
-  precedent as My Reviews' `StatsRow`), full badge grid (`myBadges`, earned vs.
+  avatar + "member since", stats row and a 6-month activity area chart
+  (`ProfileActivityChart.tsx`) both computed client-side from `myReviews` (no new
+  backend aggregate, same "start simple" precedent as My Reviews' `StatsRow`), full
+  badge grid (`myBadges`, earned vs.
   locked with descriptions), recent-reviews preview. Still entirely read-only — a
   deliberate split, not a backend gap: account editing lives on Settings (below),
   not duplicated here. See [specs/phase-5-profile.md](./specs/phase-5-profile.md).

@@ -80,6 +80,20 @@ export class ReviewRepository extends BaseRepository<InputReviewInterface, Revie
     };
   }
 
+  // Backs ReviewService's WATCHED_PLACE_REVIEW notification - everyone who's
+  // previously reviewed this place, except the reviewer who just wrote the
+  // new one (they don't need to be told about their own write).
+  async getReviewerIdsForPlace(placeId: number, excludeReviewerId: string): Promise<string[]> {
+    const rows = (await this.model.findAll({
+      attributes: ['reviewerId'],
+      where: { placeId, reviewerId: { [Op.ne]: excludeReviewerId } },
+      group: ['reviewerId'],
+      raw: true,
+    })) as unknown as { reviewerId: string }[];
+
+    return rows.map((r) => r.reviewerId);
+  }
+
   // Keyset (cursor) pagination built directly on Sequelize's own where/Op -
   // parameterized automatically, unlike the vendored CursorPaginate/QueryBuilder
   // helper in src/packages/cursors, which builds raw SQL by string-interpolating

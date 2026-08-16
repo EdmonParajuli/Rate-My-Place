@@ -5,6 +5,10 @@ query MyNotifications($filter: NotificationFilterEnum) {
       type
       message
       placeId
+      place {
+        id
+        label
+      }
       read
       createdAt
     }
