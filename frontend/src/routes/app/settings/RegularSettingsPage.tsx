@@ -27,7 +27,7 @@ import {
 } from "@/lib/graphql/generated/graphql"
 
 const fieldClass =
-  "w-full rounded-[10px] border border-border bg-white px-3.5 py-2.5 pr-10 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary/15"
+  "w-full rounded-[10px] border border-border bg-input-background px-3.5 py-2.5 pr-10 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary/15"
 
 const SECTIONS = ["Account", "Preferences", "Notifications", "Privacy", "Security", "Danger Zone"] as const
 type Section = (typeof SECTIONS)[number]
@@ -99,7 +99,7 @@ export function RegularSettingsPage() {
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <h2 className="mb-4 border-b border-slate-100 pb-1 text-xs font-bold tracking-widest text-slate-400 uppercase">{title}</h2>
+      <h2 className="mb-4 border-b border-border pb-1 text-xs font-bold tracking-widest text-slate-400 uppercase">{title}</h2>
       {children}
     </div>
   )
@@ -111,11 +111,11 @@ function PreviewNotice({ children }: { children: React.ReactNode }) {
 
 function ToggleRow({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-      <span className="text-sm text-slate-700">{label}</span>
+    <div className="flex items-center justify-between border-b border-border py-3 last:border-0">
+      <span className="text-sm text-foreground">{label}</span>
       <button
         onClick={() => onChange(!checked)}
-        className={`relative h-[22px] w-10 flex-shrink-0 cursor-pointer rounded-full transition-colors ${checked ? "bg-primary" : "bg-slate-200"}`}
+        className={`relative h-[22px] w-10 flex-shrink-0 cursor-pointer rounded-full transition-colors ${checked ? "bg-primary" : "bg-switch-background"}`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-5" : "translate-x-0.5"}`} />
       </button>
@@ -189,10 +189,10 @@ function AccountSection() {
           </div>
           <div>
             <p className="mb-1 text-xs font-semibold text-slate-500">Email Address</p>
-            <p className="text-sm font-medium text-slate-800">{user?.email}</p>
+            <p className="text-sm font-medium text-foreground">{user?.email}</p>
           </div>
         </div>
-        <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
+        <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
           <button
             onClick={handleSaveName}
             disabled={nameSaving || !fullName.trim() || fullName === user?.fullName}
@@ -202,7 +202,7 @@ function AccountSection() {
             {nameSaving ? "Saving..." : nameSaved ? "Saved" : "Save Name"}
           </button>
         </div>
-        <p className="mt-4 border-t border-slate-100 pt-4 text-xs text-slate-400">
+        <p className="mt-4 border-t border-border pt-4 text-xs text-slate-400">
           Email can't be changed from here yet — contact support if you need to update it.
         </p>
       </Card>
@@ -214,7 +214,7 @@ function AccountSection() {
           <PasswordField label="Confirm New Password" value={confirmPw} show={showConfirm} onToggle={() => setShowConfirm((v) => !v)} onChange={setConfirmPw} placeholder="Repeat new password" />
           {pwError && <p className="text-sm font-medium text-destructive">{pwError}</p>}
         </div>
-        <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
+        <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
           <button
             onClick={handleChangePassword}
             disabled={pwLoading || !currentPw || !newPw || !confirmPw}
@@ -246,7 +246,7 @@ function PasswordField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-slate-700">{label}</label>
+      <label className="mb-1.5 block text-sm font-semibold text-foreground">{label}</label>
       <div className="relative">
         <input type={show ? "text" : "password"} className={fieldClass} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
         <button type="button" onClick={onToggle} className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-slate-400 transition-colors hover:text-slate-600">
@@ -261,9 +261,9 @@ function PasswordField({
 
 function StaticPickerRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-3 last:border-0">
-      <span className="text-sm text-slate-700">{label}</span>
-      <span className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600">
+    <div className="flex items-center justify-between border-b border-border py-3 last:border-0">
+      <span className="text-sm text-foreground">{label}</span>
+      <span className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
         {value} <ChevronDown className="h-3.5 w-3.5" />
       </span>
     </div>
@@ -271,12 +271,14 @@ function StaticPickerRow({ label, value }: { label: string; value: string }) {
 }
 
 function PreferencesSection() {
-  const [darkMode, setDarkMode] = useState(false)
-
+  // Dark Mode toggle temporarily hidden (2026-08-16) - too many visual bugs
+  // to ship yet. Theme mechanism (lib/theme/ThemeContext.tsx) is untouched
+  // and disabled at its own flag; this just stops surfacing the control
+  // while that's off. Re-add `<ToggleRow checked={theme === "dark"}
+  // onChange={toggleTheme} label="Dark Mode" />` once re-enabled.
   return (
     <Card title="Preferences">
-      <PreviewNotice>these settings aren't wired up to anything real yet (dark mode needs a real frontend theme first).</PreviewNotice>
-      <ToggleRow checked={darkMode} onChange={setDarkMode} label="Dark Mode" />
+      <PreviewNotice>language and time zone aren't wired up to anything real yet.</PreviewNotice>
       <StaticPickerRow label="Language" value="English (US)" />
       <StaticPickerRow label="Time Zone" value="EST (UTC -5)" />
     </Card>
@@ -297,7 +299,7 @@ function NotificationsSection() {
 
   return (
     <Card title="Notification Preferences">
-      <PreviewNotice>real per-type notifications (in-app) are on My Reviews' bell icon - these email/push toggles aren't sent anywhere yet.</PreviewNotice>
+      <PreviewNotice>real per-type notifications (in-app) are on the Notifications page - these email/push toggles aren't sent anywhere yet.</PreviewNotice>
       {NOTIF_ROWS.map((row) => (
         <ToggleRow key={row.id} checked={toggles[row.id]} onChange={(v) => setToggles((t) => ({ ...t, [row.id]: v }))} label={row.label} />
       ))}
@@ -316,14 +318,14 @@ function PrivacySection() {
       <PreviewNotice>blocked users and data export have no backend yet.</PreviewNotice>
       <ToggleRow checked={publicProfile} onChange={setPublicProfile} label="Public Profile" />
       <ToggleRow checked={hideActivity} onChange={setHideActivity} label="Hide Activity from Feed" />
-      <div className="flex items-center justify-between border-b border-slate-100 py-3">
-        <span className="text-sm text-slate-700">Blocked Users</span>
+      <div className="flex items-center justify-between border-b border-border py-3">
+        <span className="text-sm text-foreground">Blocked Users</span>
         <span className="flex items-center gap-1 text-xs font-semibold text-primary">
           Manage <ChevronRight className="h-3.5 w-3.5" />
         </span>
       </div>
       <div className="py-3">
-        <span className="flex items-center gap-2 text-sm font-medium text-slate-700">
+        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Download className="h-4 w-4" /> Download My Data
         </span>
       </div>
@@ -367,12 +369,12 @@ function SecuritySection({ sessions, loading, onRevoked }: { sessions: ActiveSes
           sessions.map((session) => {
             const isCurrent = currentSessionId != null && String(session.id) === currentSessionId
             return (
-              <div key={session.id} className="flex items-center gap-3 border-b border-slate-100 py-3 last:border-0">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+              <div key={session.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <Globe className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-slate-900">{session.deviceLabel ?? "Unknown device"}</p>
+                  <p className="text-sm font-semibold text-foreground">{session.deviceLabel ?? "Unknown device"}</p>
                   <p className="text-xs text-muted-foreground">
                     {session.ipAddress ?? "Unknown IP"} · Last used {formatDate(session.lastUsedAt)}
                   </p>
@@ -422,7 +424,7 @@ function DangerZoneSection({ sessions, onSignedOutOthers }: { sessions: ActiveSe
         <button
           onClick={handleSignOutOthers}
           disabled={signingOut || otherSessions.length === 0}
-          className="flex w-full cursor-pointer items-center gap-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-full cursor-pointer items-center gap-3 py-2 text-sm font-semibold text-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
         >
           <LogOut className="h-4 w-4 text-slate-400" />
           {signingOut ? "Signing out..." : `Sign out of all other devices${otherSessions.length ? ` (${otherSessions.length})` : ""}`}
