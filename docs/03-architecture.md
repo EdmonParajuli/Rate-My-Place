@@ -874,6 +874,34 @@ asking directly, not self-caught.
   directly with the user as a real future phase (business recommendations), so
   there's nothing to fake or label; it's just an empty category today.
 
+## Built: Preferences — real dark mode (Phase 7, 2026-08-16)
+
+Full design in
+[specs/phase-7-preferences-dark-mode.md](./specs/phase-7-preferences-dark-mode.md).
+Third of Phase 7's sequenced tickets. Turned out to be mostly wiring: `index.css`
+already had a complete, unused `.dark` CSS variable block from the original shadcn
+scaffold (every color token, Tailwind v4's `@custom-variant dark` already
+configured) — nothing ever applied the class.
+
+- **`ThemeContext`/`useTheme()`** (new, `lib/theme/`) — simple on/off (`localStorage`,
+  key `rmp_theme`), not a light/dark/system picker; matches the Figma source's
+  toggle exactly. Device-level, not an account setting — no backend field.
+- **No flash on load**: a plain inline `<script>` in `index.html`'s `<body>` (before
+  `main.tsx` mounts) reads the stored preference (falling back to
+  `prefers-color-scheme`) and applies the `.dark` class synchronously, pre-paint.
+  `ThemeProvider`'s `useState` initializer just reads whatever class is already
+  there rather than deciding independently — the two can't disagree.
+- **Visual coverage is honestly partial, not silently complete**: a grep found 44
+  files across `frontend/src` using hardcoded literal Tailwind colors (`bg-white`,
+  `text-slate-900`, etc.) instead of this project's theme-aware semantic tokens
+  (`bg-card`, `text-foreground`) — all of Discover/Categories/Place
+  Detail/business console/etc. predate this ticket and are unaudited for dark mode.
+  Fixed the two highest-blast-radius surfaces so the toggle's own home screen isn't
+  visibly broken (`AppLayout.tsx`'s persistent header, all of
+  `RegularSettingsPage.tsx` — some of which was a real legibility bug, not just
+  cosmetic: hardcoded dark-gray text on a near-black background). The remaining
+  coverage gap is flagged as a real follow-up, not swept under anything.
+
 ## GraphQL schema design principles going forward
 
 - **One `typeDefs`/`resolvers` pair per domain concept**, `extend type Query`/`Mutation`

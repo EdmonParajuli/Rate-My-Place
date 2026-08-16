@@ -115,9 +115,10 @@ resolver → typeDefs):**
   one shared screen — the two have genuinely different designs in their own Figma
   sources. `RegularSettingsPage.tsx`: 6-section sidebar (Account, Preferences,
   Notifications, Privacy, Security, Danger Zone) — Account (editable Full Name via
-  `updateUser`, real password change, email read-only) and Security's active-sessions
-  list + revoke (+ Danger Zone's "sign out of all other devices") are real; the rest
-  are labeled previews. `BusinessSettingsPage.tsx`: the original Phase 6 2-tab screen
+  `updateUser`, real password change, email read-only), Security's active-sessions
+  list + revoke (+ Danger Zone's "sign out of all other devices"), and Preferences'
+  Dark Mode toggle (real site-wide theme, see below) are real; the rest are labeled
+  previews. `BusinessSettingsPage.tsx`: the original Phase 6 2-tab screen
   (Account/Notifications), unchanged. See
   [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md)
   (includes a correction note — these two were briefly, incorrectly merged into one
@@ -159,7 +160,12 @@ resolver → typeDefs):**
   2026-08-15 after it caused intermittent logout on hard reload), a `refreshUser()`
   escape hatch (re-fetches `authMeUser` and replaces context `user` — added for
   `updateUser` so the sidebar/topbar name updates immediately after an edit instead
-  of on next reload), `PrivateRoute` gating the authenticated shell.
+  of on next reload), `PrivateRoute` gating the authenticated shell, `ThemeContext`
+  (`lib/theme/`) for real dark mode — `localStorage`-persisted, a pre-mount inline
+  script in `index.html` avoids a flash of the wrong theme on load. Visual dark-mode
+  coverage is partial (44 files still use hardcoded literal colors instead of
+  theme-aware tokens) — see
+  [specs/phase-7-preferences-dark-mode.md](./specs/phase-7-preferences-dark-mode.md).
 
 ## Known issues / tech debt
 

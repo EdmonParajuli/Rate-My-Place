@@ -7,6 +7,19 @@
     <title>frontend</title>
   </head>
   <body>
+    <!-- Applies the .dark class (already fully defined in index.css from the
+         original shadcn scaffold) before React mounts, so there's no flash
+         of the wrong theme on load. Explicit choice (localStorage) wins;
+         otherwise falls back to the OS-level preference. Kept as plain
+         inline JS, not a React effect, specifically so it runs before first
+         paint - see lib/theme/ThemeContext.tsx for the React-side toggle. -->
+    <script>
+      (function () {
+        var stored = localStorage.getItem("rmp_theme");
+        var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (dark) document.documentElement.classList.add("dark");
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
