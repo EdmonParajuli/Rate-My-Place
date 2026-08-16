@@ -75,10 +75,13 @@ resolver → typeDefs):**
 - **Media** (Phase 8) — Cloudinary-backed signed uploads (`mediaUploadSignature`/
   `attachMedia`), `providers_media` is a polymorphic audit table (doc 3's
   `PLACE | REVIEW | USER` × `PHOTO | AVATAR | COVER` shape) but only `USER`
-  avatar/cover is wired up so far. `User.profilePicture`/`coverPicture` are the
-  actual read path (denormalized columns, same "recompute and store" precedent as
-  `Place.averageRating`) — reading them anywhere `User` is embedded (review/place
-  owner cards included) is a plain column read, never a `MEDIA` lookup. See
+  avatar/cover has a real upload flow so far. `User.profilePicture`/`coverPicture`
+  and `Place.coverPhotoUrl` are the actual read path (denormalized columns, same
+  "recompute and store" precedent as `Place.averageRating`) — reading them anywhere
+  embedded (review/place owner cards, Discover cards) is a plain column read, never
+  a `MEDIA` lookup. `Place.coverPhotoUrl` has no upload mutation yet — 28 existing
+  places were seeded directly in the DB (real `providers_media` rows too) just to
+  make the feature visible; a real place-photo upload ticket is still open. See
   [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 **Frontend screens, all against the real API above (no mocked data anywhere in
@@ -89,10 +92,13 @@ resolver → typeDefs):**
   `Place` atomically via `signUpBusiness`), session persistence across reloads (a
   stored refresh token silently re-authenticates on mount).
 - **Discover** — search/filter/sort, card grid + a real Leaflet/OpenStreetMap view
-  toggle.
+  toggle. Cards show a real `coverPhotoUrl` when a place has one (most don't yet —
+  no upload flow, see the Media bullet above), falling back to the existing
+  category-tinted gradient placeholder.
 - **Categories** — browse grid (real cover images/stats) + category-detail sub-screen.
 - **Place Detail** — full write/edit/reply review flow, helpful votes, rating
-  breakdown, business hours.
+  breakdown, business hours. Hero renders `coverPhotoUrl` when set, falling back to
+  the dashed "Cover photo" placeholder.
 - **My Reviews** — Published/Drafts tabs (drafts are a deliberate client-side-only,
   `localStorage` feature — no backend draft concept exists), real edit/delete, a
   compact 5-badge earned/locked strip (`BadgeStrip.tsx`).

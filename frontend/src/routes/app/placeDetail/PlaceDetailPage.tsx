@@ -155,10 +155,14 @@ export function PlaceDetailPage() {
   return (
     <div>
       <div className="relative flex h-64 items-center justify-center overflow-hidden bg-[repeating-linear-gradient(45deg,#F1F5F9,#F1F5F9_10px,#E2E8F0_10px,#E2E8F0_20px)] text-slate-400">
-        <div className="text-center">
-          <ImageIcon className="mx-auto mb-1 h-10 w-10" />
-          <p className="text-xs font-semibold">Cover photo — Phase 8 Media</p>
-        </div>
+        {place.coverPhotoUrl ? (
+          <img src={place.coverPhotoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <div className="text-center">
+            <ImageIcon className="mx-auto mb-1 h-10 w-10" />
+            <p className="text-xs font-semibold">Cover photo — Phase 8 Media</p>
+          </div>
+        )}
         <div className="absolute top-4 right-0 left-0 flex items-center justify-between px-6">
           <button
             onClick={() => navigate("/app")}

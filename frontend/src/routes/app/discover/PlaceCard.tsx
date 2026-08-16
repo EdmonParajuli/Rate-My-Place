@@ -5,10 +5,11 @@ import { CATEGORY_STYLES } from "@/lib/categoryStyles"
 import type { DiscoverPriceRange } from "./filterTypes"
 import type { DiscoverPlace } from "./types"
 
-// No real place photos exist yet (no upload flow - Phase 8 Media, same gap
-// Place Detail's ticket already flagged) - a category-tinted placeholder
-// instead of faking a stock photo, reusing the same accent data the
-// Categories screen will use.
+// coverPhotoUrl is real (Phase 8) but still null for most places - no upload
+// flow exists for it yet (seeded directly for now, see
+// docs/specs/phase-8-media-plumbing.md). Falls back to a category-tinted
+// placeholder instead of faking a stock photo, reusing the same accent data
+// the Categories screen uses.
 function PlaceImagePlaceholder({ categoryLabel }: { categoryLabel: string | null | undefined }) {
   const style = categoryLabel ? CATEGORY_STYLES[categoryLabel] : undefined
   return (
@@ -26,7 +27,11 @@ export function PlaceCard({ place, compact = false }: { place: DiscoverPlace; co
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative bg-slate-100" style={{ height: compact ? 120 : 160 }}>
-        <PlaceImagePlaceholder categoryLabel={place.category?.label} />
+        {place.coverPhotoUrl ? (
+          <img src={place.coverPhotoUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <PlaceImagePlaceholder categoryLabel={place.category?.label} />
+        )}
         {place.id !== null && place.id !== undefined && (
           <div className="absolute top-2.5 right-2.5">
             <SaveHeartButton placeId={place.id} initialSaved={place.savedByMe} size="sm" />

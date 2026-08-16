@@ -258,9 +258,16 @@ cheaper to build once the shapes of those three are stable.
 - [ ] Wire into place photos, review photos, avatar/cover - **avatar/cover done**
       (real upload, `ProfileHeader`'s camera-icon/cover-pill affordances, no Figma
       reference existed for this interaction so it was designed reasonably rather
-      than translated). Place photos and review photos remain - separate follow-up
-      tickets reusing the same `MEDIA` table/signed-upload plumbing, needing real
-      multi-photo gallery UI that avatar/cover's single-slot model didn't need.
+      than translated). **Place cover photo also partially done** - `Place.coverPhotoUrl`
+      is real and rendered on `PlaceCard`/`PlaceDetailPage`, but read-only: 28 existing
+      places were seeded directly in the DB (no upload flow, no `attachMedia` support
+      for `PLACE` yet) per explicit request, so real users still can't set one. Full
+      multi-photo `PHOTO` galleries (place and review) and any place-photo upload
+      mutation remain - separate follow-up tickets reusing the same `MEDIA` table/
+      signed-upload plumbing, needing real gallery UI that a single cover field
+      didn't need. See
+      [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md)'s
+      2026-08-16 update.
 
 ## Phase 9 — Hardening for production
 

@@ -90,6 +90,11 @@ const Place = sequelize.define<PlaceModelInterface>(
             allowNull: false,
             defaultValue: 0,
             field: "trending_score"
+        },
+        coverPhotoUrl: {
+            type: Sequelize.TEXT,
+            allowNull: true,
+            field: "cover_photo_url"
         }
     },
     {   
