@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { dayName } from "../placeDetail/formatHours"
 import { ListingPreviewCard } from "./ListingPreviewCard"
+import { PlacePhotosSection } from "./PlacePhotosSection"
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]
 const PRICE_TIERS: { value: "LOW" | "MEDIUM" | "HIGH"; symbol: string; hint: string }[] = [
@@ -170,6 +171,13 @@ export function MyListingPage() {
 
       <div className="grid grid-cols-1 gap-7 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">
+          <PlacePhotosSection
+            placeId={place.id ?? 0}
+            coverPhotoUrl={place.coverPhotoUrl}
+            photos={(place.photos ?? []).filter((p): p is NonNullable<typeof p> => p !== null)}
+            onChanged={() => refetch()}
+          />
+
           <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <h3 className="mb-5 border-b border-slate-100 pb-1 text-xs font-bold tracking-widest text-slate-400 uppercase">Basics</h3>
             <div className="space-y-5">
@@ -321,6 +329,7 @@ export function MyListingPage() {
               address={form.address}
               phone={form.phone}
               website={form.website}
+              coverPhotoUrl={place.coverPhotoUrl}
               todayHours={todayHours}
             />
           </div>

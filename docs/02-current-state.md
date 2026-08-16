@@ -73,15 +73,19 @@ resolver → typeDefs):**
   `providers_reviews`/`providers_reviews_replies` — see
   [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md).
 - **Media** (Phase 8) — Cloudinary-backed signed uploads (`mediaUploadSignature`/
-  `attachMedia`), `providers_media` is a polymorphic audit table (doc 3's
-  `PLACE | REVIEW | USER` × `PHOTO | AVATAR | COVER` shape) but only `USER`
-  avatar/cover has a real upload flow so far. `User.profilePicture`/`coverPicture`
-  and `Place.coverPhotoUrl` are the actual read path (denormalized columns, same
-  "recompute and store" precedent as `Place.averageRating`) — reading them anywhere
-  embedded (review/place owner cards, Discover cards) is a plain column read, never
-  a `MEDIA` lookup. `Place.coverPhotoUrl` has no upload mutation yet — 28 existing
-  places were seeded directly in the DB (real `providers_media` rows too) just to
-  make the feature visible; a real place-photo upload ticket is still open. See
+  `attachMedia`, both taking `ownerType`/`ownerId`), `providers_media` is a
+  polymorphic audit table (doc 3's `PLACE | REVIEW | USER` × `PHOTO | AVATAR |
+  COVER` shape). `USER` (avatar/cover) and `PLACE` (cover + a real, capped-at-12
+  `PHOTO` gallery) both have real upload flows now, gated by real ownership
+  checks (`assertOwnership` against `PlaceService` for places); `REVIEW` is still
+  unimplemented. `User.profilePicture`/`coverPicture` and `Place.coverPhotoUrl`
+  are denormalized read-cache columns (same "recompute and store" precedent as
+  `Place.averageRating`) — reading them anywhere embedded (review/place owner
+  cards, Discover cards) is a plain column read, never a `MEDIA` lookup.
+  `Place.photos` is the one live (non-denormalized) list resolver — safe because
+  it's only ever requested for one place at a time, never across a list of many.
+  A new `removeMedia` mutation deletes an individual media row (ownership-checked,
+  clears the matching denormalized column if it was the current cover). See
   [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md).
 
 **Frontend screens, all against the real API above (no mocked data anywhere in
@@ -152,7 +156,10 @@ resolver → typeDefs):**
 - **Business console** (`BUSINESS` accounts get their own nav, not the reviewer
   nav — see [specs/phase-6-business-dashboard.md](./specs/phase-6-business-dashboard.md)) —
   Dashboard (KPI cards, trend charts, sentiment, review management), My Listing (edit
-  form + live preview), Reviews (full review management), Analytics (trend charts +
+  form + live preview, plus a real photos section — cover photo and a capped
+  12-photo gallery, both real uploads via Phase 8's Media plumbing, see
+  [specs/phase-8-media-plumbing.md](./specs/phase-8-media-plumbing.md)), Reviews
+  (full review management), Analytics (trend charts +
   rating distribution, real; keyword mentions/competitor benchmark, explicitly-labeled
   static previews), Promotions (`localStorage`-only preview — no promotions concept
   exists in the product at all), Settings (see the Settings bullet above — real

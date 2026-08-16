@@ -26,11 +26,13 @@ export class UserService {
   // pattern as Place.averageRating) so every place/review list that embeds
   // User.profilePicture stays a plain column read, not a per-row Media
   // lookup.
-  async updateProfilePicture(id: number | string, url: string, transaction?: Transaction) {
+  // url: null clears it (used when the current avatar/cover is removed via
+  // MediaService.removeMedia).
+  async updateProfilePicture(id: number | string, url: string | null, transaction?: Transaction) {
     await this.repository.updateOne({ id, input: { profilePicture: url } }, { transaction });
   }
 
-  async updateCoverPicture(id: number | string, url: string, transaction?: Transaction) {
+  async updateCoverPicture(id: number | string, url: string | null, transaction?: Transaction) {
     await this.repository.updateOne({ id, input: { coverPicture: url } }, { transaction });
   }
 }

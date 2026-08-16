@@ -14,6 +14,7 @@ export function ListingPreviewCard({
   phone,
   website,
   todayHours,
+  coverPhotoUrl,
 }: {
   categoryLabel: string | null
   label: string
@@ -25,12 +26,19 @@ export function ListingPreviewCard({
   phone: string
   website: string
   todayHours: { open: boolean; opensAt: string; closesAt: string }
+  coverPhotoUrl?: string | null
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="flex h-36 flex-col items-center justify-center gap-2 border-b border-border bg-slate-100">
-        <Image className="h-8 w-8 text-slate-300" />
-        <span className="text-xs font-medium text-slate-400">Photo uploads coming soon</span>
+        {coverPhotoUrl ? (
+          <img src={coverPhotoUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <>
+            <Image className="h-8 w-8 text-slate-300" />
+            <span className="text-xs font-medium text-slate-400">No cover photo yet</span>
+          </>
+        )}
       </div>
 
       <div className="p-5">

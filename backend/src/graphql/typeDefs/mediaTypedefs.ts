@@ -4,16 +4,24 @@ import gql from "graphql-tag";
 export const mediaTypedefs: DocumentNode = gql`
     #graphql
 
-    # PHOTO exists for doc 3's full polymorphic shape (place/review photo
-    # galleries, a later ticket) - attachMedia only accepts AVATAR/COVER today.
     enum MediaKindEnum {
         PHOTO
         AVATAR
         COVER
     }
 
+    # REVIEW exists for doc 3's full polymorphic shape (review photo galleries,
+    # a later ticket) - MediaService rejects it until that ticket lands.
+    enum MediaOwnerTypeEnum {
+        PLACE
+        USER
+        REVIEW
+    }
+
     type Media {
         id: Int
+        ownerType: MediaOwnerTypeEnum
+        ownerId: Int
         kind: MediaKindEnum
         url: String
         createdAt: String
@@ -40,16 +48,22 @@ export const mediaTypedefs: DocumentNode = gql`
     }
 
     input InputAttachMedia {
+        ownerType: MediaOwnerTypeEnum!
+        # Required for PLACE (the place being photographed); ignored for USER
+        # (always the caller's own account - never trust a client-supplied id
+        # there).
+        ownerId: Int
         kind: MediaKindEnum!
         url: String!
     }
 
     extend type Query {
-        # Always for the caller's own avatar/cover - no ownerId, self only.
-        mediaUploadSignature(kind: MediaKindEnum!): UploadSignatureResponse
+        # ownerId required for PLACE, ignored for USER (self).
+        mediaUploadSignature(ownerType: MediaOwnerTypeEnum!, kind: MediaKindEnum!, ownerId: Int): UploadSignatureResponse
     }
 
     extend type Mutation {
         attachMedia(input: InputAttachMedia!): AttachMediaResponse
+        removeMedia(mediaId: Int!): Message
     }
 `

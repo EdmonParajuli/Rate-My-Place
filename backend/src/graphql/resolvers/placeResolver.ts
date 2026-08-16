@@ -14,6 +14,9 @@ import { ReviewService } from "../../services/reviewService";
 import { CategoryService } from "../../services/categoryService";
 import { PlaceSortEnum } from "../../enums/placeSortEnum";
 import { InputPlaceHourInterface } from "../../interfaces/placeHourInterface";
+import { MediaService } from "../../services/mediaService";
+import { MediaOwnerTypeEnum } from "../../enums/mediaOwnerTypeEnum";
+import { MediaKindEnum } from "../../enums/mediaKindEnum";
 
 export const placeResolver = {
     Mutation: {
@@ -209,6 +212,9 @@ export const placeResolver = {
         },
         ratingBreakdown: async (parent: PlaceInterface) => {
             return new ReviewService().getRatingBreakdown(parent.id);
+        },
+        photos: async (parent: PlaceInterface) => {
+            return new MediaService().getForOwner(MediaOwnerTypeEnum.PLACE, Number(parent.id), MediaKindEnum.PHOTO);
         }
     }
 }

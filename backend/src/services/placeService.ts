@@ -164,4 +164,14 @@ export default class PlaceService {
       { transaction }
     );
   }
+
+  // Called by MediaService inside its own transaction, mirroring
+  // UserService.updateProfilePicture/updateCoverPicture - coverPhotoUrl is a
+  // denormalized read cache (same "recompute and store" precedent as
+  // averageRating/reviewCount above) so Discover's card grid stays a plain
+  // column read. url: null clears it (used when the current cover photo is
+  // removed via MediaService.removeMedia).
+  async updateCoverPhoto(placeId: number, url: string | null, transaction?: Transaction) {
+    await this.repository.updateOne({ id: placeId, input: { coverPhotoUrl: url } }, { transaction });
+  }
 }

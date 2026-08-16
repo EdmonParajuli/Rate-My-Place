@@ -85,9 +85,14 @@ export const placeDefs: DocumentNode = gql`
         openNow: Boolean
         ratingBreakdown: [RatingBreakdownEntry]
         trendingScore: Float
-        # Denormalized read cache, no write path yet (no attachMedia support
-        # for PLACE) - see docs/specs/phase-8-media-plumbing.md.
+        # Denormalized read cache, kept in sync by MediaService whenever the
+        # owner sets/removes a COVER media row - see
+        # docs/specs/phase-8-media-plumbing.md.
         coverPhotoUrl: String
+        # Live per-place lookup (not denormalized - only ever requested for
+        # one place at a time, no N+1 risk the way coverPhotoUrl had on
+        # Discover's grid). Owner-uploaded gallery, kind PHOTO only.
+        photos: [Media]
     }
 
     type PlaceResponse {
