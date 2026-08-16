@@ -50,4 +50,11 @@ export class SavedPlaceService {
     }
     return (await this.repository.findOne({ where: { placeId, userId } })) ?? null;
   }
+
+  // Backs ReviewService's WATCHED_PLACE_REVIEW notification - every user who
+  // has this place saved (any list type), regardless of who saved it.
+  async getSaverUserIds(placeId: number): Promise<string[]> {
+    const rows = await this.repository.findAll({ where: { placeId } });
+    return rows.map((r) => r.userId);
+  }
 }

@@ -395,6 +395,7 @@ export type Notification = {
   createdAt?: Maybe<Scalars['String']['output']>;
   id?: Maybe<Scalars['Int']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+  place?: Maybe<Place>;
   placeId?: Maybe<Scalars['Int']['output']>;
   read?: Maybe<Scalars['Boolean']['output']>;
   type?: Maybe<NotificationTypeEnum>;
@@ -412,8 +413,10 @@ export type NotificationListResponse = {
 
 export type NotificationTypeEnum =
   | 'BADGE_EARNED'
+  | 'HELPFUL_VOTE_RECEIVED'
   | 'NEW_REVIEW'
-  | 'REVIEW_REPLY';
+  | 'REVIEW_REPLY'
+  | 'WATCHED_PLACE_REVIEW';
 
 export type PageInfo = {
   __typename?: 'PageInfo';
@@ -843,7 +846,7 @@ export type MyNotificationsQueryVariables = Exact<{
 }>;
 
 
-export type MyNotificationsQuery = { __typename?: 'Query', myNotifications?: { __typename?: 'NotificationListResponse', data?: Array<{ __typename?: 'Notification', id?: number | null, type?: NotificationTypeEnum | null, message?: string | null, placeId?: number | null, read?: boolean | null, createdAt?: string | null } | null> | null } | null };
+export type MyNotificationsQuery = { __typename?: 'Query', myNotifications?: { __typename?: 'NotificationListResponse', data?: Array<{ __typename?: 'Notification', id?: number | null, type?: NotificationTypeEnum | null, message?: string | null, placeId?: number | null, read?: boolean | null, createdAt?: string | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null } | null } | null> | null } | null };
 
 export type UnreadNotificationCountQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1630,6 +1633,10 @@ export const MyNotificationsDocument = gql`
       type
       message
       placeId
+      place {
+        id
+        label
+      }
       read
       createdAt
     }
