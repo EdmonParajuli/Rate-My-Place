@@ -122,7 +122,7 @@ export function DiscoverListView({
             </button>
           </div>
 
-          {loading ? (
+          {loading && places.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Loading places...</p>
           ) : places.length === 0 ? (
             <div className="py-16 text-center">
