@@ -44,8 +44,8 @@ export const savedPlaceTypedefs: DocumentNode = gql`
     }
 
     extend type Place {
-        savedByMe: Boolean
-        savedListType: SavedListTypeEnum
+        savedByMe: Boolean @complexity(value: 2)
+        savedListType: SavedListTypeEnum @complexity(value: 2)
     }
 
     extend type Query {

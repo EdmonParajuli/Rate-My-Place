@@ -12,7 +12,7 @@ export const reviewVoteTypedefs: DocumentNode = gql`
 
     extend type Review {
         helpfulCount: Int
-        helpfulByMe: Boolean
+        helpfulByMe: Boolean @complexity(value: 2)
     }
 
     extend type Mutation {

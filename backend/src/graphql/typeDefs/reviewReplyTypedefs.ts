@@ -26,7 +26,7 @@ export const reviewReplyTypedefs: DocumentNode = gql`
     }
 
     extend type Review {
-        reply: ReviewReply
+        reply: ReviewReply @complexity(value: 2)
     }
 
     extend type Mutation {

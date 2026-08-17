@@ -67,13 +67,13 @@ export const placeDefs: DocumentNode = gql`
 
     type Place {
         id: Int
-        owner: User
+        owner: User @complexity(value: 2)
         label: String
         description: String
         address: String
         phone: String
         website: String
-        category: Category
+        category: Category @complexity(value: 2)
         averageRating: Float
         reviewCount: Int
         isVerified: Boolean
@@ -81,9 +81,9 @@ export const placeDefs: DocumentNode = gql`
         longitude: Float
         distance: Float
         priceRange: PriceRangeEnum
-        hours: [PlaceHour]
-        openNow: Boolean
-        ratingBreakdown: [RatingBreakdownEntry]
+        hours: [PlaceHour] @complexity(value: 2)
+        openNow: Boolean @complexity(value: 2)
+        ratingBreakdown: [RatingBreakdownEntry] @complexity(value: 2)
         trendingScore: Float
         # Denormalized read cache, kept in sync by MediaService whenever the
         # owner sets/removes a COVER media row - see
@@ -92,7 +92,7 @@ export const placeDefs: DocumentNode = gql`
         # Live per-place lookup (not denormalized - only ever requested for
         # one place at a time, no N+1 risk the way coverPhotoUrl had on
         # Discover's grid). Owner-uploaded gallery, kind PHOTO only.
-        photos: [Media]
+        photos: [Media] @complexity(value: 2)
     }
 
     type PlaceResponse {
@@ -108,7 +108,7 @@ export const placeDefs: DocumentNode = gql`
 
     extend type Query {
         getPlaceById(id: Int!): PlaceResponse
-        listPlaces(sort: PlaceSortEnum, near: GeoInput, filter: PlaceFilterInput, first: Int, after: String): PlaceListResponse
+        listPlaces(sort: PlaceSortEnum, near: GeoInput, filter: PlaceFilterInput, first: Int, after: String): PlaceListResponse @complexity(value: 1, multipliers: ["first"])
     }
 
     extend type Mutation {

@@ -13,6 +13,7 @@ import { startTrendingScoreJob } from "./jobs/trendingScoreJob";
 import { rateLimiter } from "./middlewares";
 import { logger } from "./utils/logger";
 import { loggingPlugin } from "./utils/apolloLoggingPlugin";
+import { queryComplexityPlugin } from "./utils/queryComplexityPlugin";
 
 dotenv.config();
 
@@ -65,7 +66,7 @@ class Server {
     const apolloServer = new ApolloServer({
       schema,
       introspection: true,
-      plugins: [loggingPlugin],
+      plugins: [loggingPlugin, queryComplexityPlugin],
     });
 
     await apolloServer.start();

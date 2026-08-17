@@ -42,5 +42,14 @@ export const port = mustExist(+process.env.PORT!, "PORT") as number,
     timezone: string;
   };
 
+// Optional, not fail-fast like the config above - a sane default keeps every
+// existing .env working without changes. See src/utils/queryComplexityPlugin.ts:
+// a typical Discover page (listPlaces(first: 12) with a handful of nested
+// live fields like category/openNow/savedByMe) scores in the low hundreds;
+// the same shape at the pagination layer's max page size (first: 1000, see
+// CursorBasedPagination's MaxLimit) scores in the tens of thousands - 2000
+// comfortably allows legitimate page sizes well past what any current screen
+// requests while rejecting that kind of near-max-page-size abuse.
+export const queryComplexityLimit = Number(process.env.QUERY_COMPLEXITY_LIMIT) || 2000;
 
 export * from './instance';

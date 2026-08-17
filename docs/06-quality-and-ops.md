@@ -56,9 +56,12 @@ there's no lint/format script yet — quick win).
 - **Ownership checks**: fix issue #2 in doc 2 before it's copy-pasted into
   review/reply resolvers.
 - **Rate limiting**: `express-rate-limit` on `/graphql` at minimum. **Built** —
-  `backend/src/middlewares/rateLimiter.ts`, wired into `server.ts`. Still open:
-  a query-cost/depth limiter (`graphql-query-complexity` or Apollo's built-in
-  `costAnalysis` plugin) once the schema has nested list fields that could be abused.
+  `backend/src/middlewares/rateLimiter.ts`, wired into `server.ts`.
+- **Query cost limiting**: **Built (2026-08-17, Phase 9)** — see
+  [specs/phase-9-query-complexity.md](./specs/phase-9-query-complexity.md).
+  `graphql-query-complexity` as an Apollo plugin, pricing `listPlaces`/
+  `placeReviews`/`myReviews`'s page size and every live per-row `Place`/`Review`
+  field, rejecting anything over 2000 before execution.
 - **Secrets**: `.env` is gitignored (verified) — keep it that way; `.env.example`
   documents required vars without values, which is the right pattern, keep it current
   as new config (S3 keys, session secret, etc.) gets added.
