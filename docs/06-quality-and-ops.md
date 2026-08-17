@@ -5,10 +5,11 @@ pieces of this now (Phase 1 of the roadmap), not after the product is "done."
 
 ## Testing
 
-**Layers 1-2 built (2026-08-16/17, Phase 9)** — see
-[specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md) and
-[specs/phase-9-integration-tests.md](./specs/phase-9-integration-tests.md). Layers
-3-4 below are still open. Suggested layers, cheapest-value-first:
+**Layers 1-3 built (2026-08-16/17, Phase 9)** — see
+[specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md),
+[specs/phase-9-integration-tests.md](./specs/phase-9-integration-tests.md), and
+[specs/phase-9-resolver-tests.md](./specs/phase-9-resolver-tests.md). Layer 4
+below is still open. Suggested layers, cheapest-value-first:
 
 1. **Service-layer unit tests** (Jest) — the business logic (ownership checks,
    average-rating recomputation, password hashing) lives in services; test it there
@@ -26,7 +27,13 @@ pieces of this now (Phase 1 of the roadmap), not after the product is "done."
    no-op in Sequelize's own `truncate()`).
 3. **Resolver/GraphQL tests** — execute real GraphQL operations against the schema
    with a test context (mock `ContextInterface.user`) to catch schema/resolver drift
-   like the `signOut`/`forgotPassword` gap found in doc 2.
+   like the `signOut`/`forgotPassword` gap found in doc 2. **Built**:
+   `backend/tests/resolvers/`, 18 tests running real `graphql()` calls against the
+   actual composed schema (only repositories mocked) — `authResolver` (`login`,
+   `authMeUser`, `signOut` — a direct regression test for the historical
+   declared-but-unimplemented bug), `placeResolver` (`createPlace`'s role check,
+   `updatePlace`'s ownership check), `reviewResolver` (`createReview`'s
+   self-review/duplicate/validation guards).
 4. **Frontend**: component tests for interactive components, Playwright for the
    critical end-to-end paths (see doc 5).
 

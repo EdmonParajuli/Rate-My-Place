@@ -314,7 +314,19 @@ deployment pipeline, rate limiting/query cost limiting, observability, load test
       no-op in `sequelize.truncate()` that let stale data leak across test runs.
       `.github/workflows/ci.yml` gained a `backend-integration` job (Postgres service
       container) running `npm run test:integration` on every push to `main` and every
-      PR. Resolver/GraphQL tests (layer 3) still open.
+      PR.
+- [x] Testing (doc 6 layer 3, resolver/GraphQL tests) — see
+      [specs/phase-9-resolver-tests.md](./specs/phase-9-resolver-tests.md). 18 Jest
+      tests (`backend/tests/resolvers/`) executing real `graphql()` calls against the
+      actual composed schema (only repositories mocked, everything above that —
+      `requireAuth`/`requireOwner`/`assertOwnership`, Joi validation, the real
+      service logic, `SuccessResponse`'s envelope — runs for real): `authResolver`
+      (`login`/`authMeUser`/`signOut`, the last a direct regression test for doc 2's
+      "declared but unimplemented" bug class), `placeResolver` (`createPlace`'s role
+      check, `updatePlace`'s ownership check — doc 2's issue 2's exact bug class),
+      `reviewResolver` (`createReview`'s self-review/duplicate/not-found/validation
+      guards). Doc 6's testing pyramid (layers 1-3) is now fully built; only frontend
+      tests (layer 4) remain open.
 - [x] Query cost/depth limiting — see
       [specs/phase-9-query-complexity.md](./specs/phase-9-query-complexity.md).
       `listPlaces`/`placeReviews`/`myReviews` already clamped `first` to 1000 max
