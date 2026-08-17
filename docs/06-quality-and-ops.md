@@ -5,9 +5,10 @@ pieces of this now (Phase 1 of the roadmap), not after the product is "done."
 
 ## Testing
 
-**Layer 1 built (2026-08-16, Phase 9)** — see
-[specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md). Layers 2-4 below are
-still open. Suggested layers, cheapest-value-first:
+**Layers 1-2 built (2026-08-16/17, Phase 9)** — see
+[specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md) and
+[specs/phase-9-integration-tests.md](./specs/phase-9-integration-tests.md). Layers
+3-4 below are still open. Suggested layers, cheapest-value-first:
 
 1. **Service-layer unit tests** (Jest) — the business logic (ownership checks,
    average-rating recomputation, password hashing) lives in services; test it there
@@ -16,7 +17,13 @@ still open. Suggested layers, cheapest-value-first:
    `utils/auth`, `authService`, `reviewService`.
 2. **Repository/integration tests** against a real (containerized, throwaway)
    Postgres — verifies the Sequelize models, migrations, and `BaseRepository` methods
-   actually work together. Use `docker-compose` to spin up a disposable test DB.
+   actually work together. **Built**: `backend/tests/integration/` (separate Jest
+   config), 7 tests against a real Postgres covering `BaseRepository` CRUD +
+   paranoid soft-delete/restore + transaction visibility, and `ReviewRepository`'s
+   DB-level unique constraint, soft-delete-then-recreate, and `getRatingStats`.
+   `docker-compose.yml` provisions the disposable DB for CI/portability; found and
+   fixed two real bugs invisible to layer 1 (a migration-ordering bug, and a silent
+   no-op in Sequelize's own `truncate()`).
 3. **Resolver/GraphQL tests** — execute real GraphQL operations against the schema
    with a test context (mock `ContextInterface.user`) to catch schema/resolver drift
    like the `signOut`/`forgotPassword` gap found in doc 2.
@@ -28,10 +35,14 @@ auth, ownership checks, rating aggregation, payment/upgrade flow if that ships.
 
 ## CI/CD
 
-**Built (2026-08-16, Phase 9)** — `.github/workflows/ci.yml`: two jobs (`backend`,
-`frontend`, matching the two independent `package.json`s), each `npm ci` → `npm run
-build`, `backend` additionally running `npm test`. Triggers on push to `main` and
-every pull request.
+**Built (2026-08-16/17, Phase 9)** — `.github/workflows/ci.yml`: three jobs
+(`backend`, `backend-integration`, `frontend`, matching the two independent
+`package.json`s plus a dedicated integration-test job), each `npm ci` → `npm run
+build` for `backend`/`frontend`, `backend` additionally running `npm test`, and
+`backend-integration` running `npm run test:integration` against a Postgres service
+container (GitHub Actions' native `services:` block, not `docker-compose.yml` —
+that stays local/portability reference only). Triggers on push to `main` and every
+pull request.
 
 Still open: `frontend/package.json` already has a real `lint` script (`oxlint`), but
 it's untested in CI (see the ticket spec for why — a local Node-version mismatch

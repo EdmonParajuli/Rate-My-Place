@@ -22,6 +22,52 @@ jobs:
       - run: npm run build
       - run: npm test
 
+  backend-integration:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: rate_my_place_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_NAME: rate_my_place_test
+      DB_DIALECT: postgres
+      DB_PORT: 5433
+      PORT: 4000
+      PASSWORD_HASH_CONSTANT: 4
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: ci-refresh-secret
+      JWT_REFRESH_EXPIRES_IN: 30d
+      CLOUDINARY_NAME: ci-test-cloud
+      API_KEY: ci-test-key
+      API_SECRET: ci-test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run test:integration
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

@@ -301,6 +301,20 @@ deployment pipeline, rate limiting/query cost limiting, observability, load test
       Repository/integration tests (layer 2, against a real containerized Postgres)
       and resolver/GraphQL tests (layer 3) are still open — this ticket only covers
       layer 1.
+- [x] Testing (doc 6 layer 2, repository/integration tests against a real Postgres) —
+      see [specs/phase-9-integration-tests.md](./specs/phase-9-integration-tests.md).
+      7 Jest tests (`backend/tests/integration/`) against a real disposable Postgres
+      (`docker-compose.yml` for CI/portability; a locally-available Postgres for this
+      environment, since Docker isn't installed here), covering `BaseRepository` CRUD
+      + paranoid soft-delete/restore + a transaction-visibility regression, and
+      `ReviewRepository`'s DB-level unique constraint, a soft-delete-then-recreate
+      regression, and `getRatingStats`. Found and fixed two real bugs along the way: a
+      migration-ordering bug (`create-places-table`'s FK referenced a table that
+      didn't exist yet) invisible until migrations replayed from empty, and a silent
+      no-op in `sequelize.truncate()` that let stale data leak across test runs.
+      `.github/workflows/ci.yml` gained a `backend-integration` job (Postgres service
+      container) running `npm run test:integration` on every push to `main` and every
+      PR. Resolver/GraphQL tests (layer 3) still open.
 - [ ] Query cost/depth limiting (`graphql-query-complexity` or Apollo's `costAnalysis`
       plugin) — doc 6 flags this as needed "once the schema has nested list fields
       that could be abused"; not urgent yet at current schema/traffic shape.

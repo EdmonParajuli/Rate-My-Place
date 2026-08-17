@@ -5,6 +5,7 @@ logs
 .yarn
 .yarn.lock
 .env
+.env.test
 .idea/
 .idea/
 .env.docker

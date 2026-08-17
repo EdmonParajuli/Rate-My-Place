@@ -4,6 +4,10 @@ module.exports = {
   testEnvironment: "node",
   rootDir: ".",
   testMatch: ["<rootDir>/tests/**/*.test.ts"],
+  // Integration tests (tests/integration/) need a real Postgres and their own
+  // setupFiles (jest.integration.config.js, run via npm run test:integration)
+  // - excluded here so plain `npm test` stays fast/dependency-free.
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/tests/integration/"],
   setupFiles: ["<rootDir>/tests/setupEnv.ts"],
   clearMocks: true,
   transform: {

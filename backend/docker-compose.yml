@@ -1,0 +1,26 @@
+# Disposable Postgres for integration tests (docs/06-quality-and-ops.md's
+# "docker-compose for Postgres" recommendation) - not used for the app's own
+# dev DB, which already runs via Postgres.app/a local install per .env.
+#
+# Usage: docker compose up -d, then npm run db:migrate:test && npm run
+# test:integration. Matches backend/.env.test.example's defaults - copy that
+# to .env.test to point the app/tests at this container.
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: rate_my_place_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d rate_my_place_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  pgdata:

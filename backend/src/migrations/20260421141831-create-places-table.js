@@ -38,12 +38,14 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
+      // No inline FK reference here - providers_category doesn't exist yet at
+      // this point in migration history (created by the next migration). The
+      // FK constraint itself is added there instead, once both tables exist.
+      // Found replaying migrations against a fresh DB for integration tests
+      // (docs/specs/phase-9-integration-tests.md) - the real dev DB was never
+      // actually migrated from empty, so this ordering bug was latent.
       category_id: {
         type: Sequelize.INTEGER,
-        references: {
-          model: 'providers_category',
-          key: 'id'
-        }
       },
       average_rating: {
         type: Sequelize.INTEGER,

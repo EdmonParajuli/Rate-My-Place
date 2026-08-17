@@ -16,7 +16,11 @@
     "db:migrate:undo:all": "ts-node node_modules/.bin/sequelize-cli db:migrate:undo:all",
     "db:seed": "ts-node node_modules/.bin/sequelize-cli db:seed:all",
     "db:seed:undo": "ts-node node_modules/.bin/sequelize-cli db:seed:undo:all",
-    "test": "jest"
+    "db:migrate:test": "NODE_ENV=test ts-node node_modules/.bin/sequelize-cli db:migrate",
+    "db:migrate:test:undo:all": "NODE_ENV=test ts-node node_modules/.bin/sequelize-cli db:migrate:undo:all",
+    "test": "jest",
+    "pretest:integration": "npm run db:migrate:test",
+    "test:integration": "jest --config jest.integration.config.js --runInBand --forceExit"
   },
   "keywords": [],
   "author": "",
