@@ -296,19 +296,27 @@ the same branch, not called out in the original spec because they weren't known 
   created, by either account type, since no email-verification flow exists anywhere
   in this codebase and email is the login identifier. See
   [specs/phase-7-settings-account-edit.md](./specs/phase-7-settings-account-edit.md).
-- ~~No tests, no CI~~ **Partially fixed (Phase 9, 2026-08-16).** 43 Jest service-layer
-  unit tests (`backend/tests/`, mocked repositories — `businessDashboardMath`,
-  `utils/auth`, `authService`, `reviewService`) plus `.github/workflows/ci.yml`
-  running `npm run build`+`npm test` (`backend/`) and `npm run build` (`frontend/`)
-  on every push to `main` and every PR. See
-  [specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md). Still open: doc 6's
-  testing layers 2/3 (repository/integration tests against a real Postgres,
-  resolver/GraphQL tests), and frontend tests. Verification for everything not yet
-  covered by the new suite is still manual, same as before: `npm run build` for type
-  errors, then exercising backend changes against a live `npm run start:dev` server
-  via GraphQL introspection. Per explicit user direction, frontend/UI changes are
-  verified by typecheck alone — this repo's workflow does not require driving a
-  browser to click-test (see the root `CLAUDE.md`).
+- ~~No tests, no CI~~ **Partially fixed (Phase 9, 2026-08-16/17).** 43 Jest
+  service-layer unit tests (`backend/tests/`, mocked repositories —
+  `businessDashboardMath`, `utils/auth`, `authService`, `reviewService`) plus 7 Jest
+  repository/integration tests (`backend/tests/integration/`, against a real
+  Postgres) covering `BaseRepository` CRUD/soft-delete/transaction-visibility and
+  `ReviewRepository`'s DB-level unique constraint/soft-delete-recreate/rating stats.
+  `.github/workflows/ci.yml` now runs three jobs: `backend` (`npm run build`+`npm
+  test`), `backend-integration` (`npm run test:integration` against a Postgres
+  service container), `frontend` (`npm run build`) — on every push to `main` and
+  every PR. See [specs/phase-9-testing-ci.md](./specs/phase-9-testing-ci.md) and
+  [specs/phase-9-integration-tests.md](./specs/phase-9-integration-tests.md). The
+  integration-test work also found and fixed two real bugs: a migration-ordering bug
+  (`create-places-table`'s FK referenced `providers_category` before that migration
+  ran) invisible until migrations replayed from an empty DB, and a silent no-op in
+  Sequelize's own `truncate()` that let stale data leak across test runs. Still open:
+  doc 6's testing layer 3 (resolver/GraphQL tests) and frontend tests. Verification
+  for everything not yet covered by the new suites is still manual, same as before:
+  `npm run build` for type errors, then exercising backend changes against a live
+  `npm run start:dev` server via GraphQL introspection. Per explicit user direction,
+  frontend/UI changes are verified by typecheck alone — this repo's workflow does not
+  require driving a browser to click-test (see the root `CLAUDE.md`).
 - **Structured logging (Phase 9, 2026-08-16).** Bare `console.log`/`console.error`
   replaced with `pino` — a per-request child logger (`pino-http`, generates/echoes
   an `x-request-id`) is available as `context.logger` in every resolver, and an
