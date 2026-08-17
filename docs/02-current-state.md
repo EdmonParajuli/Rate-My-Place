@@ -310,9 +310,14 @@ the same branch, not called out in the original spec because they weren't known 
   integration-test work also found and fixed two real bugs: a migration-ordering bug
   (`create-places-table`'s FK referenced `providers_category` before that migration
   ran) invisible until migrations replayed from an empty DB, and a silent no-op in
-  Sequelize's own `truncate()` that let stale data leak across test runs. Still open:
-  doc 6's testing layer 3 (resolver/GraphQL tests) and frontend tests. Verification
-  for everything not yet covered by the new suites is still manual, same as before:
+  Sequelize's own `truncate()` that let stale data leak across test runs. Plus 18
+  Jest resolver/GraphQL tests (`backend/tests/resolvers/`, doc 6's testing layer 3)
+  executing real `graphql()` calls against the actual composed schema with only
+  repositories mocked — `authResolver`, `placeResolver`, `reviewResolver` — see
+  [specs/phase-9-resolver-tests.md](./specs/phase-9-resolver-tests.md). Doc 6's
+  testing pyramid is now built through layer 3; only frontend tests (layer 4) remain
+  open. Verification for everything not yet covered by the new suites is still
+  manual, same as before:
   `npm run build` for type errors, then exercising backend changes against a live
   `npm run start:dev` server via GraphQL introspection. Per explicit user direction,
   frontend/UI changes are verified by typecheck alone — this repo's workflow does not
