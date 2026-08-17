@@ -25,8 +25,8 @@ export const reviewTypedefs: DocumentNode = gql`
         rating: Int
         placeId: Int
         reviewerId: Int
-        reviewer: User
-        place: Place
+        reviewer: User @complexity(value: 2)
+        place: Place @complexity(value: 2)
         createdAt: String
     }
 
@@ -48,8 +48,8 @@ export const reviewTypedefs: DocumentNode = gql`
     }
 
     extend type Query {
-        placeReviews(placeId: Int!, first: Int, after: String, sort: ReviewSortEnum): ReviewListResponse
-        myReviews(first: Int, after: String): ReviewListResponse
+        placeReviews(placeId: Int!, first: Int, after: String, sort: ReviewSortEnum): ReviewListResponse @complexity(value: 1, multipliers: ["first"])
+        myReviews(first: Int, after: String): ReviewListResponse @complexity(value: 1, multipliers: ["first"])
         # Single-review scoped, unlike placeReviews/myReviews - lets the
         # frontend fetch a review's photos (Review.photos) without embedding
         # that live resolver in a list query, which would be a real N+1. See

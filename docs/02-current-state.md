@@ -324,6 +324,16 @@ the same branch, not called out in the original spec because they weren't known 
   that id, without needing changes in each of the 14 resolver files. See
   [specs/phase-9-structured-logging.md](./specs/phase-9-structured-logging.md).
   Still open: Sentry/error tracking (gated on a real deployed environment existing).
+- **Query cost limiting (Phase 9, 2026-08-17).** `listPlaces`/`placeReviews`/
+  `myReviews` already clamped `first` to 1000 max server-side, but nothing priced
+  the live per-row `Place`/`Review` fields (`owner`, `category`, `hours`, `photos`,
+  `savedByMe`, `reviewer`, `place`, `reply`, ...) that each cost a separate DB call
+  per row — a large `first` combined with several of these in one request could
+  force thousands of extra round trips despite the row cap. `graphql-query-complexity`
+  wired as an Apollo plugin (`didResolveOperation`), a `@complexity` directive
+  pricing those fields plus a `multipliers: ["first"]` directive on the three
+  paginated queries, rejecting anything over 2000 before execution. See
+  [specs/phase-9-query-complexity.md](./specs/phase-9-query-complexity.md).
 - **`providers_category` is still a singular table name**, inconsistent with every
   other table (`providers_reviews`, `providers_reviews_replies`, `providers_sessions`,
   etc.). Cosmetic, low priority, would need a migration to rename.

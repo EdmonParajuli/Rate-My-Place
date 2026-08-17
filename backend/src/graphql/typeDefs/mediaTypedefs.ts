@@ -61,7 +61,7 @@ export const mediaTypedefs: DocumentNode = gql`
     # docs/specs/phase-8-media-plumbing.md.
     extend type Review {
         photoCount: Int
-        photos: [Media]
+        photos: [Media] @complexity(value: 2)
     }
 
     extend type Query {

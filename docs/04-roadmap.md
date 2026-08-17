@@ -315,9 +315,18 @@ deployment pipeline, rate limiting/query cost limiting, observability, load test
       `.github/workflows/ci.yml` gained a `backend-integration` job (Postgres service
       container) running `npm run test:integration` on every push to `main` and every
       PR. Resolver/GraphQL tests (layer 3) still open.
-- [ ] Query cost/depth limiting (`graphql-query-complexity` or Apollo's `costAnalysis`
-      plugin) — doc 6 flags this as needed "once the schema has nested list fields
-      that could be abused"; not urgent yet at current schema/traffic shape.
+- [x] Query cost/depth limiting — see
+      [specs/phase-9-query-complexity.md](./specs/phase-9-query-complexity.md).
+      `listPlaces`/`placeReviews`/`myReviews` already clamped `first` to 1000 max
+      server-side, but nothing priced the live per-row fields (`Place.owner`/
+      `category`/`hours`/`photos`/`savedByMe`/..., `Review.reviewer`/`place`/
+      `reply`/`photos`/...) that each cost a separate DB round trip per row.
+      `graphql-query-complexity`, wired as an Apollo plugin (not Apollo's
+      `costAnalysis`, which doesn't exist as a free plugin in Apollo Server v4):
+      a `@complexity` directive prices those fields, a `multipliers: ["first"]`
+      directive on the three paginated queries scales cost with actual page size
+      (including when `first` is a variable), rejecting anything over 2000 before
+      execution.
 - [x] Structured logging (pino) with a request id threaded resolver → service →
       repository, replacing the previous bare `console.log`/`console.error` — see
       [specs/phase-9-structured-logging.md](./specs/phase-9-structured-logging.md).
