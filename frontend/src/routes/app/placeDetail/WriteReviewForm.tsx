@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Star, Send, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ReviewPhotosSection } from "./ReviewPhotosSection"
+import { PendingPhotosPicker, type PendingPhoto } from "./PendingPhotosPicker"
 
 const RATING_LABEL: Record<number, string> = { 1: "Poor", 2: "Fair", 3: "Good", 4: "Great", 5: "Excellent" }
 
@@ -24,23 +25,28 @@ export function WriteReviewForm({
   initialRating?: number
   initialText?: string
   isEditing: boolean
-  // Only present while editing an existing (already-created) review - photo
-  // upload needs a real review to attach to, so a not-yet-submitted review
-  // can't take photos yet. See ReviewPhotosSection.
+  // Only present while editing an existing (already-created) review -
+  // ReviewPhotosSection's upload needs a real review to attach to. A
+  // not-yet-submitted review instead collects photos locally via
+  // PendingPhotosPicker below, uploaded once the caller's onSubmit has a
+  // real id (see PlaceDetailPage.handleSubmitReview).
   reviewId?: number | null
   photos?: GalleryPhoto[]
   submitting: boolean
   onCancel: () => void
-  onSubmit: (rating: number, text: string) => void
+  onSubmit: (rating: number, text: string, photos: File[]) => void
   // Not offered while editing a published review - drafts are only for a
   // review that hasn't been submitted yet (docs/specs/phase-4-frontend-mvp.md
   // §7's My Reviews resolution: a real but client-side-only, this-device-only
-  // feature, never sent to the API).
+  // feature, never sent to the API). Picked photos aren't carried into a
+  // draft - localStorage can't hold File objects and a draft has no reviewId
+  // to eventually attach them to anyway.
   onSaveDraft?: (rating: number, text: string) => void
   onPhotosChanged?: () => void
 }) {
   const [rating, setRating] = useState(initialRating ?? 0)
   const [text, setText] = useState(initialText ?? "")
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
 
   return (
     <div className="rounded-2xl border-2 border-primary/20 bg-card p-5">
@@ -73,7 +79,7 @@ export function WriteReviewForm({
       {isEditing && reviewId ? (
         <ReviewPhotosSection reviewId={reviewId} photos={photos ?? []} onChanged={onPhotosChanged ?? (() => {})} />
       ) : (
-        !isEditing && <p className="mb-4 text-xs text-slate-400">You can add photos after posting your review.</p>
+        !isEditing && <PendingPhotosPicker photos={pendingPhotos} onChange={setPendingPhotos} />
       )}
 
       <div className="flex items-center justify-between">
@@ -87,7 +93,11 @@ export function WriteReviewForm({
               Save as Draft
             </Button>
           )}
-          <Button type="button" disabled={!rating || !text.trim() || submitting} onClick={() => onSubmit(rating, text)}>
+          <Button
+            type="button"
+            disabled={!rating || !text.trim() || submitting}
+            onClick={() => onSubmit(rating, text, pendingPhotos.map((p) => p.file))}
+          >
             <Send className="h-4 w-4" />
             {submitting ? "Saving..." : isEditing ? "Save Changes" : "Submit Review"}
           </Button>
