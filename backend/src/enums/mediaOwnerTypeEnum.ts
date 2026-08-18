@@ -1,7 +1,7 @@
-// Matches doc 3's MEDIA table design. Only USER is implemented by
-// MediaService today (avatar/cover) - PLACE/REVIEW exist here because
-// they're part of the agreed polymorphic shape, but attachMedia rejects
-// them until the place/review photo tickets land.
+// Matches doc 3's MEDIA table design. All three owner types are implemented
+// by MediaService - USER (AVATAR/COVER), PLACE (AVATAR/COVER/PHOTO), REVIEW
+// (PHOTO only) - see mediaValidators.ts's attachMediaSchema for the exact
+// kind restrictions per owner type.
 export enum MediaOwnerTypeEnum {
     PLACE = "PLACE",
     REVIEW = "REVIEW",

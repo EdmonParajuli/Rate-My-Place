@@ -240,6 +240,13 @@ export function PlaceDetailPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-2">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                {place.profilePicture ? (
+                  <img src={place.profilePicture} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <ImageIcon className="h-4 w-4 text-slate-300" />
+                )}
+              </div>
               <h1 className="text-2xl font-extrabold">{place.label}</h1>
               {place.isVerified && (
                 <span className="flex items-center gap-1 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-primary">

@@ -20,8 +20,9 @@ const cloudinaryUrlSchema = stringSchema
 // (always the caller's own account - MediaService never trusts a
 // client-supplied id there, so accepting one here would just be misleading).
 // kind is further restricted per ownerType - USER has no PHOTO concept
-// (avatar/cover only, single-slot), PLACE has no AVATAR concept, REVIEW only
-// has PHOTO (no avatar/cover concept at all for a review).
+// (avatar/cover only, single-slot), PLACE has AVATAR/COVER (both
+// single-slot) plus PHOTO (gallery), REVIEW only has PHOTO (no avatar/cover
+// concept at all for a review).
 export const attachMediaSchema = Joi.object({
     ownerType: stringSchema.label("Owner type").valid(MediaOwnerTypeEnum.PLACE, MediaOwnerTypeEnum.USER, MediaOwnerTypeEnum.REVIEW).required(),
     ownerId: numberSchema.label("Owner ID").integer().min(1).when("ownerType", {
@@ -31,7 +32,7 @@ export const attachMediaSchema = Joi.object({
     }),
     kind: stringSchema.label("Kind").required().when("ownerType", {
         switch: [
-            { is: MediaOwnerTypeEnum.PLACE, then: stringSchema.valid(MediaKindEnum.COVER, MediaKindEnum.PHOTO) },
+            { is: MediaOwnerTypeEnum.PLACE, then: stringSchema.valid(MediaKindEnum.AVATAR, MediaKindEnum.COVER, MediaKindEnum.PHOTO) },
             { is: MediaOwnerTypeEnum.REVIEW, then: stringSchema.valid(MediaKindEnum.PHOTO) },
         ],
         otherwise: stringSchema.valid(MediaKindEnum.AVATAR, MediaKindEnum.COVER),

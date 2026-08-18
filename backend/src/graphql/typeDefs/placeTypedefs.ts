@@ -89,6 +89,11 @@ export const placeDefs: DocumentNode = gql`
         # owner sets/removes a COVER media row - see
         # docs/specs/phase-8-media-plumbing.md.
         coverPhotoUrl: String
+        # Same denormalized-read-cache shape as coverPhotoUrl, kept in sync
+        # whenever the owner sets/removes an AVATAR media row - a distinct
+        # single square logo shown next to the place name, not the wide
+        # cover banner and not part of the PHOTO gallery.
+        profilePicture: String
         # Live per-place lookup (not denormalized - only ever requested for
         # one place at a time, no N+1 risk the way coverPhotoUrl had on
         # Discover's grid). Owner-uploaded gallery, kind PHOTO only.

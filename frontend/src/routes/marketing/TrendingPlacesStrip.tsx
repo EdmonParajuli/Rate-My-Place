@@ -38,11 +38,22 @@ function TrendingPlaceCard({ place }: { place: TrendingPlace }) {
       to={`/app/places/${place.id}`}
       className="w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-lg"
     >
-      <div className={`flex h-32 items-center justify-center bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}>
-        <MapPin className="h-7 w-7 text-white/70" />
+      <div className="h-32 bg-slate-100">
+        {place.coverPhotoUrl ? (
+          <img src={place.coverPhotoUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className={`flex h-full items-center justify-center bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}>
+            <MapPin className="h-7 w-7 text-white/70" />
+          </div>
+        )}
       </div>
       <div className="p-3">
-        <h3 className="mb-1 truncate text-sm font-bold">{place.label}</h3>
+        <div className="mb-1 flex min-w-0 items-center gap-1.5">
+          {place.profilePicture && (
+            <img src={place.profilePicture} alt="" className="h-4 w-4 flex-shrink-0 rounded object-cover" />
+          )}
+          <h3 className="truncate text-sm font-bold">{place.label}</h3>
+        </div>
         <div className="flex items-center gap-1 text-xs text-amber-700">
           <Star className="h-3.5 w-3.5 fill-accent text-accent" />
           {rating.toFixed(1)} · {(place.reviewCount ?? 0).toLocaleString()} reviews

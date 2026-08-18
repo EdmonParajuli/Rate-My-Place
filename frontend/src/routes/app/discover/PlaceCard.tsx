@@ -71,7 +71,12 @@ export function PlaceCard({
         )}
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="mb-0.5 truncate text-sm leading-snug font-bold">{place.label}</h3>
+        <div className="mb-0.5 flex min-w-0 items-center gap-1.5">
+          {place.profilePicture && (
+            <img src={place.profilePicture} alt="" className="h-5 w-5 flex-shrink-0 rounded object-cover" />
+          )}
+          <h3 className="truncate text-sm leading-snug font-bold">{place.label}</h3>
+        </div>
         {place.category?.label && <p className="mb-2 text-xs text-muted-foreground">{place.category.label}</p>}
         <div className="mb-1.5 flex items-center gap-1.5">
           <div className="flex gap-0.5">

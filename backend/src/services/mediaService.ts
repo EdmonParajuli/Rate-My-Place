@@ -55,8 +55,8 @@ export class MediaService {
       }
       folder = `rate-my-place/users/${userId}/${kind.toLowerCase()}`;
     } else if (ownerType === MediaOwnerTypeEnum.PLACE) {
-      if (kind !== MediaKindEnum.COVER && kind !== MediaKindEnum.PHOTO) {
-        throwError("Only COVER or PHOTO uploads are supported for a place.", "BAD_REQUEST", 400);
+      if (kind !== MediaKindEnum.AVATAR && kind !== MediaKindEnum.COVER && kind !== MediaKindEnum.PHOTO) {
+        throwError("Only AVATAR, COVER, or PHOTO uploads are supported for a place.", "BAD_REQUEST", 400);
       }
       if (!ownerId) {
         throwError("ownerId is required for a place upload.", "BAD_REQUEST", 400);
@@ -147,7 +147,7 @@ export class MediaService {
       }
       await this.assertOwnsPlace(ownerId!, userId);
 
-      if (kind === MediaKindEnum.COVER) {
+      if (kind === MediaKindEnum.AVATAR || kind === MediaKindEnum.COVER) {
         // Single-slot, same replace-on-upload behavior as USER's AVATAR/COVER.
         return this.withTransaction(async (transaction) => {
           await this.repository.deleteAllForOwner(MediaOwnerTypeEnum.PLACE, ownerId!, kind, transaction);
@@ -155,7 +155,11 @@ export class MediaService {
             { ownerType: MediaOwnerTypeEnum.PLACE, ownerId: ownerId!, kind, url },
             { transaction }
           );
-          await this.placeService.updateCoverPhoto(ownerId!, url, transaction);
+          if (kind === MediaKindEnum.AVATAR) {
+            await this.placeService.updateProfilePicture(ownerId!, url, transaction);
+          } else {
+            await this.placeService.updateCoverPhoto(ownerId!, url, transaction);
+          }
           return media;
         });
       }
@@ -234,7 +238,11 @@ export class MediaService {
           await this.placeService.updateCoverPhoto(Number(media!.ownerId), null, transaction);
         }
       } else if (media!.kind === MediaKindEnum.AVATAR) {
-        await this.userService.updateProfilePicture(media!.ownerId, null, transaction);
+        if (media!.ownerType === MediaOwnerTypeEnum.USER) {
+          await this.userService.updateProfilePicture(media!.ownerId, null, transaction);
+        } else {
+          await this.placeService.updateProfilePicture(Number(media!.ownerId), null, transaction);
+        }
       } else if (media!.kind === MediaKindEnum.PHOTO && media!.ownerType === MediaOwnerTypeEnum.REVIEW) {
         await this.syncReviewPhotoCount(Number(media!.ownerId), transaction);
       }

@@ -490,6 +490,7 @@ export type Place = {
   phone?: Maybe<Scalars['String']['output']>;
   photos?: Maybe<Array<Maybe<Media>>>;
   priceRange?: Maybe<PriceRangeEnum>;
+  profilePicture?: Maybe<Scalars['String']['output']>;
   ratingBreakdown?: Maybe<Array<Maybe<RatingBreakdownEntry>>>;
   reviewCount?: Maybe<Scalars['Int']['output']>;
   savedByMe?: Maybe<Scalars['Boolean']['output']>;
@@ -941,7 +942,7 @@ export type MyReviewsQueryVariables = Exact<{
 }>;
 
 
-export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, photoCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', label?: string | null, icon?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
+export type MyReviewsQuery = { __typename?: 'Query', myReviews?: { __typename?: 'ReviewListResponse', data?: Array<{ __typename?: 'Review', id?: number | null, review?: string | null, rating?: number | null, createdAt?: string | null, helpfulCount?: number | null, photoCount?: number | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, coverPhotoUrl?: string | null, profilePicture?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', label?: string | null, icon?: string | null } | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } | null } | null };
 
 export type MyNotificationsQueryVariables = Exact<{
   filter?: InputMaybe<NotificationFilterEnum>;
@@ -979,7 +980,7 @@ export type GetPlaceByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, photos?: Array<{ __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null> | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
+export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, profilePicture?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, photos?: Array<{ __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null> | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
 
 export type PlaceReviewsQueryVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -1045,7 +1046,7 @@ export type ListPlacesQueryVariables = Exact<{
 }>;
 
 
-export type ListPlacesQuery = { __typename?: 'Query', listPlaces?: { __typename?: 'PlaceListResponse', message?: string | null, data?: Array<{ __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, trendingScore?: number | null, coverPhotoUrl?: string | null, latitude?: number | null, longitude?: number | null, distance?: number | null, openNow?: boolean | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } | null } | null };
+export type ListPlacesQuery = { __typename?: 'Query', listPlaces?: { __typename?: 'PlaceListResponse', message?: string | null, data?: Array<{ __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, trendingScore?: number | null, coverPhotoUrl?: string | null, profilePicture?: string | null, latitude?: number | null, longitude?: number | null, distance?: number | null, openNow?: boolean | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null> | null, pageInfo?: { __typename?: 'PageInfo', hasNextPage: boolean, hasPreviousPage: boolean, startCursor?: string | null, endCursor?: string | null } | null } | null };
 
 export type PlatformStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1057,7 +1058,7 @@ export type SavedPlacesQueryVariables = Exact<{
 }>;
 
 
-export type SavedPlacesQuery = { __typename?: 'Query', savedPlaces?: { __typename?: 'SavedPlaceListResponse', data?: Array<{ __typename?: 'SavedPlace', id?: number | null, placeId?: number | null, listType?: SavedListTypeEnum | null, createdAt?: string | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null } | null> | null } | null };
+export type SavedPlacesQuery = { __typename?: 'Query', savedPlaces?: { __typename?: 'SavedPlaceListResponse', data?: Array<{ __typename?: 'SavedPlace', id?: number | null, placeId?: number | null, listType?: SavedListTypeEnum | null, createdAt?: string | null, place?: { __typename?: 'Place', id?: number | null, label?: string | null, address?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, trendingScore?: number | null, coverPhotoUrl?: string | null, profilePicture?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null } | null } | null> | null } | null };
 
 export type ToggleSavePlaceMutationVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -1808,6 +1809,10 @@ export const MyReviewsDocument = gql`
         isVerified
         openNow
         trendingScore
+        coverPhotoUrl
+        profilePicture
+        savedByMe
+        savedListType
         category {
           label
           icon
@@ -2063,6 +2068,7 @@ export const GetPlaceByIdDocument = gql`
       isVerified
       openNow
       coverPhotoUrl
+      profilePicture
       photos {
         id
         kind
@@ -2434,6 +2440,7 @@ export const ListPlacesDocument = gql`
       isVerified
       trendingScore
       coverPhotoUrl
+      profilePicture
       latitude
       longitude
       distance
@@ -2560,6 +2567,10 @@ export const SavedPlacesDocument = gql`
         isVerified
         openNow
         trendingScore
+        coverPhotoUrl
+        profilePicture
+        savedByMe
+        savedListType
         category {
           id
           label
