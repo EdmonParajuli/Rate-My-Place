@@ -17,6 +17,10 @@ query MyReviews($first: Int, $after: String) {
         isVerified
         openNow
         trendingScore
+        coverPhotoUrl
+        profilePicture
+        savedByMe
+        savedListType
         category {
           label
           icon

@@ -13,6 +13,7 @@ query GetPlaceById($id: Int!) {
       isVerified
       openNow
       coverPhotoUrl
+      profilePicture
       photos {
         id
         kind

@@ -95,6 +95,11 @@ const Place = sequelize.define<PlaceModelInterface>(
             type: Sequelize.TEXT,
             allowNull: true,
             field: "cover_photo_url"
+        },
+        profilePicture: {
+            type: Sequelize.TEXT,
+            allowNull: true,
+            field: "profile_picture"
         }
     },
     {   

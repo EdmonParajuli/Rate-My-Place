@@ -15,6 +15,10 @@ query SavedPlaces($filter: SavedPlaceFilterEnum) {
         isVerified
         openNow
         trendingScore
+        coverPhotoUrl
+        profilePicture
+        savedByMe
+        savedListType
         category {
           id
           label

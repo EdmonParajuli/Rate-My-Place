@@ -11,6 +11,7 @@ query ListPlaces($sort: PlaceSortEnum, $near: GeoInput, $filter: PlaceFilterInpu
       isVerified
       trendingScore
       coverPhotoUrl
+      profilePicture
       latitude
       longitude
       distance

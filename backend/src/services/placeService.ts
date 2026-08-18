@@ -174,4 +174,11 @@ export default class PlaceService {
   async updateCoverPhoto(placeId: number, url: string | null, transaction?: Transaction) {
     await this.repository.updateOne({ id: placeId, input: { coverPhotoUrl: url } }, { transaction });
   }
+
+  // Same shape/reasoning as updateCoverPhoto above - a distinct single-slot
+  // image (the square logo shown next to the place name via an AVATAR media
+  // row), not the wide cover banner.
+  async updateProfilePicture(placeId: number, url: string | null, transaction?: Transaction) {
+    await this.repository.updateOne({ id: placeId, input: { profilePicture: url } }, { transaction });
+  }
 }

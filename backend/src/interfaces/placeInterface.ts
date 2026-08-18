@@ -22,6 +22,11 @@ export interface InputPlaceInterface {
       // removeMedia), same reasoning as averageRating/reviewCount above. See
       // docs/specs/phase-8-media-plumbing.md.
       coverPhotoUrl?: string | null,
+      // Same shape as coverPhotoUrl above, written by PlaceService.updateLogo -
+      // a distinct single-slot image (a square logo shown next to the place
+      // name), not the wide banner coverPhotoUrl is, and not part of the
+      // PHOTO gallery either.
+      profilePicture?: string | null,
 }
 
 export interface PlaceInterface extends ModelTimestampExtend, InputPlaceInterface {

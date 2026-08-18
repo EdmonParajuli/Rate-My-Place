@@ -14,6 +14,7 @@ export function ListingPreviewCard({
   phone,
   website,
   todayHours,
+  profilePicture,
   coverPhotoUrl,
 }: {
   categoryLabel: string | null
@@ -26,6 +27,7 @@ export function ListingPreviewCard({
   phone: string
   website: string
   todayHours: { open: boolean; opensAt: string; closesAt: string }
+  profilePicture?: string | null
   coverPhotoUrl?: string | null
 }) {
   return (
@@ -43,9 +45,18 @@ export function ListingPreviewCard({
 
       <div className="p-5">
         <div className="mb-3 flex items-start justify-between gap-2">
-          <div>
-            <p className="mb-1 text-[11px] font-bold tracking-wide text-primary uppercase">{categoryLabel ?? "Uncategorized"}</p>
-            <h3 className="text-lg leading-tight font-extrabold text-slate-900">{label || "Your Business Name"}</h3>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+              {profilePicture ? (
+                <img src={profilePicture} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <Image className="h-4 w-4 text-slate-300" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="mb-1 text-[11px] font-bold tracking-wide text-primary uppercase">{categoryLabel ?? "Uncategorized"}</p>
+              <h3 className="truncate text-lg leading-tight font-extrabold text-slate-900">{label || "Your Business Name"}</h3>
+            </div>
           </div>
           <span className="flex-shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-sm font-bold text-slate-500">
             {PRICE_SYMBOL[priceRange] ?? "$$"}

@@ -173,6 +173,7 @@ export function MyListingPage() {
         <div className="space-y-6 lg:col-span-3">
           <PlacePhotosSection
             placeId={place.id ?? 0}
+            profilePicture={place.profilePicture}
             coverPhotoUrl={place.coverPhotoUrl}
             photos={(place.photos ?? []).filter((p): p is NonNullable<typeof p> => p !== null)}
             onChanged={() => refetch()}
@@ -329,6 +330,7 @@ export function MyListingPage() {
               address={form.address}
               phone={form.phone}
               website={form.website}
+              profilePicture={place.profilePicture}
               coverPhotoUrl={place.coverPhotoUrl}
               todayHours={todayHours}
             />

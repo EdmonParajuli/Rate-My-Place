@@ -13,20 +13,28 @@ type GalleryPhoto = { id?: number | null; url?: string | null }
 // docs/specs/phase-8-media-plumbing.md.
 export function PlacePhotosSection({
   placeId,
+  profilePicture,
   coverPhotoUrl,
   photos,
   onChanged,
 }: {
   placeId: number
+  profilePicture: string | null | undefined
   coverPhotoUrl: string | null | undefined
   photos: GalleryPhoto[]
   onChanged: () => void
 }) {
+  const profileInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [removeMediaMutation] = useRemoveMediaMutation()
   const [removingId, setRemovingId] = useState<number | null>(null)
 
+  // Distinct from coverPhotoUrl (a wide banner) and photos (a gallery) - a
+  // single square logo shown next to the place name (PlaceCard,
+  // PlaceDetailPage, ListingPreviewCard), same AVATAR kind/single-slot
+  // replace-on-upload shape ProfileHeader.tsx uses for a user's own avatar.
+  const profileUpload = useMediaUpload("AVATAR", "PLACE", placeId, onChanged)
   const coverUpload = useMediaUpload("COVER", "PLACE", placeId, onChanged)
   const galleryUpload = useMediaUpload("PHOTO", "PLACE", placeId, onChanged)
 
@@ -49,11 +57,35 @@ export function PlacePhotosSection({
   }
 
   const atCap = photos.length >= MAX_PHOTOS
-  const error = coverUpload.error || galleryUpload.error
+  const error = profileUpload.error || coverUpload.error || galleryUpload.error
 
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <h3 className="mb-5 border-b border-slate-100 pb-1 text-xs font-bold tracking-widest text-slate-400 uppercase">Photos</h3>
+
+      <div className="mb-6">
+        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Profile Picture</label>
+        <p className="mb-2.5 text-xs text-slate-400">Shown right next to your place name.</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+            {profilePicture ? (
+              <img src={profilePicture} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Camera className="h-6 w-6 text-slate-300" />
+            )}
+          </div>
+          <input ref={profileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e.target, profileUpload.upload)} />
+          <button
+            type="button"
+            onClick={() => profileInputRef.current?.click()}
+            disabled={profileUpload.uploading}
+            className="flex cursor-pointer items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {profileUpload.uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+            {profileUpload.uploading ? "Uploading..." : profilePicture ? "Change Picture" : "Add Picture"}
+          </button>
+        </div>
+      </div>
 
       <div className="mb-6">
         <label className="mb-1.5 block text-sm font-semibold text-slate-700">Cover Photo</label>
