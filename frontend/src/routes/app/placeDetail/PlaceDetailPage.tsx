@@ -29,9 +29,12 @@ import {
   useToggleHelpfulVoteMutation,
   useCreateReviewReplyMutation,
   useListPlacesQuery,
+  useMediaUploadSignatureLazyQuery,
+  useAttachMediaMutation,
   type ReviewSortEnum,
 } from "@/lib/graphql/generated/graphql"
 import { saveDraft } from "@/lib/drafts"
+import { uploadMedia } from "@/lib/media/useMediaUpload"
 import { RatingOverview } from "./RatingOverview"
 import { WriteReviewForm } from "./WriteReviewForm"
 import { ReviewCard } from "./ReviewCard"
@@ -56,6 +59,11 @@ export function PlaceDetailPage() {
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null)
   const [submittingReview, setSubmittingReview] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
+  // Not nested inside writeFormOpen's block - a photo-upload failure happens
+  // after the review is already successfully created (see handleSubmitReview),
+  // so the form has already closed by the time this can be set; it needs to
+  // stay visible past that.
+  const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null)
 
   const { data: placeData, loading: placeLoading, refetch: refetchPlace } = useGetPlaceByIdQuery({ variables: { id } })
   const place = placeData?.getPlaceById?.data
@@ -83,6 +91,8 @@ export function PlaceDetailPage() {
   const [deleteReview] = useDeleteReviewMutation()
   const [toggleHelpfulVote] = useToggleHelpfulVoteMutation()
   const [createReviewReply] = useCreateReviewReplyMutation()
+  const [getMediaUploadSignature] = useMediaUploadSignatureLazyQuery({ fetchPolicy: "network-only" })
+  const [attachMedia] = useAttachMediaMutation()
 
   const refetchAll = () => Promise.all([refetchPlace(), refetchReviews()])
 
@@ -124,14 +134,32 @@ export function PlaceDetailPage() {
     setWriteFormOpen(false)
   }
 
-  const handleSubmitReview = async (rating: number, text: string) => {
+  const handleSubmitReview = async (rating: number, text: string, photoFiles: File[]) => {
     setReviewError(null)
+    setPhotoUploadWarning(null)
     setSubmittingReview(true)
     try {
       if (editingReview?.id) {
         await updateReview({ variables: { reviewId: editingReview.id, input: { review: text, rating } } })
       } else {
-        await createReview({ variables: { placeId: id, input: { review: text, rating } } })
+        const result = await createReview({ variables: { placeId: id, input: { review: text, rating } } })
+        const newReviewId = result.data?.createReview?.data?.id
+
+        if (newReviewId != null && photoFiles.length > 0) {
+          const failures = (
+            await Promise.allSettled(
+              photoFiles.map((file) =>
+                uploadMedia({ getSignature: getMediaUploadSignature, attachMediaMutation: attachMedia, kind: "PHOTO", ownerType: "REVIEW", ownerId: newReviewId, file })
+              )
+            )
+          ).filter((r) => r.status === "rejected").length
+
+          if (failures > 0) {
+            setPhotoUploadWarning(
+              `Your review was posted, but ${failures} photo${failures === 1 ? "" : "s"} failed to upload. Edit your review to try again.`
+            )
+          }
+        }
       }
       setWriteFormOpen(false)
       setEditingReviewId(null)
@@ -332,6 +360,8 @@ export function PlaceDetailPage() {
               {reviewError && <p className="text-xs text-destructive">{reviewError}</p>}
             </>
           ) : null}
+
+          {photoUploadWarning && <p className="text-xs text-amber-600">{photoUploadWarning}</p>}
 
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">

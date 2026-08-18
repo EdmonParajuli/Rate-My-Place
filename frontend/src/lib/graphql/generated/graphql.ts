@@ -1004,7 +1004,7 @@ export type CreateReviewMutationVariables = Exact<{
 }>;
 
 
-export type CreateReviewMutation = { __typename?: 'Mutation', createReview?: { __typename?: 'ReviewResponse', message?: string | null } | null };
+export type CreateReviewMutation = { __typename?: 'Mutation', createReview?: { __typename?: 'ReviewResponse', message?: string | null, data?: { __typename?: 'Review', id?: number | null } | null } | null };
 
 export type UpdateReviewMutationVariables = Exact<{
   reviewId: Scalars['Int']['input'];
@@ -2255,6 +2255,9 @@ export const CreateReviewDocument = gql`
     mutation CreateReview($placeId: Int!, $input: InputReview!) {
   createReview(placeId: $placeId, input: $input) {
     message
+    data {
+      id
+    }
   }
 }
     `;

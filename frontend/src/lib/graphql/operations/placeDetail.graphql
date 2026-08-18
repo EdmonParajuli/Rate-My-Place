@@ -92,6 +92,7 @@ query GetReviewById($id: Int!) {
 mutation CreateReview($placeId: Int!, $input: InputReview!) {
   createReview(placeId: $placeId, input: $input) {
     message
+    data { id }
   }
 }
 
