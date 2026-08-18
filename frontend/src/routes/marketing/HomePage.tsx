@@ -1,10 +1,14 @@
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 import { ArrowRight, Building2, MessageSquare, Search, ShieldCheck, Sparkles, Star, TrendingUp, User } from "lucide-react"
 import { TESTIMONIALS } from "@/lib/testimonials"
 import { MarketingNav } from "./MarketingNav"
 import { MarketingFooter } from "./MarketingFooter"
 import { TrendingPlacesStrip } from "./TrendingPlacesStrip"
+import { TypingWord } from "./TypingWord"
+import { HeroSearchResults } from "./HeroSearchResults"
+
+const SEARCH_DEBOUNCE_MS = 300
 
 const STATS = [
   { value: "5M+", label: "Active Users" },
@@ -29,11 +33,44 @@ const FEATURES = [
 // logged-out - no GraphQL on load besides the trending strip's own query.
 export function HomePage() {
   const [search, setSearch] = useState("")
-  const navigate = useNavigate()
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  // HeroSearchResults portals its panel to document.body (see that file's
+  // comment - escapes .hero-gradient's overflow-hidden clipping), so it's
+  // no longer a real DOM descendant of searchRef even though it's still a
+  // React child - the click-outside check below needs this second ref to
+  // recognize a click landing inside the portaled panel as "inside", not
+  // "outside".
+  const resultsRef = useRef<HTMLDivElement>(null)
 
-  const handleSearch = (e: React.FormEvent) => {
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  // Same click-outside pattern AppLayout's account dropdown uses - no
+  // library, a document-level listener scoped to while the popover is open.
+  useEffect(() => {
+    if (!searchOpen) return
+    const onClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node
+      if (!searchRef.current?.contains(target) && !resultsRef.current?.contains(target)) {
+        setSearchOpen(false)
+      }
+    }
+    document.addEventListener("click", onClickOutside)
+    return () => document.removeEventListener("click", onClickOutside)
+  }, [searchOpen])
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setSearchOpen(value.trim().length > 0)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    navigate("/app")
+    setSearchOpen(search.trim().length > 0)
   }
 
   return (
@@ -46,30 +83,41 @@ export function HomePage() {
             <Sparkles className="h-4 w-4 text-accent" />
             Trusted by millions of local reviewers
           </span>
-          <h1 className="mb-6 text-5xl font-extrabold tracking-tight text-white md:text-6xl">
-            Find it. Review it.
+          <h1 className="mb-6 text-5xl leading-tight font-extrabold tracking-tight text-white md:text-6xl">
+            <span className="inline-block animate-in fade-in zoom-in-95 slide-in-from-bottom-3 fill-mode-both duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+              Find it.
+            </span>{" "}
+            <span className="inline-block animate-in fade-in zoom-in-95 slide-in-from-bottom-3 fill-mode-both delay-300 duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
+              Review it.
+            </span>
             <br />
-            <span className="bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent">Help it grow.</span>
+            <span className="inline-block animate-in fade-in zoom-in-95 slide-in-from-bottom-3 fill-mode-both delay-[600ms] duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] bg-gradient-to-r from-accent to-blue-400 bg-clip-text text-transparent">
+              Help it <TypingWord />
+            </span>
           </h1>
           <p className="mx-auto mb-10 max-w-2xl text-lg text-slate-300">
             The reviews marketplace connecting reviewers and local businesses.
           </p>
 
-          <form onSubmit={handleSearch} className="mx-auto mb-6 flex max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-2xl md:flex-row">
-            <div className="flex flex-1 items-center rounded-xl bg-slate-50 px-4 py-3">
-              <Search className="mr-3 h-5 w-5 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search places..."
-                className="w-full bg-transparent text-sm text-slate-900 outline-none"
-              />
-            </div>
-            <button type="submit" className="cursor-pointer rounded-xl bg-primary px-6 py-3 font-medium text-white hover:bg-blue-700">
-              Search
-            </button>
-          </form>
+          <div ref={searchRef} className="relative mx-auto mb-6 max-w-2xl">
+            <form onSubmit={handleSearchSubmit} className="flex flex-col gap-2 rounded-2xl bg-white p-2 shadow-2xl md:flex-row">
+              <div className="flex flex-1 items-center rounded-xl bg-slate-50 px-4 py-3">
+                <Search className="mr-3 h-5 w-5 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onFocus={() => search.trim() && setSearchOpen(true)}
+                  placeholder="Search places..."
+                  className="w-full bg-transparent text-sm text-slate-900 outline-none"
+                />
+              </div>
+              <button type="submit" className="cursor-pointer rounded-xl bg-primary px-6 py-3 font-medium text-white hover:bg-blue-700">
+                Search
+              </button>
+            </form>
+            {searchOpen && <HeroSearchResults query={debouncedSearch} anchorRef={searchRef} rootRef={resultsRef} />}
+          </div>
           <div className="mb-14 flex flex-wrap justify-center gap-2">
             {CATEGORY_CHIPS.map((chip) => (
               <span key={chip} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white">

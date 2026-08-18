@@ -21,7 +21,19 @@ function PlaceImagePlaceholder({ categoryLabel }: { categoryLabel: string | null
 
 const PRICE_SYMBOL: Record<DiscoverPriceRange, string> = { LOW: "$", MEDIUM: "$$", HIGH: "$$$" }
 
-export function PlaceCard({ place, compact = false }: { place: DiscoverPlace; compact?: boolean }) {
+export function PlaceCard({
+  place,
+  compact = false,
+  showSaveButton = true,
+}: {
+  place: DiscoverPlace
+  compact?: boolean
+  // Off for HeroSearchResults' logged-out landing-page preview - saving a
+  // place calls toggleSavePlace, which requireAuth's on the backend, and
+  // that surface can't assume a signed-in caller the way every other
+  // PlaceCard usage (all gated behind PrivateRoute) safely can.
+  showSaveButton?: boolean
+}) {
   const rating = place.averageRating ?? 0
 
   return (
@@ -32,7 +44,7 @@ export function PlaceCard({ place, compact = false }: { place: DiscoverPlace; co
         ) : (
           <PlaceImagePlaceholder categoryLabel={place.category?.label} />
         )}
-        {place.id !== null && place.id !== undefined && (
+        {showSaveButton && place.id !== null && place.id !== undefined && (
           <div className="absolute top-2.5 right-2.5">
             <SaveHeartButton placeId={place.id} initialSaved={place.savedByMe} size="sm" />
           </div>
