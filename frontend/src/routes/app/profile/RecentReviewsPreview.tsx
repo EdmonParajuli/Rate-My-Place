@@ -38,9 +38,13 @@ export function RecentReviewsPreview({ reviews }: { reviews: MyReview[] }) {
                 className="flex items-start gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50"
               >
                 <div
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}
+                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}
                 >
-                  <MapPin className="h-4 w-4 text-white/70" />
+                  {review.place?.profilePicture ? (
+                    <img src={review.place.profilePicture} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <MapPin className="h-4 w-4 text-white/70" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">

@@ -44,9 +44,13 @@ export function ReviewListItem({
       <div className="flex items-start gap-4 p-5">
         <Link
           to={`/app/places/${review.place?.id}`}
-          className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}
+          className={`flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}
         >
-          <MapPin className="h-5 w-5 text-white/70" />
+          {review.place?.profilePicture ? (
+            <img src={review.place.profilePicture} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <MapPin className="h-5 w-5 text-white/70" />
+          )}
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
