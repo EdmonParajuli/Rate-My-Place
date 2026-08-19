@@ -18,4 +18,7 @@ export const CATEGORY_STYLES: Record<string, { gradient: string; bg: string; ico
   // (docs/03-architecture.md), no reason to only fall back to gray when a
   // real accent color is just as easy to give it.
   Bar: { gradient: "from-amber-500 to-orange-600", bg: "bg-amber-50", iconColor: "text-amber-600" },
+  // Added post-Figma-10 (docs/04-roadmap.md) - no source accent to match, so
+  // given its own distinct color rather than reusing a nearby one.
+  "Housing & Apartments": { gradient: "from-cyan-400 to-teal-600", bg: "bg-cyan-50", iconColor: "text-cyan-500" },
 }

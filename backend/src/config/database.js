@@ -11,7 +11,14 @@ const config = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     dialect: process.env.DB_DIALECT,
-    port: process.env.DB_PORT
+    port: process.env.DB_PORT,
+    // Without this, sequelize-cli doesn't track which seeders already ran
+    // (unlike migrations, which always track via SequelizeMeta) - every
+    // `db:seed:all` call re-runs every seeder file, silently duplicating
+    // whatever they insert. This makes seeders track their run state in a
+    // SequelizeData table the same way migrations do, so re-running
+    // `db:seed` is a no-op for seeders that already applied.
+    seederStorage: 'sequelize'
 };
 
 module.exports = {

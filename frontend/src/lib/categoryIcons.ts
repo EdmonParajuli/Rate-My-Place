@@ -10,6 +10,7 @@ import {
   Music,
   Briefcase,
   Beer,
+  Building2,
   Store,
   type LucideIcon,
 } from "lucide-react"
@@ -33,6 +34,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   music: Music,
   briefcase: Briefcase,
   beer: Beer,
+  "building-2": Building2,
 }
 
 export function getCategoryIcon(iconName: string | null | undefined): LucideIcon {
