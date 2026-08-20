@@ -220,6 +220,11 @@ Ticket 01 (needs `ReviewQrCodeService`/repository to exist) — done, see above.
 
 ## Ticket 03 — Public scan route + mandatory auth modal (frontend)
 
+**Status: ✅ Done** — built as planned, `npm run build` (typecheck) clean. Not
+browser-tested, per this repo's established convention (root `CLAUDE.md`) that a
+clean typecheck is sufficient for UI work; see "What was actually built" for two
+implementation details the plan didn't spell out and one conscious scope call.
+
 ### Why
 
 This is the actual "scan → review" moment — the highest-value, highest-risk ticket
@@ -259,23 +264,62 @@ business-facing half of the feature.
   updates, the modal unmounts (`user` now truthy), the already-rendered form becomes
   the only thing left on screen.
 
+### What was actually built (two implementation details, one scope call)
+
+**`SignInForm`/`SignUpForm` gained an optional `onSuccess?: () => void` prop.**
+The plan said "reused from `routes/auth/`" without specifying how the
+navigate-away-on-success behavior both forms already have gets suppressed inside
+the modal. Both forms hardcode a `navigate(...)` call after a successful
+`login`/`signUp`/`signUpBusiness` - passing `onSuccess` (the modal passes a no-op)
+makes them call that instead. `LoginPage.tsx`'s own usage is unaffected (it never
+passes the prop, so the default navigate behavior is unchanged there). The modal
+itself doesn't need the callback to *do* anything - `AuthContext`'s `user` state
+flipping truthy is what actually unmounts the modal, via `PlaceDetailPage`'s own
+`isTokenEntry && !user` render condition; `onSuccess` only exists so the forms
+skip their own redirect.
+
+**Repeat-scan detection (Q8) is a ref-guarded effect, not a literal call to
+`openEditForm()`.** `openEditForm` is defined after the component's early-return
+guards; an effect that needs to run before those guards (Rules of Hooks) can't
+reference it yet at the point it's declared, even though by the time the effect
+callback actually executes post-render it would resolve fine via closure. Setting
+`editingReviewId`/`showAlreadyReviewedNotice` directly, gated by a
+`hasCheckedExistingReviewRef` so it only fires once per mount once both `user`
+and the reviews list are available, is the same outcome without relying on that
+ordering.
+
+**Scope call, not locked in the plan: sign-up inside the modal isn't restricted
+to `REGULAR` accounts.** `SignUpForm` is reused whole, including the Business
+Owner account-type card and its second-step place-details form. A customer
+scanning a QR is presumably a reviewer, and choosing "Business owner" mid-modal
+is an odd fit for a quick-review flow - but restricting it wasn't part of the
+agreed ticket, so it's flagged here rather than silently decided. Worth a real
+answer if it comes up.
+
 ### Acceptance criteria
 
-- [ ] Scanning (visiting `/r/:token` directly) while logged out shows the real place
+- [x] Scanning (visiting `/r/:token` directly) while logged out shows the real place
       — name, photo, rating — dimmed behind the modal; the type box is visible but
-      inert
-- [ ] The modal cannot be dismissed without completing sign-up or sign-in (no
-      backdrop click, no Escape, no close affordance)
-- [ ] Completing sign-up or sign-in clears the modal and the review form becomes
-      interactive, on the same page — no redirect
-- [ ] An already-authenticated customer who hasn't reviewed this place lands
+      inert. `writeFormOpen` starts `true` on a token entry and the modal is a
+      `position: fixed; inset: 0` overlay with no click-through, so this falls out
+      of the render logic rather than needing special-cased disabling
+- [x] The modal cannot be dismissed without completing sign-up or sign-in (no
+      backdrop click, no Escape, no close affordance) - achieved by omission: no
+      dismiss handler of any kind is wired up
+- [x] Completing sign-up or sign-in clears the modal and the review form becomes
+      interactive, on the same page — no redirect (see `onSuccess` above)
+- [x] An already-authenticated customer who hasn't reviewed this place lands
       straight on an empty, open write form
-- [ ] An already-authenticated customer who *has* reviewed this place sees the
+- [x] An already-authenticated customer who *has* reviewed this place sees the
       notice, then lands in edit mode on their existing review
-- [ ] The place's own `BUSINESS` owner scanning their own code sees the existing
-      owner-view treatment, not a review form they can't submit to
-- [ ] An invalid/deactivated token shows a clear "not found" state, not a crash
-- [ ] `npm run build` passes
+- [x] The place's own `BUSINESS` owner scanning their own code sees the existing
+      owner-view treatment, not a review form they can't submit to - `isOwner`'s
+      existing check is entry-mode-agnostic, no new code needed
+- [x] An invalid/deactivated token shows a clear "not found" state, not a crash -
+      copy changed to "This QR code isn't valid" specifically for the token-entry
+      case (the generic "Place not found" + "Back to Discover" link stays for the
+      authenticated route, unchanged)
+- [x] `npm run build` passes (backend and frontend both)
 
 ### Blocked by
 

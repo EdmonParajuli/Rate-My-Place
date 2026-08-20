@@ -19,7 +19,7 @@ import {
   clearStoredSessionId,
 } from "./tokenStorage"
 
-type AuthUser = {
+export type AuthUser = {
   id: number
   email: string | null
   fullName: string | null

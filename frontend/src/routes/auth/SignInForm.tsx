@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { signInSchema, type SignInValues } from "./authSchemas"
 
-export function SignInForm() {
+// onSuccess lets a caller outside the normal /login page (the QR scan
+// flow's non-dismissable auth modal, docs/specs/phase-11-qr-review-flow.md
+// ticket 03) reuse this form without the default post-login redirect - the
+// scan flow wants auth to resolve in place, not navigate away.
+export function SignInForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
@@ -23,7 +27,11 @@ export function SignInForm() {
     setServerError(null)
     try {
       const loggedInUser = await login(values)
-      navigate(loggedInUser?.userType === "BUSINESS" ? "/app/dashboard" : "/app")
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        navigate(loggedInUser?.userType === "BUSINESS" ? "/app/dashboard" : "/app")
+      }
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Sign in failed")
     }

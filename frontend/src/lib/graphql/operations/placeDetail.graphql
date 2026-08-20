@@ -44,6 +44,52 @@ query GetPlaceById($id: Int!) {
   }
 }
 
+query PlaceByReviewToken($token: String!) {
+  placeByReviewToken(token: $token) {
+    data {
+      id
+      label
+      description
+      address
+      phone
+      website
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      openNow
+      coverPhotoUrl
+      profilePicture
+      photos {
+        id
+        kind
+        url
+      }
+      savedByMe
+      savedListType
+      category {
+        id
+        label
+        icon
+      }
+      owner {
+        id
+        fullName
+        profilePicture
+      }
+      hours {
+        dayOfWeek
+        opensAt
+        closesAt
+      }
+      ratingBreakdown {
+        stars
+        count
+      }
+    }
+  }
+}
+
 query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSortEnum) {
   placeReviews(placeId: $placeId, first: $first, after: $after, sort: $sort) {
     data {

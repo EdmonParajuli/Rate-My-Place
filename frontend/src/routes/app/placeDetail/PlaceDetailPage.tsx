@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   BadgeCheck,
@@ -21,6 +21,7 @@ import { SaveHeartButton } from "@/components/SaveHeartButton"
 import { useAuth } from "@/lib/auth/AuthContext"
 import {
   useGetPlaceByIdQuery,
+  usePlaceByReviewTokenQuery,
   usePlaceReviewsQuery,
   useGetReviewByIdQuery,
   useCreateReviewMutation,
@@ -38,6 +39,7 @@ import { uploadMedia } from "@/lib/media/useMediaUpload"
 import { RatingOverview } from "./RatingOverview"
 import { WriteReviewForm } from "./WriteReviewForm"
 import { ReviewCard } from "./ReviewCard"
+import { ScanAuthModal } from "./ScanAuthModal"
 import { dayName, formatTime, sortByDay } from "./formatHours"
 import type { PlaceReview } from "./types"
 
@@ -48,14 +50,21 @@ const SORTS: { value: ReviewSortEnum; label: string }[] = [
 ]
 
 export function PlaceDetailPage() {
-  const { placeId } = useParams<{ placeId: string }>()
+  // Two distinct entry points render this same component (router.tsx):
+  // /app/places/:placeId (authenticated, existing) and /r/:token (public QR
+  // scan, ticket 03) - reusing the real place page rather than a second
+  // review UI, per docs/specs/phase-11-qr-review-flow.md's locked decision.
+  const { placeId, token } = useParams<{ placeId?: string; token?: string }>()
+  const isTokenEntry = Boolean(token)
   const id = Number(placeId)
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const [sort, setSort] = useState<ReviewSortEnum>("RECENT")
   const [hoursOpen, setHoursOpen] = useState(false)
-  const [writeFormOpen, setWriteFormOpen] = useState(false)
+  // Starts open on a scan entry - the whole point is landing directly on the
+  // type box, no extra click (Q7/Q9).
+  const [writeFormOpen, setWriteFormOpen] = useState(isTokenEntry)
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null)
   const [submittingReview, setSubmittingReview] = useState(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -64,12 +73,43 @@ export function PlaceDetailPage() {
   // so the form has already closed by the time this can be set; it needs to
   // stay visible past that.
   const [photoUploadWarning, setPhotoUploadWarning] = useState<string | null>(null)
+  // Q8: a repeat scan from someone who's already reviewed this place gets a
+  // notice, then lands in edit mode - not a silent drop into editing.
+  const [showAlreadyReviewedNotice, setShowAlreadyReviewedNotice] = useState(false)
+  const hasCheckedExistingReviewRef = useRef(false)
 
-  const { data: placeData, loading: placeLoading, refetch: refetchPlace } = useGetPlaceByIdQuery({ variables: { id } })
-  const place = placeData?.getPlaceById?.data
+  const { data: placeData, loading: placeByIdLoading, refetch: refetchPlaceById } = useGetPlaceByIdQuery({
+    variables: { id },
+    skip: isTokenEntry,
+  })
+  const { data: tokenPlaceData, loading: placeByTokenLoading, refetch: refetchPlaceByToken } = usePlaceByReviewTokenQuery({
+    variables: { token: token ?? "" },
+    skip: !isTokenEntry,
+  })
+  const place = isTokenEntry ? tokenPlaceData?.placeByReviewToken?.data : placeData?.getPlaceById?.data
+  const placeLoading = isTokenEntry ? placeByTokenLoading : placeByIdLoading
+  // The real numeric id once place resolves either way - place.id for both
+  // entry modes once loaded, falling back to the URL param before that
+  // (already correct immediately for the placeId-route entry; NaN and
+  // harmless for the token entry, where every query below is skipped until
+  // place.id is known).
+  const resolvedPlaceId = place?.id ?? id
 
-  const { data: reviewsData, refetch: refetchReviews } = usePlaceReviewsQuery({ variables: { placeId: id, first: 20, sort } })
+  const { data: reviewsData, refetch: refetchReviews } = usePlaceReviewsQuery({
+    variables: { placeId: resolvedPlaceId, first: 20, sort },
+    skip: isTokenEntry && !place?.id,
+  })
   const reviews = (reviewsData?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null)
+
+  useEffect(() => {
+    if (!isTokenEntry || !user || hasCheckedExistingReviewRef.current || !reviewsData) return
+    hasCheckedExistingReviewRef.current = true
+    const existingReview = reviews.find((r) => r.reviewerId === user.id)
+    if (existingReview?.id) {
+      setShowAlreadyReviewedNotice(true)
+      setEditingReviewId(existingReview.id)
+    }
+  }, [isTokenEntry, user, reviewsData, reviews])
 
   // Single-review scoped fetch, seeds the edit form's photo gallery - not
   // part of placeReviews above, which would be a real N+1. See
@@ -84,7 +124,7 @@ export function PlaceDetailPage() {
     variables: { filter: { categoryId: place?.category?.id ?? undefined }, first: 4 },
     skip: !place?.category?.id,
   })
-  const similarPlaces = (similarData?.listPlaces?.data ?? []).filter((p) => p !== null && p.id !== id).slice(0, 3)
+  const similarPlaces = (similarData?.listPlaces?.data ?? []).filter((p) => p !== null && p.id !== resolvedPlaceId).slice(0, 3)
 
   const [createReview] = useCreateReviewMutation()
   const [updateReview] = useUpdateReviewMutation()
@@ -94,7 +134,7 @@ export function PlaceDetailPage() {
   const [getMediaUploadSignature] = useMediaUploadSignatureLazyQuery({ fetchPolicy: "network-only" })
   const [attachMedia] = useAttachMediaMutation()
 
-  const refetchAll = () => Promise.all([refetchPlace(), refetchReviews()])
+  const refetchAll = () => Promise.all([isTokenEntry ? refetchPlaceByToken() : refetchPlaceById(), refetchReviews()])
 
   if (placeLoading) {
     return <p className="p-6 text-center text-sm text-muted-foreground">Loading place...</p>
@@ -102,10 +142,12 @@ export function PlaceDetailPage() {
   if (!place) {
     return (
       <div className="p-6 text-center">
-        <p className="font-bold text-slate-700">Place not found</p>
-        <Link to="/app" className="mt-2 inline-block text-sm text-primary">
-          Back to Discover
-        </Link>
+        <p className="font-bold text-slate-700">{isTokenEntry ? "This QR code isn't valid" : "Place not found"}</p>
+        {!isTokenEntry && (
+          <Link to="/app" className="mt-2 inline-block text-sm text-primary">
+            Back to Discover
+          </Link>
+        )}
       </div>
     )
   }
@@ -130,7 +172,7 @@ export function PlaceDetailPage() {
   }
 
   const handleSaveDraft = (rating: number, text: string) => {
-    saveDraft({ placeId: id, placeName: place?.label ?? "this place", rating, text })
+    saveDraft({ placeId: resolvedPlaceId, placeName: place?.label ?? "this place", rating, text })
     setWriteFormOpen(false)
   }
 
@@ -142,7 +184,7 @@ export function PlaceDetailPage() {
       if (editingReview?.id) {
         await updateReview({ variables: { reviewId: editingReview.id, input: { review: text, rating } } })
       } else {
-        const result = await createReview({ variables: { placeId: id, input: { review: text, rating } } })
+        const result = await createReview({ variables: { placeId: resolvedPlaceId, input: { review: text, rating } } })
         const newReviewId = result.data?.createReview?.data?.id
 
         if (newReviewId != null && photoFiles.length > 0) {
@@ -348,6 +390,12 @@ export function PlaceDetailPage() {
             </div>
           ) : writeFormOpen ? (
             <>
+              {showAlreadyReviewedNotice && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-600">
+                  <Check className="h-3.5 w-3.5" />
+                  You've already reviewed this place — here's your review to edit.
+                </div>
+              )}
               <WriteReviewForm
                 placeName={place.label}
                 initialRating={editingReview?.rating ?? undefined}
@@ -358,7 +406,7 @@ export function PlaceDetailPage() {
                 submitting={submittingReview}
                 onCancel={cancelWriteForm}
                 onSubmit={handleSubmitReview}
-                onSaveDraft={editingReview ? undefined : handleSaveDraft}
+                onSaveDraft={editingReview || isTokenEntry ? undefined : handleSaveDraft}
                 onPhotosChanged={() => {
                   void refetchEditingReviewPhotos()
                   void refetchReviews()
@@ -469,6 +517,8 @@ export function PlaceDetailPage() {
           )}
         </div>
       </div>
+
+      {isTokenEntry && !user && <ScanAuthModal placeName={place.label} />}
     </div>
   )
 }

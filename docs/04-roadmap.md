@@ -393,7 +393,7 @@ for the full decision table and the five-ticket breakdown.
       schema change later) — ticket 01
 - [x] Public `placeByReviewToken` query — same `Place` shape `getPlaceById` returns,
       no login required — ticket 02
-- [ ] Public `/r/:token` scan route + non-dismissable auth modal, reusing
+- [x] Public `/r/:token` scan route + non-dismissable auth modal, reusing
       `PlaceDetailPage`/`WriteReviewForm` directly rather than a second review UI —
       ticket 03
 - [ ] Business console QR page (view / download PNG / copy link via

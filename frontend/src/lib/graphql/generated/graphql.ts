@@ -571,7 +571,9 @@ export type Query = {
   mediaUploadSignature?: Maybe<UploadSignatureResponse>;
   myBadges?: Maybe<BadgeListResponse>;
   myNotifications?: Maybe<NotificationListResponse>;
+  myReviewQrCode?: Maybe<ReviewQrCodeResponse>;
   myReviews?: Maybe<ReviewListResponse>;
+  placeByReviewToken?: Maybe<PlaceResponse>;
   placeReviews?: Maybe<ReviewListResponse>;
   platformStats?: Maybe<PlatformStatsResponse>;
   savedPlaces?: Maybe<SavedPlaceListResponse>;
@@ -621,6 +623,11 @@ export type QueryMyReviewsArgs = {
 };
 
 
+export type QueryPlaceByReviewTokenArgs = {
+  token: Scalars['String']['input'];
+};
+
+
 export type QueryPlaceReviewsArgs = {
   after?: InputMaybe<Scalars['String']['input']>;
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -667,6 +674,18 @@ export type ReviewListResponse = {
   data?: Maybe<Array<Maybe<Review>>>;
   message?: Maybe<Scalars['String']['output']>;
   pageInfo?: Maybe<PageInfo>;
+};
+
+export type ReviewQrCode = {
+  __typename?: 'ReviewQrCode';
+  createdAt?: Maybe<Scalars['String']['output']>;
+  publicToken?: Maybe<Scalars['String']['output']>;
+};
+
+export type ReviewQrCodeResponse = {
+  __typename?: 'ReviewQrCodeResponse';
+  data?: Maybe<ReviewQrCode>;
+  message?: Maybe<Scalars['String']['output']>;
 };
 
 export type ReviewReply = {
@@ -981,6 +1000,13 @@ export type GetPlaceByIdQueryVariables = Exact<{
 
 
 export type GetPlaceByIdQuery = { __typename?: 'Query', getPlaceById?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, profilePicture?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, photos?: Array<{ __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null> | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
+
+export type PlaceByReviewTokenQueryVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type PlaceByReviewTokenQuery = { __typename?: 'Query', placeByReviewToken?: { __typename?: 'PlaceResponse', data?: { __typename?: 'Place', id?: number | null, label?: string | null, description?: string | null, address?: string | null, phone?: string | null, website?: string | null, priceRange?: PriceRangeEnum | null, averageRating?: number | null, reviewCount?: number | null, isVerified?: boolean | null, openNow?: boolean | null, coverPhotoUrl?: string | null, profilePicture?: string | null, savedByMe?: boolean | null, savedListType?: SavedListTypeEnum | null, photos?: Array<{ __typename?: 'Media', id?: number | null, kind?: MediaKindEnum | null, url?: string | null } | null> | null, category?: { __typename?: 'Category', id?: number | null, label?: string | null, icon?: string | null } | null, owner?: { __typename?: 'User', id?: number | null, fullName?: string | null, profilePicture?: string | null } | null, hours?: Array<{ __typename?: 'PlaceHour', dayOfWeek?: number | null, opensAt?: string | null, closesAt?: string | null } | null> | null, ratingBreakdown?: Array<{ __typename?: 'RatingBreakdownEntry', stars?: number | null, count?: number | null } | null> | null } | null } | null };
 
 export type PlaceReviewsQueryVariables = Exact<{
   placeId: Scalars['Int']['input'];
@@ -2136,6 +2162,90 @@ export type GetPlaceByIdQueryHookResult = ReturnType<typeof useGetPlaceByIdQuery
 export type GetPlaceByIdLazyQueryHookResult = ReturnType<typeof useGetPlaceByIdLazyQuery>;
 export type GetPlaceByIdSuspenseQueryHookResult = ReturnType<typeof useGetPlaceByIdSuspenseQuery>;
 export type GetPlaceByIdQueryResult = ApolloReactCommon.QueryResult<GetPlaceByIdQuery, GetPlaceByIdQueryVariables>;
+export const PlaceByReviewTokenDocument = gql`
+    query PlaceByReviewToken($token: String!) {
+  placeByReviewToken(token: $token) {
+    data {
+      id
+      label
+      description
+      address
+      phone
+      website
+      priceRange
+      averageRating
+      reviewCount
+      isVerified
+      openNow
+      coverPhotoUrl
+      profilePicture
+      photos {
+        id
+        kind
+        url
+      }
+      savedByMe
+      savedListType
+      category {
+        id
+        label
+        icon
+      }
+      owner {
+        id
+        fullName
+        profilePicture
+      }
+      hours {
+        dayOfWeek
+        opensAt
+        closesAt
+      }
+      ratingBreakdown {
+        stars
+        count
+      }
+    }
+  }
+}
+    `;
+
+/**
+ * __usePlaceByReviewTokenQuery__
+ *
+ * To run a query within a React component, call `usePlaceByReviewTokenQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePlaceByReviewTokenQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePlaceByReviewTokenQuery({
+ *   variables: {
+ *      token: // value for 'token'
+ *   },
+ * });
+ */
+export function usePlaceByReviewTokenQuery(baseOptions: ApolloReactHooks.QueryHookOptions<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables> & ({ variables: PlaceByReviewTokenQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>(PlaceByReviewTokenDocument, options as any);
+      }
+export function usePlaceByReviewTokenLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>(PlaceByReviewTokenDocument, options as any);
+        }
+// @ts-ignore
+export function usePlaceByReviewTokenSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function usePlaceByReviewTokenSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<PlaceByReviewTokenQuery | undefined, PlaceByReviewTokenQueryVariables>;
+export function usePlaceByReviewTokenSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>(PlaceByReviewTokenDocument, options as any);
+        }
+export type PlaceByReviewTokenQueryHookResult = ReturnType<typeof usePlaceByReviewTokenQuery>;
+export type PlaceByReviewTokenLazyQueryHookResult = ReturnType<typeof usePlaceByReviewTokenLazyQuery>;
+export type PlaceByReviewTokenSuspenseQueryHookResult = ReturnType<typeof usePlaceByReviewTokenSuspenseQuery>;
+export type PlaceByReviewTokenQueryResult = ApolloReactCommon.QueryResult<PlaceByReviewTokenQuery, PlaceByReviewTokenQueryVariables>;
 export const PlaceReviewsDocument = gql`
     query PlaceReviews($placeId: Int!, $first: Int, $after: String, $sort: ReviewSortEnum) {
   placeReviews(placeId: $placeId, first: $first, after: $after, sort: $sort) {

@@ -23,7 +23,9 @@ type UserTypeChoice = "REGULAR" | "BUSINESS"
 // submitted together via signUpBusiness - not two chained calls - so a
 // BUSINESS-type user is never left without a place if they drop off between
 // steps. See docs/03-architecture.md's signUpBusiness section.
-export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoice }) {
+// onSuccess: same reasoning as SignInForm's - lets the QR scan flow's auth
+// modal (ticket 03) reuse this form without navigating away.
+export function SignUpForm({ initialUserType, onSuccess }: { initialUserType?: UserTypeChoice; onSuccess?: () => void }) {
   const { signUp, signUpBusiness } = useAuth()
   const navigate = useNavigate()
   const [userType, setUserType] = useState<UserTypeChoice>(initialUserType ?? "REGULAR")
@@ -47,7 +49,11 @@ export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoi
     }
     try {
       await signUp({ name: values.name, email: values.email, password: values.password, userType: "REGULAR" })
-      navigate("/app")
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        navigate("/app")
+      }
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Sign up failed")
     }
@@ -69,7 +75,11 @@ export function SignUpForm({ initialUserType }: { initialUserType?: UserTypeChoi
         categoryId: values.categoryId,
         priceRange: values.priceRange,
       })
-      navigate("/app/dashboard")
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        navigate("/app/dashboard")
+      }
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Sign up failed")
     }

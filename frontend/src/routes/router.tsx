@@ -27,6 +27,13 @@ export const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
     ],
   },
+  // Public QR scan entry (docs/specs/phase-11-qr-review-flow.md, ticket 03) -
+  // deliberately outside both MarketingLayout (no marketing chrome belongs on
+  // a scan-and-go flow) and PrivateRoute (must render before login).
+  // PlaceDetailPage itself branches on the `token` param vs. `placeId` below
+  // to source its data from the public placeByReviewToken query instead of
+  // the authenticated getPlaceById one.
+  { path: "r/:token", element: <PlaceDetailPage /> },
   {
     path: "app",
     element: <PrivateRoute />,
