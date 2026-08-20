@@ -12,6 +12,7 @@ import Badge from "./badges";
 import UserBadge from "./userBadges";
 import Notification from "./notifications";
 import Media from "./media";
+import ReviewQrCode from "./reviewQrCodes";
 
 const Model = {
     User,
@@ -27,7 +28,8 @@ const Model = {
     Badge,
     UserBadge,
     Notification,
-    Media
+    Media,
+    ReviewQrCode
 }
 
 export default Model;

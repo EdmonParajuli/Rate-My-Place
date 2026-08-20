@@ -5,6 +5,8 @@ import { assertOwnership } from '../utils/auth';
 import { throwError } from '../helpers/errorHelper';
 import { PlaceSortEnum } from '../enums/placeSortEnum';
 import { CursorBasedPagination, SortEnum } from '../packages/cursors/service';
+import { Database } from '../config';
+import { ReviewQrCodeService } from './reviewQrCodeService';
 
 export default class PlaceService {
   private repository: PlaceRepository;
@@ -127,7 +129,23 @@ export default class PlaceService {
       throw new Error(`Place with ID ${placeId} not found`);
     }
     assertOwnership(existingPlace.ownerId, requestingUserId, "You do not own this place.");
-    return this.repository.deleteOne(placeId);
+
+    // Q6 (docs/specs/phase-11-qr-review-flow.md): deleting a place cascades to
+    // deactivate its QR, in the same transaction as the delete itself - a
+    // scanned sticker for a place that's gone shouldn't quietly keep resolving.
+    // Instantiated locally, not as a constructor-held field - ReviewQrCodeService
+    // holds its own PlaceService, so a field here would construct the two
+    // services into each other on every PlaceService() call, not just delete().
+    const transaction = await Database.sequelize.transaction();
+    try {
+      const result = await this.repository.deleteOne(placeId, transaction);
+      await new ReviewQrCodeService().deactivateForPlace(placeId, transaction);
+      await transaction.commit();
+      return result;
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 
   // Thin passthrough - src/jobs/trendingScoreJob.ts is a caller like any

@@ -379,6 +379,32 @@ prototype (not wired to any real field), built for real here once the shape of t
 - [ ] Wire into the Place Detail screen's amenity pills, replacing the Phase 4
       placeholder content
 
+## Phase 11 — QR-code review flow
+
+**New phase, surfaced 2026-08-20.** A business generates a dedicated QR code;
+scanning it takes a customer straight into that specific place's review form,
+skipping search entirely. Decided via a clarifying round with the user (ownership,
+token behavior, review-flow UX, navbar placement, QR-rendering tech) before any code
+was written — see [specs/phase-11-qr-review-flow.md](./specs/phase-11-qr-review-flow.md)
+for the full decision table and the five-ticket breakdown.
+
+- [x] `review_qr_codes` table + owner-gated `myReviewQrCode` query (get-or-create,
+      one active QR per place, keyed on `place_id` so multi-listing accounts need no
+      schema change later) — ticket 01
+- [x] Public `placeByReviewToken` query — same `Place` shape `getPlaceById` returns,
+      no login required — ticket 02
+- [ ] Public `/r/:token` scan route + non-dismissable auth modal, reusing
+      `PlaceDetailPage`/`WriteReviewForm` directly rather than a second review UI —
+      ticket 03
+- [ ] Business console QR page (view / download PNG / copy link via
+      `qrcode.react`, client-side, nothing stored) — ticket 04
+- [ ] Navbar `QrCode` icon, `BUSINESS`-only, left of the existing avatar — ticket 05
+
+Deliberately out of this phase: QR locking/unlocking and per-source labeling
+(counter/table/receipt) are both confirmed V2 scope, not even stubbed as inert
+columns here; self-service regeneration and an admin panel are both real future
+work, referenced but not built.
+
 ## Open questions worth resolving before/around Phase 3-4
 
 These are yours to decide, not technical inevitabilities — flagging so they don't get

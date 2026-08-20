@@ -11,3 +11,4 @@ export * from "./notificationResolver";
 export * from "./mediaResolver";
 export * from "./platformStatsResolver";
 export * from "./businessDashboardResolver";
+export * from "./reviewQrCodeResolver";

@@ -17,6 +17,7 @@ import { InputPlaceHourInterface } from "../../interfaces/placeHourInterface";
 import { MediaService } from "../../services/mediaService";
 import { MediaOwnerTypeEnum } from "../../enums/mediaOwnerTypeEnum";
 import { MediaKindEnum } from "../../enums/mediaKindEnum";
+import { ReviewQrCodeService } from "../../services/reviewQrCodeService";
 
 export const placeResolver = {
     Mutation: {
@@ -140,6 +141,33 @@ export const placeResolver = {
                 requireAuth(context);
 
                 const result = await new PlaceService().getPlaceById(args.id);
+
+                return SuccessResponse.send({
+                    message: "Place fetched successfully",
+                    data: result
+                });
+            } catch (error: any) {
+                if (error instanceof GraphQLError) {
+                    throw error;
+                }
+                throwError(error.message, "BAD_REQUEST", 400);
+            }
+        },
+
+        // Public, no requireAuth - the QR scan flow that reaches this
+        // (docs/specs/phase-11-qr-review-flow.md, ticket 02) has to work
+        // before the customer is logged in. Same Place shape/field resolvers
+        // getPlaceById returns - deliberately not a stripped-down public
+        // type, since the scan is meant to land on the real review page.
+        placeByReviewToken: async(
+            parent: ParentNode,
+            args: {token: string},
+            context: ContextInterface,
+            info: GraphQLResolveInfo
+        ) => {
+            try {
+                const placeId = await new ReviewQrCodeService().resolveActiveToken(args.token);
+                const result = await new PlaceService().getPlaceById(placeId);
 
                 return SuccessResponse.send({
                     message: "Place fetched successfully",

@@ -13,3 +13,4 @@ export * from "./mediaTypedefs";
 export * from "./commonTypedefs";
 export * from "./platformStatsTypedefs";
 export * from "./businessDashboardTypedefs";
+export * from "./reviewQrCodeTypedefs";

@@ -114,6 +114,9 @@ export const placeDefs: DocumentNode = gql`
     extend type Query {
         getPlaceById(id: Int!): PlaceResponse
         listPlaces(sort: PlaceSortEnum, near: GeoInput, filter: PlaceFilterInput, first: Int, after: String): PlaceListResponse @complexity(value: 1, multipliers: ["first"])
+        # Public, no requireAuth - resolves a scanned QR's token to the place
+        # it points at. See docs/specs/phase-11-qr-review-flow.md, ticket 02.
+        placeByReviewToken(token: String!): PlaceResponse
     }
 
     extend type Mutation {
