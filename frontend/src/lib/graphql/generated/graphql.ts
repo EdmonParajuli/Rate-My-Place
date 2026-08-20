@@ -1079,6 +1079,11 @@ export type PlatformStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type PlatformStatsQuery = { __typename?: 'Query', platformStats?: { __typename?: 'PlatformStatsResponse', data?: { __typename?: 'PlatformStats', totalPlaces?: number | null, totalReviews?: number | null } | null } | null };
 
+export type MyReviewQrCodeQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MyReviewQrCodeQuery = { __typename?: 'Query', myReviewQrCode?: { __typename?: 'ReviewQrCodeResponse', message?: string | null, data?: { __typename?: 'ReviewQrCode', publicToken?: string | null, createdAt?: string | null } | null } | null };
+
 export type SavedPlacesQueryVariables = Exact<{
   filter?: InputMaybe<SavedPlaceFilterEnum>;
 }>;
@@ -2659,6 +2664,53 @@ export type PlatformStatsQueryHookResult = ReturnType<typeof usePlatformStatsQue
 export type PlatformStatsLazyQueryHookResult = ReturnType<typeof usePlatformStatsLazyQuery>;
 export type PlatformStatsSuspenseQueryHookResult = ReturnType<typeof usePlatformStatsSuspenseQuery>;
 export type PlatformStatsQueryResult = ApolloReactCommon.QueryResult<PlatformStatsQuery, PlatformStatsQueryVariables>;
+export const MyReviewQrCodeDocument = gql`
+    query MyReviewQrCode {
+  myReviewQrCode {
+    message
+    data {
+      publicToken
+      createdAt
+    }
+  }
+}
+    `;
+
+/**
+ * __useMyReviewQrCodeQuery__
+ *
+ * To run a query within a React component, call `useMyReviewQrCodeQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMyReviewQrCodeQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMyReviewQrCodeQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useMyReviewQrCodeQuery(baseOptions?: ApolloReactHooks.QueryHookOptions<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return ApolloReactHooks.useQuery<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>(MyReviewQrCodeDocument, options as any);
+      }
+export function useMyReviewQrCodeLazyQuery(baseOptions?: ApolloReactHooks.LazyQueryHookOptions<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useLazyQuery<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>(MyReviewQrCodeDocument, options as any);
+        }
+// @ts-ignore
+export function useMyReviewQrCodeSuspenseQuery(baseOptions?: ApolloReactHooks.SuspenseQueryHookOptions<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>;
+// @ts-expect-error - known typescript-react-apollo/Apollo Client v4 overload mismatch, see scripts/fix-codegen-apollo-v4.mjs
+export function useMyReviewQrCodeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>): ApolloReactHooks.UseSuspenseQueryResult<MyReviewQrCodeQuery | undefined, MyReviewQrCodeQueryVariables>;
+export function useMyReviewQrCodeSuspenseQuery(baseOptions?: ApolloReactHooks.SkipToken | ApolloReactHooks.SuspenseQueryHookOptions<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>) {
+          const options = baseOptions === ApolloReactHooks.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return ApolloReactHooks.useSuspenseQuery<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>(MyReviewQrCodeDocument, options as any);
+        }
+export type MyReviewQrCodeQueryHookResult = ReturnType<typeof useMyReviewQrCodeQuery>;
+export type MyReviewQrCodeLazyQueryHookResult = ReturnType<typeof useMyReviewQrCodeLazyQuery>;
+export type MyReviewQrCodeSuspenseQueryHookResult = ReturnType<typeof useMyReviewQrCodeSuspenseQuery>;
+export type MyReviewQrCodeQueryResult = ApolloReactCommon.QueryResult<MyReviewQrCodeQuery, MyReviewQrCodeQueryVariables>;
 export const SavedPlacesDocument = gql`
     query SavedPlaces($filter: SavedPlaceFilterEnum) {
   savedPlaces(filter: $filter) {

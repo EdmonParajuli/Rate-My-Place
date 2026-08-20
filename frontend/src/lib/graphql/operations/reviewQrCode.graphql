@@ -1,0 +1,9 @@
+query MyReviewQrCode {
+  myReviewQrCode {
+    message
+    data {
+      publicToken
+      createdAt
+    }
+  }
+}

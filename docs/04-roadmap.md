@@ -381,12 +381,15 @@ prototype (not wired to any real field), built for real here once the shape of t
 
 ## Phase 11 — QR-code review flow
 
-**New phase, surfaced 2026-08-20.** A business generates a dedicated QR code;
-scanning it takes a customer straight into that specific place's review form,
-skipping search entirely. Decided via a clarifying round with the user (ownership,
-token behavior, review-flow UX, navbar placement, QR-rendering tech) before any code
-was written — see [specs/phase-11-qr-review-flow.md](./specs/phase-11-qr-review-flow.md)
-for the full decision table and the five-ticket breakdown.
+**New phase, surfaced 2026-08-20. All five tickets built** (2026-08-20) — **edge-case
+pass still open**, deliberately deferred until the full path could be seen end to end
+first. A business generates a dedicated QR code; scanning it takes a customer
+straight into that specific place's review form, skipping search entirely. Decided
+via a clarifying round with the user (ownership, token behavior, review-flow UX,
+navbar placement, QR-rendering tech) before any code was written — see
+[specs/phase-11-qr-review-flow.md](./specs/phase-11-qr-review-flow.md) for the full
+decision table and the five-ticket breakdown, including implementation notes and
+deviations found while building each one.
 
 - [x] `review_qr_codes` table + owner-gated `myReviewQrCode` query (get-or-create,
       one active QR per place, keyed on `place_id` so multi-listing accounts need no
@@ -396,9 +399,9 @@ for the full decision table and the five-ticket breakdown.
 - [x] Public `/r/:token` scan route + non-dismissable auth modal, reusing
       `PlaceDetailPage`/`WriteReviewForm` directly rather than a second review UI —
       ticket 03
-- [ ] Business console QR page (view / download PNG / copy link via
+- [x] Business console QR page (view / download PNG / copy link via
       `qrcode.react`, client-side, nothing stored) — ticket 04
-- [ ] Navbar `QrCode` icon, `BUSINESS`-only, left of the existing avatar — ticket 05
+- [x] Navbar `QrCode` icon, `BUSINESS`-only, left of the existing avatar — ticket 05
 
 Deliberately out of this phase: QR locking/unlocking and per-source labeling
 (counter/table/receipt) are both confirmed V2 scope, not even stubbed as inert

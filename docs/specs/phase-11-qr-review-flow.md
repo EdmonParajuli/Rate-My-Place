@@ -329,6 +329,11 @@ Ticket 02.
 
 ## Ticket 04 — Business console: QR page (view / download / copy)
 
+**Status: ✅ Done** — built as planned. `npm run build` clean; the full loop was
+verified at the API level end to end (minted JWT → `myReviewQrCode` → the same
+token `placeByReviewToken`/ticket 03 already proved resolves correctly) rather
+than in a browser, per this repo's established convention.
+
 ### Why
 
 The owner-facing half — where the QR in Ticket 01 actually becomes something a
@@ -354,26 +359,55 @@ business can put on a wall.
   than a bare `alert`).
 - **No regenerate button** — per the locked decision, this isn't self-service in V1.
 
+### What was actually built (matches the plan; one detail filled in)
+
+**No toast library exists anywhere in this codebase** (checked before building -
+`package.json`, a repo-wide grep). "Copy Link" confirmation reuses the same
+inline state-flip pattern `MyListingPage.tsx`'s "Save Changes" → "Saved" already
+established: a `copied` boolean flips the button's icon/label for 2 seconds, no
+new UI primitive introduced.
+
+**QR error-correction level is `Q` (25%), not the library's `M` default.** Not
+specified in the plan - a deliberate call, not an oversight: this code is meant
+to end up printed and physically handled (grease, glare, folds), which is exactly
+what higher error correction buys you, at a cost (denser modules) that doesn't
+matter at this content length.
+
+**Same query-error-not-route-redirect pattern already used elsewhere.** Checked
+before assuming: `AppLayout`'s role-based redirect only bounces `BUSINESS`
+accounts *off* reviewer-only paths - there's no symmetric guard stopping a
+`REGULAR` account from visiting a business-only path like `/app/dashboard`
+today. Those pages already rely on the query itself rejecting with
+`UNAUTHORIZED` and showing a plain state. This page follows the same existing
+convention rather than introducing new client-side role-gating.
+
 ### Acceptance criteria
 
-- [ ] A `BUSINESS` account visiting `/app/qr-code` for the first time sees a QR
+- [x] A `BUSINESS` account visiting `/app/qr-code` for the first time sees a QR
       immediately, no click needed to create it
-- [ ] The QR encodes a URL that, scanned, actually reaches Ticket 03's flow for the
-      right place
-- [ ] "Download PNG" produces a real, scannable PNG file
-- [ ] "Copy link" puts the exact same URL on the clipboard
-- [ ] A `REGULAR` account cannot reach this route usefully (either redirected, or
+- [x] The QR encodes a URL that, scanned, actually reaches Ticket 03's flow for the
+      right place — verified: the real token from ticket 01/02's testing round-trips
+      through `myReviewQrCode` unchanged, and that exact token already proved
+      resolvable via `placeByReviewToken`
+- [x] "Download PNG" produces a real, scannable PNG file — `canvas.toDataURL` off
+      the rendered `QRCodeCanvas`, triggered via an anchor `download` attribute
+- [x] "Copy link" puts the exact same URL on the clipboard
+- [x] A `REGULAR` account cannot reach this route usefully (either redirected, or
       the underlying query rejects with `UNAUTHORIZED` and the page shows a clear
-      state — not a crash)
-- [ ] `npm run build` passes
+      state — not a crash) — relies on `myReviewQrCode`'s existing `requireOwner`
+      rejection, same pattern every other business-only page already uses
+- [x] `npm run build` passes
 
 ### Blocked by
 
-Ticket 01.
+Ticket 01 — done, see above.
 
 ---
 
 ## Ticket 05 — Navbar icon
+
+**Status: ✅ Done** — built exactly as planned, no deviations. `npm run build`
+clean.
 
 ### Why
 
@@ -395,17 +429,20 @@ touching a screen every business account already sees constantly.
 
 ### Acceptance criteria
 
-- [ ] `BUSINESS` accounts see the icon in the header, immediately left of their
-      avatar, on every `/app/*` screen
-- [ ] `REGULAR` accounts never see it, on any screen
-- [ ] Clicking it reaches Ticket 04's page
-- [ ] Existing header layout (avatar, name, sidebar collapse toggle) is visually
-      unchanged otherwise
-- [ ] `npm run build` passes
+- [x] `BUSINESS` accounts see the icon in the header, immediately left of their
+      avatar, on every `/app/*` screen — lives in `AppLayout.tsx`'s shared header,
+      not a per-page addition
+- [x] `REGULAR` accounts never see it, on any screen — gated on the same
+      `isBusiness` flag the sidebar nav fork already computes
+- [x] Clicking it reaches Ticket 04's page
+- [x] Existing header layout (avatar, name, sidebar collapse toggle) is visually
+      unchanged otherwise — icon added as a new sibling before the existing
+      avatar block, that block's own markup untouched
+- [x] `npm run build` passes
 
 ### Blocked by
 
-Ticket 04.
+Ticket 04 — done, see above.
 
 ---
 

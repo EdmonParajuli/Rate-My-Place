@@ -18,6 +18,7 @@ import { PromotionsPage } from "./app/promotions/PromotionsPage"
 import { SettingsPage } from "./app/settings/SettingsPage"
 import { NotificationsPage } from "./app/notifications/NotificationsPage"
 import { ProfilePage } from "./app/profile/ProfilePage"
+import { QrCodePage } from "./app/qrCode/QrCodePage"
 
 export const router = createBrowserRouter([
   {
@@ -55,6 +56,9 @@ export const router = createBrowserRouter([
           { path: "settings", element: <SettingsPage /> },
           { path: "notifications", element: <NotificationsPage /> },
           { path: "profile", element: <ProfilePage /> },
+          // Reached only via the header QR icon (ticket 05), not a sidebar
+          // nav item - see docs/specs/phase-11-qr-review-flow.md, ticket 04.
+          { path: "qr-code", element: <QrCodePage /> },
         ],
       },
     ],

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import {
   Star,
   Search,
@@ -17,6 +17,7 @@ import {
   LogOut,
   Menu,
   X,
+  QrCode,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { UserAvatar } from "@/components/UserAvatar"
@@ -78,6 +79,7 @@ const SCREEN_META: Record<string, { title: string; subtitle: string }> = {
   "/app/settings": { title: "Settings", subtitle: "Manage your account and notification preferences" },
   "/app/notifications": { title: "Notifications", subtitle: "Replies, new reviews, and badges you've earned" },
   "/app/profile": { title: "Profile", subtitle: "Your stats, activity, and badges" },
+  "/app/qr-code": { title: "Review QR Code", subtitle: "Share this so customers can review you in seconds" },
 }
 
 export function AppLayout() {
@@ -252,9 +254,21 @@ export function AppLayout() {
               <p className="mt-0.5 text-xs text-muted-foreground">{meta.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-shrink-0 items-center gap-2 rounded-xl py-1 pr-3 pl-1">
-            <UserAvatar name={displayName} profilePicture={user?.profilePicture ?? null} className="h-7 w-7 rounded-full" />
-            <span className="hidden text-xs font-semibold sm:block">{displayName}</span>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {isBusiness && (
+              <Link
+                to="/app/qr-code"
+                className="flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-primary"
+                title="Review QR code"
+                aria-label="Review QR code"
+              >
+                <QrCode className="h-[18px] w-[18px]" />
+              </Link>
+            )}
+            <div className="flex items-center gap-2 rounded-xl py-1 pr-3 pl-1">
+              <UserAvatar name={displayName} profilePicture={user?.profilePicture ?? null} className="h-7 w-7 rounded-full" />
+              <span className="hidden text-xs font-semibold sm:block">{displayName}</span>
+            </div>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
