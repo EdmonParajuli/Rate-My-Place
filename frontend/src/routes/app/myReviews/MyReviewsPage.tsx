@@ -7,6 +7,7 @@ import {
   useMyBadgesQuery,
 } from "@/lib/graphql/generated/graphql"
 import { deleteDraft, getDrafts, updateDraft, type ReviewDraft } from "@/lib/drafts"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { StatsRow } from "./StatsRow"
 import { BadgeStrip } from "./BadgeStrip"
 import { MostHelpfulBanner } from "./MostHelpfulBanner"
@@ -21,6 +22,11 @@ export function MyReviewsPage() {
   const [editingReviewId, setEditingReviewId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [drafts, setDrafts] = useState<ReviewDraft[]>(() => getDrafts())
+  // Replaces two bare window.confirm() calls (edge case 3.5) - a native
+  // confirm() can't be dismissed through browser-automation tooling and
+  // permanently stuck the tab mid-QA-pass, besides being visually
+  // inconsistent with the rest of the app's confirmation UX.
+  const [pendingDelete, setPendingDelete] = useState<{ type: "review"; id: number } | { type: "draft"; id: string } | null>(null)
 
   const { data, loading, refetch } = useMyReviewsQuery({ variables: { first: 50 } })
   const { data: badgesData } = useMyBadgesQuery()
@@ -47,21 +53,20 @@ export function MyReviewsPage() {
     }
   }
 
-  const handleDelete = async (reviewId: number) => {
-    if (!confirm("Delete your review? This can't be undone.")) return
-    await deleteReview({ variables: { reviewId } })
-    await refetch()
-  }
-
   const handleContinueDraft = (id: string, rating: number, text: string) => {
     updateDraft(id, { rating, text })
     setDrafts(getDrafts())
   }
 
-  const handleDeleteDraft = (id: string) => {
-    if (!confirm("Delete this draft?")) return
-    deleteDraft(id)
-    setDrafts(getDrafts())
+  const confirmPendingDelete = async () => {
+    if (!pendingDelete) return
+    if (pendingDelete.type === "review") {
+      await deleteReview({ variables: { reviewId: pendingDelete.id } })
+      await refetch()
+    } else {
+      deleteDraft(pendingDelete.id)
+      setDrafts(getDrafts())
+    }
   }
 
   return (
@@ -116,7 +121,7 @@ export function MyReviewsPage() {
                 onStartEdit={() => setEditingReviewId(review.id ?? null)}
                 onCancelEdit={() => setEditingReviewId(null)}
                 onSaveEdit={(rating, text) => review.id && handleSaveEdit(review.id, rating, text)}
-                onDelete={() => review.id && handleDelete(review.id)}
+                onDelete={() => review.id && setPendingDelete({ type: "review", id: review.id })}
               />
             ))
           )
@@ -132,11 +137,22 @@ export function MyReviewsPage() {
               key={draft.id}
               draft={draft}
               onContinue={(rating, text) => handleContinueDraft(draft.id, rating, text)}
-              onDelete={() => handleDeleteDraft(draft.id)}
+              onDelete={() => setPendingDelete({ type: "draft", id: draft.id })}
             />
           ))
         )}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title={pendingDelete.type === "review" ? "Delete your review?" : "Delete this draft?"}
+          description={
+            pendingDelete.type === "review" ? "This can't be undone." : "This draft will be permanently removed from this device."
+          }
+          onConfirm={confirmPendingDelete}
+          onClose={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   )
 }

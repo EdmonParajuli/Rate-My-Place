@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/UserAvatar"
 import { SaveHeartButton } from "@/components/SaveHeartButton"
+import { ConfirmDialog } from "@/components/ConfirmDialog"
 import { useAuth } from "@/lib/auth/AuthContext"
 import {
   useGetPlaceByIdQuery,
@@ -77,6 +78,10 @@ export function PlaceDetailPage() {
   // notice, then lands in edit mode - not a silent drop into editing.
   const [showAlreadyReviewedNotice, setShowAlreadyReviewedNotice] = useState(false)
   const hasCheckedExistingReviewRef = useRef(false)
+  // Replaces a bare window.confirm() (edge case 3.5) - undismissable through
+  // browser-automation tooling and inconsistent with the rest of the app's
+  // confirmation UX (see ConfirmDialog).
+  const [pendingDeleteReviewId, setPendingDeleteReviewId] = useState<number | null>(null)
 
   const { data: placeData, loading: placeByIdLoading, refetch: refetchPlaceById } = useGetPlaceByIdQuery({
     variables: { id },
@@ -213,9 +218,9 @@ export function PlaceDetailPage() {
     }
   }
 
-  const handleDeleteReview = async (reviewId: number) => {
-    if (!confirm("Delete your review? This can't be undone.")) return
-    await deleteReview({ variables: { reviewId } })
+  const confirmDeleteReview = async () => {
+    if (!pendingDeleteReviewId) return
+    await deleteReview({ variables: { reviewId: pendingDeleteReviewId } })
     await refetchAll()
   }
 
@@ -466,7 +471,7 @@ export function PlaceDetailPage() {
                     isOwnerViewing={isOwner}
                     ownerName={place.owner?.fullName}
                     onEdit={openEditForm}
-                    onDelete={() => review.id && handleDeleteReview(review.id)}
+                    onDelete={() => review.id && setPendingDeleteReviewId(review.id)}
                     onToggleHelpful={() => review.id && handleToggleHelpful(review.id)}
                     onSubmitReply={(text) => (review.id ? handleSubmitReply(review.id, text) : Promise.resolve())}
                   />
@@ -541,6 +546,14 @@ export function PlaceDetailPage() {
 
     </div>
     {scanAuthModalOpen && <ScanAuthModal placeName={place.label} />}
+    {pendingDeleteReviewId !== null && (
+      <ConfirmDialog
+        title="Delete your review?"
+        description="This can't be undone."
+        onConfirm={confirmDeleteReview}
+        onClose={() => setPendingDeleteReviewId(null)}
+      />
+    )}
     </>
   )
 }
