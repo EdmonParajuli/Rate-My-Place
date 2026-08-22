@@ -3,6 +3,7 @@ import { useListPlacesQuery, useCategoriesQuery, type PlaceSortEnum } from "@/li
 import { useGeolocation } from "./useGeolocation"
 import { DiscoverListView } from "./DiscoverListView"
 import { MapView } from "./MapView"
+import { LocationBlockedModal } from "./LocationBlockedModal"
 import { EMPTY_FILTERS, type DiscoverFilters } from "./filterTypes"
 import type { DiscoverPlace } from "./types"
 
@@ -17,6 +18,7 @@ export function DiscoverPage() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false)
   const [places, setPlaces] = useState<DiscoverPlace[]>([])
   const [loadingMore, setLoadingMore] = useState(false)
+  const [locationBlocked, setLocationBlocked] = useState(false)
   const geo = useGeolocation()
 
   useEffect(() => {
@@ -68,6 +70,19 @@ export function DiscoverPage() {
     }
   }
 
+  // Edge case 3.3: map view is gated on real geolocation, not just a
+  // one-time "auto-fit" attempt - allowing zooms the map to the user's own
+  // location (see MapView); denying blocks the view entirely behind
+  // LocationBlockedModal instead of falling back to a whole-world map.
+  const handleShowMap = async () => {
+    const coords = await geo.request()
+    if (coords) {
+      setView("map")
+    } else {
+      setLocationBlocked(true)
+    }
+  }
+
   const { data: categoriesData } = useCategoriesQuery()
   const categories = (categoriesData?.categories?.data ?? [])
     .filter((c) => c !== null && c.id !== null && c.label !== null)
@@ -89,28 +104,39 @@ export function DiscoverPage() {
         query={filters.query}
         onQueryChange={(query) => setFilters({ ...filters, query })}
         onBackToList={() => setView("list")}
+        userCoords={geo.coords}
       />
     )
   }
 
   return (
-    <DiscoverListView
-      places={places}
-      loading={loading}
-      hasNextPage={pageInfo?.hasNextPage ?? false}
-      loadingMore={loadingMore}
-      onLoadMore={handleLoadMore}
-      sort={sort}
-      onSortChange={handleSortChange}
-      filters={filters}
-      onFiltersChange={setFilters}
-      filterPanelOpen={filterPanelOpen}
-      onToggleFilterPanel={() => setFilterPanelOpen((v) => !v)}
-      categories={categories}
-      geolocationError={geo.error}
-      trendingPlaces={trendingPlaces}
-      newPlaces={newPlaces}
-      onShowMap={() => setView("map")}
-    />
+    <>
+      <DiscoverListView
+        places={places}
+        loading={loading}
+        hasNextPage={pageInfo?.hasNextPage ?? false}
+        loadingMore={loadingMore}
+        onLoadMore={handleLoadMore}
+        sort={sort}
+        onSortChange={handleSortChange}
+        filters={filters}
+        onFiltersChange={setFilters}
+        filterPanelOpen={filterPanelOpen}
+        onToggleFilterPanel={() => setFilterPanelOpen((v) => !v)}
+        categories={categories}
+        geolocationError={geo.error}
+        trendingPlaces={trendingPlaces}
+        newPlaces={newPlaces}
+        onShowMap={handleShowMap}
+      />
+      {locationBlocked && (
+        <LocationBlockedModal
+          retrying={geo.requesting}
+          error={geo.error}
+          onRetry={handleShowMap}
+          onClose={() => setLocationBlocked(false)}
+        />
+      )}
+    </>
   )
 }

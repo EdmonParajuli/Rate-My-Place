@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, CircleMarker, Tooltip } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import { List, Search } from "lucide-react"
@@ -17,7 +17,8 @@ const pinIcon = L.divIcon({
   iconAnchor: [14, 14],
 })
 
-const DEFAULT_CENTER: [number, number] = [40.7128, -74.006] // fallback only - used when no place in the current results has coordinates
+const DEFAULT_CENTER: [number, number] = [40.7128, -74.006] // fallback only - used when userCoords and every place are unavailable
+const USER_LOCATION_ZOOM = 13 // "zoom to the place where they are located" (edge case 3.3), not the whole-place-list average
 
 export function MapView({
   places,
@@ -25,22 +26,30 @@ export function MapView({
   query,
   onQueryChange,
   onBackToList,
+  userCoords,
 }: {
   places: DiscoverPlace[]
   loading: boolean
   query: string
   onQueryChange: (query: string) => void
   onBackToList: () => void
+  userCoords: { latitude: number; longitude: number } | null
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
 
   const withCoords = places.filter(
     (p): p is DiscoverPlace & { latitude: number; longitude: number } => typeof p.latitude === "number" && typeof p.longitude === "number"
   )
-  const center: [number, number] =
-    withCoords.length > 0
+  // DiscoverPage only ever mounts this view after a successful geolocation
+  // request (see handleShowMap), so userCoords is normally always set here;
+  // the place-average/DEFAULT_CENTER fallbacks just guard against that
+  // invariant changing later.
+  const center: [number, number] = userCoords
+    ? [userCoords.latitude, userCoords.longitude]
+    : withCoords.length > 0
       ? [withCoords.reduce((sum, p) => sum + p.latitude, 0) / withCoords.length, withCoords.reduce((sum, p) => sum + p.longitude, 0) / withCoords.length]
       : DEFAULT_CENTER
+  const zoom = userCoords ? USER_LOCATION_ZOOM : withCoords.length > 0 ? 12 : 3
 
   return (
     <div className="p-4 md:p-6">
@@ -73,11 +82,22 @@ export function MapView({
         </div>
 
         <div className="relative hidden flex-1 lg:block">
-          <MapContainer center={center} zoom={withCoords.length > 0 ? 12 : 3} className="h-full w-full" scrollWheelZoom>
+          <MapContainer center={center} zoom={zoom} className="h-full w-full" scrollWheelZoom>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            {userCoords && (
+              <CircleMarker
+                center={[userCoords.latitude, userCoords.longitude]}
+                radius={8}
+                pathOptions={{ color: "white", weight: 3, fillColor: "#2563EB", fillOpacity: 1 }}
+              >
+                <Tooltip direction="top" offset={[0, -10]}>
+                  Your location
+                </Tooltip>
+              </CircleMarker>
+            )}
             {withCoords.map((place) => (
               <Marker key={place.id} position={[place.latitude, place.longitude]} icon={pinIcon} eventHandlers={{ mouseover: () => setHoveredId(place.id ?? null), mouseout: () => setHoveredId(null) }}>
                 <Tooltip direction="top" offset={[0, -16]}>
