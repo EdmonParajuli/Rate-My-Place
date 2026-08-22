@@ -239,7 +239,14 @@ export function MyListingPage() {
                   <label className="mb-1.5 block text-sm font-semibold text-slate-700">Phone</label>
                   <div className="relative">
                     <Phone className="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input className={`${fieldClass} pl-9`} value={form.phone} onChange={(e) => patchForm({ phone: e.target.value })} placeholder="+15035550182" />
+                    <input
+                      className={`${fieldClass} pl-9`}
+                      type="tel"
+                      autoComplete="tel"
+                      value={form.phone}
+                      onChange={(e) => patchForm({ phone: e.target.value })}
+                      placeholder="+15035550182"
+                    />
                   </div>
                 </div>
                 <div>

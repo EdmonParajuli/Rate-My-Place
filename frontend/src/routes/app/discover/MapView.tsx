@@ -81,7 +81,13 @@ export function MapView({
           </div>
         </div>
 
-        <div className="relative hidden flex-1 lg:block">
+        {/* isolate: Leaflet's internal panes/zoom-control z-indexes (up to
+            1000, see leaflet.css) aren't contained to this component without
+            it, and can render above other page UI with a lower z-index -
+            the same real bug found in the signup wizard's LocationPicker,
+            whose map was hiding an open Select dropdown. Nothing on this
+            page currently overlaps the map, but this keeps it that way. */}
+        <div className="relative isolate hidden flex-1 lg:block">
           <MapContainer center={center} zoom={zoom} className="h-full w-full" scrollWheelZoom>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

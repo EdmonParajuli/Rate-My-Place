@@ -142,7 +142,7 @@ export function SignUpForm({
                   <SelectTrigger id="biz-category" className="w-full">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     {categoriesData?.categories?.data?.filter(Boolean).map((category) => (
                       <SelectItem key={category!.id!} value={String(category!.id)}>
                         {category!.label}
@@ -188,7 +188,7 @@ export function SignUpForm({
             <Label htmlFor="biz-phone" className="mb-1 text-xs font-semibold text-slate-600">
               Phone
             </Label>
-            <Input id="biz-phone" placeholder="+1 555 123 4567" {...businessForm.register("phone")} />
+            <Input id="biz-phone" type="tel" autoComplete="tel" placeholder="+1 555 123 4567" {...businessForm.register("phone")} />
             {businessForm.formState.errors.phone && (
               <p className="mt-1 text-xs text-destructive">{businessForm.formState.errors.phone.message}</p>
             )}
@@ -211,7 +211,7 @@ export function SignUpForm({
                   <SelectTrigger id="biz-price" className="w-full">
                     <SelectValue placeholder="Select a price range" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper">
                     <SelectItem value="LOW">$</SelectItem>
                     <SelectItem value="MEDIUM">$$</SelectItem>
                     <SelectItem value="HIGH">$$$</SelectItem>
