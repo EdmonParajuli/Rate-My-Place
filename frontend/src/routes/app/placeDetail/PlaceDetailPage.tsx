@@ -232,8 +232,16 @@ export function PlaceDetailPage() {
   const sortedHours = place.hours ? sortByDay(place.hours.filter((h) => h !== null)) : []
   const priceSymbol = place.priceRange ? PRICE_SYMBOL[place.priceRange] : null
 
+  const scanAuthModalOpen = isTokenEntry && !user
+
   return (
-    <div>
+    <>
+    {/* Marked inert while ScanAuthModal is up (edge case 3.2) - the overlay
+        already blocks mouse interaction, but without this a keyboard/screen-
+        reader user could Tab or virtual-cursor straight through it into the
+        dimmed review form underneath. ScanAuthModal itself renders as a
+        sibling below, outside this wrapper, so it's never made inert. */}
+    <div inert={scanAuthModalOpen}>
       <div className="relative flex h-64 items-center justify-center overflow-hidden bg-[repeating-linear-gradient(45deg,#F1F5F9,#F1F5F9_10px,#E2E8F0_10px,#E2E8F0_20px)] text-slate-400">
         {place.coverPhotoUrl ? (
           <img src={place.coverPhotoUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
@@ -531,7 +539,8 @@ export function PlaceDetailPage() {
         </div>
       </div>
 
-      {isTokenEntry && !user && <ScanAuthModal placeName={place.label} />}
     </div>
+    {scanAuthModalOpen && <ScanAuthModal placeName={place.label} />}
+    </>
   )
 }

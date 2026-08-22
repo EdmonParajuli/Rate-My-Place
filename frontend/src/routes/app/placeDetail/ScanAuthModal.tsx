@@ -1,9 +1,12 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Star } from "lucide-react"
 import { SignInForm } from "@/routes/auth/SignInForm"
 import { SignUpForm } from "@/routes/auth/SignUpForm"
 
 type Tab = "signin" | "signup"
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 // The QR scan flow's mandatory auth gate (docs/specs/phase-11-qr-review-flow.md,
 // ticket 03, Q7's decision): the customer lands directly on the real review
@@ -16,6 +19,46 @@ type Tab = "signin" | "signup"
 // actually clears this modal, via the caller's own render condition.
 export function ScanAuthModal({ placeName }: { placeName: string | null | undefined }) {
   const [tab, setTab] = useState<Tab>("signin")
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  // Edge case 3.2: the backdrop blocks mouse interaction, but a keyboard or
+  // screen-reader user could otherwise Tab straight through it into the
+  // dimmed review form underneath. The page marks its own content `inert`
+  // while this is mounted (see PlaceDetailPage), which handles screen-reader
+  // virtual-cursor navigation; this effect additionally traps Tab/Shift+Tab
+  // inside the panel and moves initial focus into it, since wrap-around
+  // behavior at the start/end of the tab order otherwise falls to the
+  // browser rather than looping back into the modal.
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    panelRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const panel = panelRef.current
+      if (event.key !== "Tab" || !panel) return
+      const focusable = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement as HTMLElement | null
+
+      if (!active || !panel.contains(active)) {
+        event.preventDefault()
+        ;(event.shiftKey ? last : first).focus()
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      previouslyFocused?.focus?.()
+    }
+  }, [])
 
   return (
     <div
@@ -24,7 +67,7 @@ export function ScanAuthModal({ placeName }: { placeName: string | null | undefi
       aria-modal="true"
       aria-label={`Sign in to review ${placeName ?? "this place"}`}
     >
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+      <div ref={panelRef} className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
         <div className="mb-5 flex items-center gap-2">
           <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-primary">
             <Star className="h-4 w-4 fill-white text-white" />
