@@ -40,6 +40,7 @@ export interface BusinessDashboardComputed {
   reviewCountTrend: number;
   responseRate: number;
   responseRateTrend: number;
+  pendingReplyCount: number;
   ratingTrend: MonthlyRatingPoint[];
   reviewVolume: MonthlyVolumePoint[];
   sentiment: SentimentBreakdown;
@@ -83,10 +84,11 @@ function snapshotAsOf(reviews: DashboardReviewRow[], replies: DashboardReplyRow[
   const reviewCount = reviewsSoFar.length;
   const averageRating = average(reviewsSoFar.map((r) => r.rating));
   const responseRate = reviewCount === 0 ? 0 : (repliedCount / reviewCount) * 100;
+  const pendingReplyCount = reviewCount - repliedCount;
   const recentCount = reviewsSoFar.filter((r) => daysBetween(r.createdAt, asOf) <= RECENCY_WINDOW_DAYS).length;
   const reputationScore = computeReputationScore({ averageRating, reviewCount, responseRate, recentCount });
 
-  return { reviewCount, averageRating, responseRate, reputationScore };
+  return { reviewCount, averageRating, responseRate, pendingReplyCount, reputationScore };
 }
 
 // Weighted composite, 0-100: rating (55%) + review-volume confidence (20%,
@@ -229,6 +231,12 @@ export function computeDashboardStats(
     reviewCountTrend: live.reviewCount - prior.reviewCount,
     responseRate: round(live.responseRate, 0),
     responseRateTrend: round(live.responseRate - prior.responseRate, 0),
+    // Not derived from responseRate (already rounded to a whole percent) -
+    // computed directly from the same reviewCount/repliedCount snapshot so
+    // it's exact, not a rounding-error-prone inverse. Lets the frontend show
+    // an accurate "Awaiting Reply" count without fetching every review to
+    // count it client-side (see BusinessReviewsPage's cursor pagination).
+    pendingReplyCount: live.pendingReplyCount,
     ratingTrend,
     reviewVolume,
     sentiment,

@@ -73,6 +73,7 @@ export type BusinessDashboardStats = {
   averageRating?: Maybe<Scalars['Float']['output']>;
   averageRatingTrend?: Maybe<Scalars['Float']['output']>;
   insights?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  pendingReplyCount?: Maybe<Scalars['Int']['output']>;
   placeId?: Maybe<Scalars['Int']['output']>;
   placeName?: Maybe<Scalars['String']['output']>;
   ratingTrend?: Maybe<Array<Maybe<MonthlyRatingPoint>>>;
@@ -918,7 +919,7 @@ export type ChangePasswordMutation = { __typename?: 'Mutation', changePassword?:
 export type BusinessDashboardQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type BusinessDashboardQuery = { __typename?: 'Query', businessDashboard?: { __typename?: 'BusinessDashboardResponse', data?: { __typename?: 'BusinessDashboardStats', placeId?: number | null, placeName?: string | null, reputationScore?: number | null, reputationScoreTrend?: number | null, averageRating?: number | null, averageRatingTrend?: number | null, reviewCount?: number | null, reviewCountTrend?: number | null, responseRate?: number | null, responseRateTrend?: number | null, insights?: Array<string | null> | null, ratingTrend?: Array<{ __typename?: 'MonthlyRatingPoint', month?: string | null, averageRating?: number | null } | null> | null, reviewVolume?: Array<{ __typename?: 'MonthlyVolumePoint', month?: string | null, reviewCount?: number | null } | null> | null, sentiment?: { __typename?: 'SentimentBreakdown', positivePercent?: number | null, neutralPercent?: number | null, negativePercent?: number | null } | null } | null } | null };
+export type BusinessDashboardQuery = { __typename?: 'Query', businessDashboard?: { __typename?: 'BusinessDashboardResponse', data?: { __typename?: 'BusinessDashboardStats', placeId?: number | null, placeName?: string | null, reputationScore?: number | null, reputationScoreTrend?: number | null, averageRating?: number | null, averageRatingTrend?: number | null, reviewCount?: number | null, reviewCountTrend?: number | null, responseRate?: number | null, responseRateTrend?: number | null, pendingReplyCount?: number | null, insights?: Array<string | null> | null, ratingTrend?: Array<{ __typename?: 'MonthlyRatingPoint', month?: string | null, averageRating?: number | null } | null> | null, reviewVolume?: Array<{ __typename?: 'MonthlyVolumePoint', month?: string | null, reviewCount?: number | null } | null> | null, sentiment?: { __typename?: 'SentimentBreakdown', positivePercent?: number | null, neutralPercent?: number | null, negativePercent?: number | null } | null } | null } | null };
 
 export type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1546,6 +1547,7 @@ export const BusinessDashboardDocument = gql`
       reviewCountTrend
       responseRate
       responseRateTrend
+      pendingReplyCount
       ratingTrend {
         month
         averageRating

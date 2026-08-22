@@ -1,36 +1,53 @@
-import { useState } from "react"
-import { ChevronDown, ChevronLeft, ChevronRight, Clock, MessageSquare, Star } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ChevronDown, Clock, MessageSquare, Star } from "lucide-react"
 import { useAuth } from "@/lib/auth/AuthContext"
 import { useBusinessDashboardQuery, useCreateReviewReplyMutation, usePlaceReviewsQuery } from "@/lib/graphql/generated/graphql"
 import { ReviewCard } from "../placeDetail/ReviewCard"
 import type { PlaceReview } from "../placeDetail/types"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 export function BusinessReviewsPage() {
   const { user } = useAuth()
   const [filter, setFilter] = useState<"all" | "needs">("all")
   const [sort, setSort] = useState<"RECENT" | "HELPFUL">("RECENT")
-  const [page, setPage] = useState(1)
+  const [reviews, setReviews] = useState<PlaceReview[]>([])
+  const [loadingMore, setLoadingMore] = useState(false)
 
   const { data: dashboardData, loading: dashboardLoading } = useBusinessDashboardQuery()
   const stats = dashboardData?.businessDashboard?.data
 
-  // first: 50, not 1000 - placeReviews selects reviewer/reply (each
-  // @complexity(2)) per row, and the query-complexity plugin multiplies a
-  // field's whole subtree by `first` (multipliers: ["first"] on
-  // placeReviews itself). 1000 always failed with "Query is too complex:
-  // 21000. Maximum allowed complexity: 2000" - a real HTTP 500 (the plugin
-  // throws from didResolveOperation, outside resolver execution, so it
-  // never gets the normal try/catch -> clean-response treatment every
-  // resolver's own throwError does), which silently emptied this whole
-  // page for any business with reviews. 50 stays comfortably under the
-  // limit (~1050) with headroom for future fields.
-  const { data: reviewsData, refetch } = usePlaceReviewsQuery({
-    variables: { placeId: stats?.placeId ?? 0, first: 50, sort },
+  // Genuine server-side cursor pagination (edge case 3.6), not a bigger
+  // fixed `first`. Bug 1's fix (first: 1000 -> first: 50) was only a
+  // mitigation - fetch-all-then-paginate-client-side still hits the same
+  // query-complexity ceiling once any business passes ~90 reviews, no
+  // matter which fixed number is chosen. This fetches one modest page at a
+  // time and appends via `after` (the same fetchMore/pageInfo shape
+  // DiscoverPage already uses for "Load more"), so the request size never
+  // grows with how many reviews a business has.
+  const { data: reviewsData, fetchMore, refetch } = usePlaceReviewsQuery({
+    variables: { placeId: stats?.placeId ?? 0, first: PAGE_SIZE, sort },
     skip: !stats?.placeId,
   })
-  const reviews = (reviewsData?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null)
+
+  useEffect(() => {
+    setReviews((reviewsData?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewsData])
+
+  const pageInfo = reviewsData?.placeReviews?.pageInfo
+
+  const handleLoadMore = async () => {
+    if (!pageInfo?.endCursor) return
+    setLoadingMore(true)
+    try {
+      const result = await fetchMore({ variables: { after: pageInfo.endCursor } })
+      const nextReviews = (result.data?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null)
+      setReviews((prev) => [...prev, ...nextReviews])
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const [createReviewReply] = useCreateReviewReplyMutation()
 
@@ -51,10 +68,13 @@ export function BusinessReviewsPage() {
     )
   }
 
-  const needsReply = reviews.filter((r) => !r.reply)
-  const filtered = filter === "needs" ? needsReply : reviews
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  // Sourced from the dashboard's own reviewCount/repliedCount snapshot
+  // (computeDashboardStats), not derived from `reviews` - `reviews` is only
+  // whatever's been loaded so far via Load More, so counting through it
+  // would undercount exactly like Bug 1 did once a business has more
+  // reviews than one page.
+  const pendingReplyCount = stats.pendingReplyCount ?? 0
+  const filtered = filter === "needs" ? reviews.filter((r) => !r.reply) : reviews
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-12">
@@ -77,9 +97,9 @@ export function BusinessReviewsPage() {
           icon={Clock}
           iconBgClass="bg-rose-50"
           iconColorClass="text-rose-500"
-          value={String(needsReply.length)}
+          value={String(pendingReplyCount)}
           label="Awaiting Reply"
-          highlight={needsReply.length > 0}
+          highlight={pendingReplyCount > 0}
         />
       </div>
 
@@ -88,10 +108,7 @@ export function BusinessReviewsPage() {
           {(["all", "needs"] as const).map((f) => (
             <button
               key={f}
-              onClick={() => {
-                setFilter(f)
-                setPage(1)
-              }}
+              onClick={() => setFilter(f)}
               className={`cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 filter === f ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
               }`}
@@ -101,7 +118,7 @@ export function BusinessReviewsPage() {
               ) : (
                 <>
                   Needs Response
-                  {needsReply.length > 0 && <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">{needsReply.length}</span>}
+                  {pendingReplyCount > 0 && <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[10px] text-white">{pendingReplyCount}</span>}
                 </>
               )}
             </button>
@@ -112,10 +129,7 @@ export function BusinessReviewsPage() {
           <select
             className="appearance-none rounded-xl border border-border bg-white px-4 py-2 pr-9 text-sm font-medium text-slate-700 shadow-sm outline-none focus:border-primary"
             value={sort}
-            onChange={(e) => {
-              setSort(e.target.value as "RECENT" | "HELPFUL")
-              setPage(1)
-            }}
+            onChange={(e) => setSort(e.target.value as "RECENT" | "HELPFUL")}
           >
             <option value="RECENT">Most Recent</option>
             <option value="HELPFUL">Most Helpful</option>
@@ -124,17 +138,32 @@ export function BusinessReviewsPage() {
         </div>
       </div>
 
-      {paged.length === 0 ? (
-        <div className="rounded-2xl border border-border bg-card p-14 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-            <MessageSquare className="h-6 w-6 text-emerald-500" />
+      {filtered.length === 0 ? (
+        filter === "needs" && pendingReplyCount > 0 ? (
+          // The loaded batch (sorted by RECENT/HELPFUL, not "unreplied
+          // first") just doesn't happen to contain any of the
+          // pendingReplyCount reviews still awaiting a reply - they're
+          // further back. Distinct from the real "All caught up!" state
+          // below, which would otherwise be shown falsely here.
+          <div className="rounded-2xl border border-border bg-card p-14 text-center">
+            <p className="font-bold text-slate-900">None of these are awaiting a reply</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {pendingReplyCount} review{pendingReplyCount === 1 ? "" : "s"} still {pendingReplyCount === 1 ? "needs" : "need"} a reply further back —
+              load more to find {pendingReplyCount === 1 ? "it" : "them"}.
+            </p>
           </div>
-          <p className="font-bold text-slate-900">All caught up!</p>
-          <p className="mt-1 text-sm text-slate-500">Every review has been replied to. Great work.</p>
-        </div>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card p-14 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+              <MessageSquare className="h-6 w-6 text-emerald-500" />
+            </div>
+            <p className="font-bold text-slate-900">All caught up!</p>
+            <p className="mt-1 text-sm text-slate-500">Every review has been replied to. Great work.</p>
+          </div>
+        )
       ) : (
         <div className="divide-y divide-border rounded-2xl border border-border bg-card">
-          {paged.map((review) => (
+          {filtered.map((review) => (
             <ReviewCard
               key={review.id}
               review={review}
@@ -150,40 +179,20 @@ export function BusinessReviewsPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-slate-500">
-            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="cursor-pointer rounded-xl border border-border p-2 text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                onClick={() => setPage(n)}
-                className={`h-9 w-9 cursor-pointer rounded-xl text-sm font-semibold transition-all ${
-                  n === page ? "bg-primary text-primary-foreground shadow-md shadow-blue-200" : "border border-border text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="cursor-pointer rounded-xl border border-border p-2 text-slate-500 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="flex flex-col items-center gap-2 pt-2">
+        <p className="text-xs text-muted-foreground">
+          {reviews.length} of {stats.reviewCount ?? reviews.length} reviews loaded
+        </p>
+        {pageInfo?.hasNextPage && (
+          <button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="cursor-pointer rounded-xl border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loadingMore ? "Loading..." : "Load more"}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

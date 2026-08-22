@@ -31,6 +31,7 @@ export const businessDashboardTypedefs: DocumentNode = gql`
         reviewCountTrend: Int
         responseRate: Float
         responseRateTrend: Float
+        pendingReplyCount: Int
         ratingTrend: [MonthlyRatingPoint]
         reviewVolume: [MonthlyVolumePoint]
         sentiment: SentimentBreakdown

@@ -11,6 +11,7 @@ query BusinessDashboard {
       reviewCountTrend
       responseRate
       responseRateTrend
+      pendingReplyCount
       ratingTrend {
         month
         averageRating
