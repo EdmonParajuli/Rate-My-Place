@@ -25,10 +25,23 @@ type UserTypeChoice = "REGULAR" | "BUSINESS"
 // steps. See docs/03-architecture.md's signUpBusiness section.
 // onSuccess: same reasoning as SignInForm's - lets the QR scan flow's auth
 // modal (ticket 03) reuse this form without navigating away.
-export function SignUpForm({ initialUserType, onSuccess }: { initialUserType?: UserTypeChoice; onSuccess?: () => void }) {
+// restrictToRegular: the QR scan modal's resolution of edge case 3.1 - a
+// scanner is here to review a specific place, not create one, so the
+// Reviewer/Business owner choice is hidden entirely and userType is locked
+// to REGULAR (never just pre-selected, since the picker would otherwise
+// still let them switch to the business wizard mid-modal).
+export function SignUpForm({
+  initialUserType,
+  onSuccess,
+  restrictToRegular,
+}: {
+  initialUserType?: UserTypeChoice
+  onSuccess?: () => void
+  restrictToRegular?: boolean
+}) {
   const { signUp, signUpBusiness } = useAuth()
   const navigate = useNavigate()
-  const [userType, setUserType] = useState<UserTypeChoice>(initialUserType ?? "REGULAR")
+  const [userType, setUserType] = useState<UserTypeChoice>(restrictToRegular ? "REGULAR" : (initialUserType ?? "REGULAR"))
   const [step, setStep] = useState<1 | 2>(1)
   const [accountValues, setAccountValues] = useState<SignUpAccountValues | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
@@ -190,25 +203,29 @@ export function SignUpForm({ initialUserType, onSuccess }: { initialUserType?: U
   return (
     <div>
       <h2 className="mb-1 text-2xl font-bold">Create your account</h2>
-      <p className="mb-6 text-sm text-slate-500">Start reviewing or list your place.</p>
-      <div className="mb-5 grid grid-cols-2 gap-3">
-        <TypeCard
-          active={userType === "REGULAR"}
-          color="blue"
-          icon={<User className="h-5 w-5" />}
-          title="Reviewer"
-          description="Discover & review places"
-          onClick={() => setUserType("REGULAR")}
-        />
-        <TypeCard
-          active={userType === "BUSINESS"}
-          color="emerald"
-          icon={<Building2 className="h-5 w-5" />}
-          title="Business owner"
-          description="List & manage your place"
-          onClick={() => setUserType("BUSINESS")}
-        />
-      </div>
+      <p className="mb-6 text-sm text-slate-500">
+        {restrictToRegular ? "Create an account to review this place." : "Start reviewing or list your place."}
+      </p>
+      {!restrictToRegular && (
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <TypeCard
+            active={userType === "REGULAR"}
+            color="blue"
+            icon={<User className="h-5 w-5" />}
+            title="Reviewer"
+            description="Discover & review places"
+            onClick={() => setUserType("REGULAR")}
+          />
+          <TypeCard
+            active={userType === "BUSINESS"}
+            color="emerald"
+            icon={<Building2 className="h-5 w-5" />}
+            title="Business owner"
+            description="List & manage your place"
+            onClick={() => setUserType("BUSINESS")}
+          />
+        </div>
+      )}
       <form className="space-y-4" onSubmit={accountForm.handleSubmit(onAccountSubmit)} noValidate>
         <div>
           <Label htmlFor="signup-name" className="mb-1 text-xs font-semibold text-slate-600">

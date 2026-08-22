@@ -16,8 +16,18 @@ export function BusinessReviewsPage() {
   const { data: dashboardData, loading: dashboardLoading } = useBusinessDashboardQuery()
   const stats = dashboardData?.businessDashboard?.data
 
+  // first: 50, not 1000 - placeReviews selects reviewer/reply (each
+  // @complexity(2)) per row, and the query-complexity plugin multiplies a
+  // field's whole subtree by `first` (multipliers: ["first"] on
+  // placeReviews itself). 1000 always failed with "Query is too complex:
+  // 21000. Maximum allowed complexity: 2000" - a real HTTP 500 (the plugin
+  // throws from didResolveOperation, outside resolver execution, so it
+  // never gets the normal try/catch -> clean-response treatment every
+  // resolver's own throwError does), which silently emptied this whole
+  // page for any business with reviews. 50 stays comfortably under the
+  // limit (~1050) with headroom for future fields.
   const { data: reviewsData, refetch } = usePlaceReviewsQuery({
-    variables: { placeId: stats?.placeId ?? 0, first: 1000, sort },
+    variables: { placeId: stats?.placeId ?? 0, first: 50, sort },
     skip: !stats?.placeId,
   })
   const reviews = (reviewsData?.placeReviews?.data ?? []).filter((r): r is PlaceReview => r !== null)

@@ -397,6 +397,19 @@ export function PlaceDetailPage() {
                 </div>
               )}
               <WriteReviewForm
+                // Forces a remount when what we're editing changes identity -
+                // WriteReviewForm seeds its rating/text via useState(initial...)
+                // only once per mount. On the normal /app/places/:id flow that's
+                // never an issue (editingReviewId is already set before this
+                // component ever mounts, via openEditForm's synchronous state
+                // update). On the QR scan entry, writeFormOpen starts true on
+                // the very first render, before reviews have loaded - so this
+                // mounts once with editingReview still undefined, then Q8's
+                // auto-open effect sets editingReviewId asynchronously once the
+                // data arrives. Without this key, the already-mounted form
+                // never picks up the real initialRating/initialText and stays
+                // blank despite reviewId being correctly wired underneath.
+                key={editingReview?.id ?? "new"}
                 placeName={place.label}
                 initialRating={editingReview?.rating ?? undefined}
                 initialText={editingReview?.review ?? undefined}

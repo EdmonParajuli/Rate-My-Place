@@ -55,7 +55,7 @@ export function ScanAuthModal({ placeName }: { placeName: string | null | undefi
           </button>
         </div>
 
-        {tab === "signin" ? <SignInForm onSuccess={() => {}} /> : <SignUpForm onSuccess={() => {}} />}
+        {tab === "signin" ? <SignInForm onSuccess={() => {}} /> : <SignUpForm onSuccess={() => {}} restrictToRegular />}
       </div>
     </div>
   )
