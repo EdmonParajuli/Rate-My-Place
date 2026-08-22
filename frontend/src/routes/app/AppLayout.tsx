@@ -269,6 +269,15 @@ export function AppLayout() {
               <UserAvatar name={displayName} profilePicture={user?.profilePicture ?? null} className="h-7 w-7 rounded-full" />
               <span className="hidden text-xs font-semibold sm:block">{displayName}</span>
             </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-red-50 hover:text-destructive"
+              title="Log out"
+              aria-label="Log out"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+            </button>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
