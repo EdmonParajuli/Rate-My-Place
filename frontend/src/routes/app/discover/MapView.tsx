@@ -1,24 +1,41 @@
-import { useState } from "react"
-import { MapContainer, TileLayer, Marker, CircleMarker, Tooltip } from "react-leaflet"
+import { useEffect, useState } from "react"
+import { MapContainer, TileLayer, Marker, CircleMarker, Tooltip, useMap } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import { List, Search } from "lucide-react"
+import { List, Search, X } from "lucide-react"
 import { PlaceListRow } from "./PlaceListRow"
+import { PlaceCard } from "./PlaceCard"
 import type { DiscoverPlace } from "./types"
 
 // Custom divIcon, not Leaflet's default marker - the default marker image
 // paths don't resolve correctly under Vite's bundling (a well-known Leaflet
-// gotcha), and a plain colored pin matches the design better than the
-// generic default anyway.
+// gotcha). A red teardrop pin (classic map-marker shape) reads as "location"
+// more clearly than a plain circle - anchored at its bottom tip, not its
+// center, since that's the point that marks the actual coordinate.
 const pinIcon = L.divIcon({
   className: "",
-  html: `<div style="width:28px;height:28px;border-radius:9999px;background:#2563EB;border:2px solid white;box-shadow:0 2px 6px rgba(15,23,42,0.35);"></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
+  html: `<svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(15,23,42,0.4));">
+    <path d="M15 0C6.716 0 0 6.716 0 15c0 10.5 15 25 15 25s15-14.5 15-25C30 6.716 23.284 0 15 0Z" fill="#DC2626" stroke="white" stroke-width="2"/>
+    <circle cx="15" cy="15" r="5.5" fill="white"/>
+  </svg>`,
+  iconSize: [30, 40],
+  iconAnchor: [15, 40],
 })
 
 const DEFAULT_CENTER: [number, number] = [40.7128, -74.006] // fallback only - used when userCoords and every place are unavailable
 const USER_LOCATION_ZOOM = 13 // "zoom to the place where they are located" (edge case 3.3), not the whole-place-list average
+const SELECTED_PLACE_ZOOM = 15 // close enough to pinpoint one place, not just its neighborhood
+
+// Recenters/zooms the already-mounted map whenever a place gets selected
+// (from the sidebar list or a marker click), without remounting MapContainer.
+function FlyToSelected({ place }: { place: DiscoverPlace | null }) {
+  const map = useMap()
+  useEffect(() => {
+    if (!place || typeof place.latitude !== "number" || typeof place.longitude !== "number") return
+    map.flyTo([place.latitude, place.longitude], Math.max(map.getZoom(), SELECTED_PLACE_ZOOM), { duration: 0.75 })
+  }, [place, map])
+  return null
+}
 
 export function MapView({
   places,
@@ -36,6 +53,7 @@ export function MapView({
   userCoords: { latitude: number; longitude: number } | null
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
+  const [selectedPlace, setSelectedPlace] = useState<DiscoverPlace | null>(null)
 
   const withCoords = places.filter(
     (p): p is DiscoverPlace & { latitude: number; longitude: number } => typeof p.latitude === "number" && typeof p.longitude === "number"
@@ -76,7 +94,15 @@ export function MapView({
                 <p className="mt-1 text-xs text-muted-foreground">Try adjusting your search or filters</p>
               </div>
             ) : (
-              places.map((place) => <PlaceListRow key={place.id} place={place} active={hoveredId === place.id} onHover={setHoveredId} />)
+              places.map((place) => (
+                <PlaceListRow
+                  key={place.id}
+                  place={place}
+                  active={hoveredId === place.id || selectedPlace?.id === place.id}
+                  onHover={setHoveredId}
+                  onSelect={setSelectedPlace}
+                />
+              ))
             )}
           </div>
         </div>
@@ -105,12 +131,22 @@ export function MapView({
               </CircleMarker>
             )}
             {withCoords.map((place) => (
-              <Marker key={place.id} position={[place.latitude, place.longitude]} icon={pinIcon} eventHandlers={{ mouseover: () => setHoveredId(place.id ?? null), mouseout: () => setHoveredId(null) }}>
-                <Tooltip direction="top" offset={[0, -16]}>
+              <Marker
+                key={place.id}
+                position={[place.latitude, place.longitude]}
+                icon={pinIcon}
+                eventHandlers={{
+                  click: () => setSelectedPlace(place),
+                  mouseover: () => setHoveredId(place.id ?? null),
+                  mouseout: () => setHoveredId(null),
+                }}
+              >
+                <Tooltip direction="top" offset={[0, -40]}>
                   {place.label}
                 </Tooltip>
               </Marker>
             ))}
+            <FlyToSelected place={selectedPlace} />
           </MapContainer>
           <button
             type="button"
@@ -119,6 +155,21 @@ export function MapView({
           >
             <List className="h-4 w-4" /> Back to list
           </button>
+          {selectedPlace && (
+            <div className="absolute bottom-4 left-4 z-[1000] w-[300px]">
+              <div className="mb-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlace(null)}
+                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white text-slate-500 shadow-lg transition-colors hover:text-slate-700"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <PlaceCard place={selectedPlace} compact />
+            </div>
+          )}
         </div>
       </div>
     </div>
