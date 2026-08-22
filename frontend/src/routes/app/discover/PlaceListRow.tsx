@@ -15,8 +15,14 @@ export function PlaceListRow({ place, active, onHover }: { place: DiscoverPlace;
       onMouseLeave={() => onHover(null)}
       className={`flex gap-3 rounded-xl p-2 transition-colors ${active ? "bg-slate-100" : "hover:bg-slate-50"}`}
     >
-      <div className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}>
-        <MapPin className="h-5 w-5 text-white/70" />
+      <div
+        className={`flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br ${style?.gradient ?? "from-slate-300 to-slate-400"}`}
+      >
+        {place.profilePicture ? (
+          <img src={place.profilePicture} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <MapPin className="h-5 w-5 text-white/70" />
+        )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
