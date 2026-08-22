@@ -53,6 +53,12 @@ export function DiscoverListView({
     Boolean
   ).length
 
+  // Places already surfaced in the Trending/New strips below shouldn't also
+  // show in the main grid - same place, same page, twice reads like a data
+  // bug even though it isn't one.
+  const highlightedIds = new Set([...trendingPlaces, ...newPlaces].map((p) => p.id))
+  const gridPlaces = places.filter((p) => !highlightedIds.has(p.id))
+
   return (
     <div>
       <div className="m-4 mb-0 rounded-3xl bg-gradient-to-r from-blue-950 to-slate-900 px-6 py-8 md:m-6 md:mb-0">
@@ -110,7 +116,7 @@ export function DiscoverListView({
         <section>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-extrabold">{isFiltered ? `Results (${places.length})` : "All Places"}</h2>
+              <h2 className="text-base font-extrabold">{isFiltered ? `Results (${gridPlaces.length})` : "All Places"}</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">Sorted by: {SORTS.find((s) => s.value === sort)?.label}</p>
             </div>
             <button
@@ -124,7 +130,7 @@ export function DiscoverListView({
 
           {loading && places.length === 0 ? (
             <p className="py-16 text-center text-sm text-muted-foreground">Loading places...</p>
-          ) : places.length === 0 ? (
+          ) : gridPlaces.length === 0 && !hasNextPage ? (
             <div className="py-16 text-center">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
                 <Search className="h-8 w-8 text-slate-300" />
@@ -135,7 +141,7 @@ export function DiscoverListView({
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {places.map((place) => (
+                {gridPlaces.map((place) => (
                   <PlaceCard key={place.id} place={place} />
                 ))}
               </div>
