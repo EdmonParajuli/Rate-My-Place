@@ -2,8 +2,11 @@ import { useState } from "react"
 
 type Coords = { latitude: number; longitude: number }
 
-// No reverse-geocoding exists (no "Brooklyn, NY"-style location pill) - this
-// only ever feeds listPlaces' `near` argument for the NEAREST sort.
+// Shared browser-geolocation wrapper - used by Discover's map view (the
+// NEAREST sort and the "See in map" allow/deny gate) and the business
+// signup wizard's location picker (centering the create-a-place map on the
+// owner's own position). No reverse-geocoding exists anywhere (no "Brooklyn,
+// NY"-style pill) - callers only ever get/consume raw coordinates.
 export function useGeolocation() {
   const [coords, setCoords] = useState<Coords | null>(null)
   const [error, setError] = useState<string | null>(null)

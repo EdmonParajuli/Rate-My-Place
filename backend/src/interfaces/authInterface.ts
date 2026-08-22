@@ -24,6 +24,8 @@ export interface InputSignUpBusinessInterface {
     website?: string,
     categoryId: number,
     priceRange?: PriceRangeEnum,
+    latitude?: number,
+    longitude?: number,
 }
 
 export interface SignUpBusinessResponseInterface {

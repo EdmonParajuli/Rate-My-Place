@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/lib/auth/AuthContext"
 import { useCategoriesQuery } from "@/lib/graphql/generated/graphql"
 import { signUpAccountSchema, businessDetailsSchema, type SignUpAccountValues, type BusinessDetailsValues } from "./authSchemas"
+import { LocationPicker } from "./LocationPicker"
 
 type UserTypeChoice = "REGULAR" | "BUSINESS"
 
@@ -53,6 +54,13 @@ export function SignUpForm({
   })
   const { data: categoriesData } = useCategoriesQuery({ skip: userType !== "BUSINESS" })
 
+  const pickedLatitude = businessForm.watch("latitude")
+  const pickedLongitude = businessForm.watch("longitude")
+  const handleLocationChange = (coords: { latitude: number; longitude: number }) => {
+    businessForm.setValue("latitude", coords.latitude, { shouldValidate: true })
+    businessForm.setValue("longitude", coords.longitude, { shouldValidate: true })
+  }
+
   const onAccountSubmit = async (values: SignUpAccountValues) => {
     setServerError(null)
     if (userType === "BUSINESS") {
@@ -87,6 +95,8 @@ export function SignUpForm({
         website: values.website || undefined,
         categoryId: values.categoryId,
         priceRange: values.priceRange,
+        latitude: values.latitude,
+        longitude: values.longitude,
       })
       if (onSuccess) {
         onSuccess()
@@ -153,6 +163,25 @@ export function SignUpForm({
             <Input id="biz-address" placeholder="123 Main St" {...businessForm.register("address")} />
             {businessForm.formState.errors.address && (
               <p className="mt-1 text-xs text-destructive">{businessForm.formState.errors.address.message}</p>
+            )}
+            <p className="mt-1 text-xs text-slate-500">
+              {typeof pickedLatitude === "number" && typeof pickedLongitude === "number"
+                ? `Location: ${pickedLatitude.toFixed(6)}, ${pickedLongitude.toFixed(6)}`
+                : "Location not set yet — mark it on the map below."}
+            </p>
+          </div>
+          <div>
+            <Label className="mb-1 text-xs font-semibold text-slate-600">Mark your place on the map</Label>
+            <LocationPicker
+              value={
+                typeof pickedLatitude === "number" && typeof pickedLongitude === "number"
+                  ? { latitude: pickedLatitude, longitude: pickedLongitude }
+                  : null
+              }
+              onChange={handleLocationChange}
+            />
+            {businessForm.formState.errors.latitude && (
+              <p className="mt-1 text-xs text-destructive">{businessForm.formState.errors.latitude.message}</p>
             )}
           </div>
           <div>

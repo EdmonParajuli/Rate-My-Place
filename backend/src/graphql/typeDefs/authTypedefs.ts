@@ -84,6 +84,8 @@ export const authTypedefs: DocumentNode = gql`
         website: String
         categoryId: Int
         priceRange: PriceRangeEnum
+        latitude: Float
+        longitude: Float
     }
 
     type LoginToken {

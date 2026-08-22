@@ -114,6 +114,14 @@ const signUpBusinessSchema = Joi.object({
     }),
     priceRange: stringSchema.label('Price range').valid(...Object.values(PriceRangeEnum)).allow(null).optional().messages({
         "any.only": "Price range must be one of LOW, MEDIUM, HIGH."
+    }),
+    latitude: numberSchema.label('Latitude').min(-90).max(90).allow(null).optional().messages({
+        "number.min": "Latitude must be between -90 and 90.",
+        "number.max": "Latitude must be between -90 and 90."
+    }),
+    longitude: numberSchema.label('Longitude').min(-180).max(180).allow(null).optional().messages({
+        "number.min": "Longitude must be between -180 and 180.",
+        "number.max": "Longitude must be between -180 and 180."
     })
 });
 

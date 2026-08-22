@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useListPlacesQuery, useCategoriesQuery, type PlaceSortEnum } from "@/lib/graphql/generated/graphql"
-import { useGeolocation } from "./useGeolocation"
+import { useGeolocation } from "@/lib/useGeolocation"
 import { DiscoverListView } from "./DiscoverListView"
 import { MapView } from "./MapView"
 import { LocationBlockedModal } from "./LocationBlockedModal"
