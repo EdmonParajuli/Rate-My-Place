@@ -78,7 +78,7 @@ export function PromotionsPage() {
   ].filter((g) => g.items.length > 0)
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-12">
+    <div className="space-y-6 pb-12">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Promotions</h1>

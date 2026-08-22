@@ -145,7 +145,7 @@ export function MyListingPage() {
   const selectedCategory = categories.find((c) => c.id === form.categoryId)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-12">
+    <div className="space-y-6 pb-12">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">My Listing</h1>

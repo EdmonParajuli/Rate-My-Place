@@ -17,7 +17,7 @@ export function BusinessSettingsPage() {
   const [activeTab, setActiveTab] = useState<"account" | "notifications">("account")
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-12">
+    <div className="max-w-2xl space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Settings</h1>
         <p className="mt-1 text-sm text-slate-500">Manage your account and notification preferences.</p>

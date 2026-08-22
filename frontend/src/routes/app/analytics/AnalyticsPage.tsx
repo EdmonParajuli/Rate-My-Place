@@ -50,7 +50,7 @@ export function AnalyticsPage() {
   const volumeInRange = reviewVolume.reduce((sum, p) => sum + p.reviewCount, 0)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-7 pb-12">
+    <div className="space-y-7 pb-12">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Analytics</h1>

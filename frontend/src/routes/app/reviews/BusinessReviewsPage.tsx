@@ -77,7 +77,7 @@ export function BusinessReviewsPage() {
   const filtered = filter === "needs" ? reviews.filter((r) => !r.reply) : reviews
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 pb-12">
+    <div className="space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Reviews</h1>
         <p className="mt-1 text-sm text-slate-500">Manage and respond to customer feedback.</p>
